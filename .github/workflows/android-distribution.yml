@@ -81,6 +81,12 @@ jobs:
             -p:AndroidSigningKeyPass="${{ secrets.KEY_PASSWORD }}" \
             -p:AndroidPackageFormat=aab \
             -o "${{ github.workspace }}/output"
+            
+      - name: Verify AAB is signed
+        run: |
+          AAB=$(find "${{ github.workspace }}/output" -name "*.aab" | head -1)
+          echo "Checking: $AAB"
+          $JAVA_HOME/bin/jarsigner -verify -verbose -certs "$AAB" | head -20
 
       - name: Locate AAB
         id: find_aab
