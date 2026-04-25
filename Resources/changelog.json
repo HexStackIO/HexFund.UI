@@ -1,0 +1,21 @@
+[
+  {
+    "version": "1.0.0",
+    "date": "2026-04-23",
+    "changes": [
+      "Updated: Massive UI Overhaul"
+    ]
+  },
+  {
+    "version": "0.0.05",
+    "date": "2026-04-21",
+    "changes": [
+      "Added: Transaction Sorting",
+      "Added: Helper Icons and Tooltips",
+      "Added: User Categories",
+      "Updated: Improved Text Validation",
+      "Updated: Minor UI Fixes/Adjustments",
+      "Updated: Settings Page Revamp"
+    ]
+  }
+]

@@ -1,0 +1,365 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:HexFund.UI.ViewModels"
+             xmlns:models="clr-namespace:HexFund.UI.Models"
+             x:Class="HexFund.UI.Views.AccountsPage"
+             x:DataType="vm:AccountsViewModel"
+             Title="Accounts"
+             BackgroundColor="{DynamicResource SurfacePage}">
+<Grid>
+        <Image Source="{Binding CurrentThemeBackdrop}"
+               Aspect="AspectFill"
+               InputTransparent="True"/>
+
+        <Grid RowDefinitions="*,Auto">
+
+        <!-- ── Accounts list ──────────────────────────────────────────────── -->
+        <RefreshView Grid.Row="0"
+                     Command="{Binding RefreshCommand}"
+                     IsRefreshing="{Binding IsRefreshing}">
+            <ScrollView>
+                <VerticalStackLayout Padding="15" Spacing="15">
+                    <CollectionView ItemsSource="{Binding Accounts}" SelectionMode="None">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="models:Account">
+                                <Border Padding="0" Margin="0,5">
+                                    <Border.Background>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                            <GradientStop Color="{DynamicResource SurfaceCard}"  Offset="0.0"/>
+                                            <GradientStop Color="{DynamicResource SurfaceSubtle}" Offset="1.0"/>
+                                        </LinearGradientBrush>
+                                    </Border.Background>
+                                    <Border StrokeShape="RoundRectangle 15" Padding="20">
+                                        <Border.Stroke>
+                                            <SolidColorBrush Color="{Binding Source={RelativeSource AncestorType={x:Type vm:AccountsViewModel}}, Path=SelectedAccount.AccountId, Converter={StaticResource AccountIdToColorConverter}, ConverterParameter={Binding AccountId}}"/>
+                                        </Border.Stroke>
+                                        <Border.StrokeThickness>
+                                            <OnPlatform x:TypeArguments="x:Double">
+                                                <On Platform="iOS, Android" Value="3"/>
+                                            </OnPlatform>
+                                        </Border.StrokeThickness>
+                                        <Border.Shadow>
+                                            <Shadow Brush="Black" Opacity="0.2" Offset="0,4" Radius="10"/>
+                                        </Border.Shadow>
+                                        <Border.GestureRecognizers>
+                                            <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type vm:AccountsViewModel}}, Path=SelectAccountCommand}" CommandParameter="{Binding .}"/>
+                                        </Border.GestureRecognizers>
+                                        <Grid RowDefinitions="Auto,Auto,Auto,Auto" ColumnDefinitions="*,Auto">
+                                            <Border Grid.Row="0" Grid.Column="0"
+                                                    Background="{DynamicResource Accent}"
+                                                    StrokeShape="RoundRectangle 12" Padding="10,5" Margin="0,0,0,5" HorizontalOptions="Start">
+                                                <Border.IsVisible>
+                                                    <MultiBinding Converter="{StaticResource AccountSelectedConverter}">
+                                                        <Binding Path="AccountId"/>
+                                                        <Binding Source="{RelativeSource AncestorType={x:Type vm:AccountsViewModel}}" Path="SelectedAccount.AccountId"/>
+                                                    </MultiBinding>
+                                                </Border.IsVisible>
+                                                <Label Text="📍 Selected" TextColor="White" FontSize="11" FontAttributes="Bold"/>
+                                            </Border>
+                                            <Label Grid.Row="1" Grid.Column="0" Text="{Binding AccountName}" FontSize="20" FontAttributes="Bold"/>
+                                            <Border Grid.Row="1" Grid.Column="1" StrokeShape="RoundRectangle 12" Padding="10,5" Margin="0">
+                                                <Border.Background>
+                                                    <SolidColorBrush Color="{Binding IsActive, Converter={StaticResource BoolToColorConverter}, ConverterParameter='Active'}"/>
+                                                </Border.Background>
+                                                <Label TextColor="White" FontSize="11" FontAttributes="Bold">
+                                                    <Label.Text>
+                                                        <Binding Path="IsActive">
+                                                            <Binding.Converter><StaticResource Key="BoolToTextConverter"/></Binding.Converter>
+                                                        </Binding>
+                                                    </Label.Text>
+                                                </Label>
+                                            </Border>
+                                            <Label Grid.Row="2" Grid.Column="0" Text="Current Balance" FontSize="12" TextColor="{DynamicResource TextSecondary}" Margin="0,5,0,0"/>
+                                            <Label Grid.Row="3" Grid.Column="0"
+                                                   Text="{Binding CurrentBalance, StringFormat='{0:C}'}"
+                                                   FontSize="28" FontAttributes="Bold"
+                                                   TextColor="{DynamicResource AccentInk}"/>
+                                            <HorizontalStackLayout Grid.Row="3" Grid.Column="1" Spacing="10" VerticalOptions="End">
+                                                <Border Background="{DynamicResource SurfaceHi}"
+                                                        Stroke="{DynamicResource StrokeHi}"
+                                                        StrokeThickness="1"
+                                                        StrokeShape="RoundRectangle 8" Padding="10">
+                                                    <Border.GestureRecognizers>
+                                                        <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type vm:AccountsViewModel}}, Path=ShowEditAccountCommand}" CommandParameter="{Binding .}"/>
+                                                    </Border.GestureRecognizers>
+                                                    <Label Text="✏️ Edit" TextColor="{DynamicResource TextPrimary}" FontSize="12" FontAttributes="Bold"/>
+                                                </Border>
+                                                <Border Background="{DynamicResource SurfaceLo}"
+                                                        Stroke="{DynamicResource Down}"
+                                                        StrokeThickness="1"
+                                                        StrokeShape="RoundRectangle 8" Padding="10">
+                                                    <Border.GestureRecognizers>
+                                                        <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type vm:AccountsViewModel}}, Path=DeleteAccountCommand}" CommandParameter="{Binding .}"/>
+                                                    </Border.GestureRecognizers>
+                                                    <Label Text="🗑️ Delete" TextColor="{DynamicResource Down}" FontSize="12" FontAttributes="Bold"/>
+                                                </Border>
+                                            </HorizontalStackLayout>
+                                        </Grid>
+                                    </Border>
+                                </Border>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                        <CollectionView.EmptyView>
+                            <VerticalStackLayout HorizontalOptions="Center" VerticalOptions="Center" Spacing="10" Margin="0,50,0,0">
+                                <Label Text="💳" FontSize="60" HorizontalOptions="Center"/>
+                                <Label Text="No accounts yet" FontSize="18" FontAttributes="Bold" HorizontalOptions="Center"/>
+                                <Label Text="Create your first account to get started" FontSize="14" TextColor="{DynamicResource TextSecondary}" HorizontalOptions="Center"/>
+                            </VerticalStackLayout>
+                        </CollectionView.EmptyView>
+                    </CollectionView>
+                </VerticalStackLayout>
+            </ScrollView>
+        </RefreshView>
+
+        <!-- Add Account button -->
+        <Button Grid.Row="1"
+                Text="+ Add Account"
+                Command="{Binding ShowAddAccountCommand}"
+                BackgroundColor="{DynamicResource Accent}"
+                TextColor="{DynamicResource SurfacePage}" FontSize="18" FontAttributes="Bold"
+                CornerRadius="10" Padding="0,15" Margin="15"/>
+
+        <!-- ════════════════════════════════════════════════════════════════
+             ADD ACCOUNT DIALOG
+             ════════════════════════════════════════════════════════════════ -->
+        <Border Grid.RowSpan="2"
+                IsVisible="{Binding ShowAddAccountDialog}"
+                BackgroundColor="#80000000" Padding="0">
+            <Border.GestureRecognizers>
+                <TapGestureRecognizer Command="{Binding CancelAddAccountCommand}"/>
+            </Border.GestureRecognizers>
+            <Border StrokeShape="RoundRectangle 20"
+                    Background="{DynamicResource SurfaceCard}"
+                    Padding="20" Margin="30" VerticalOptions="Center">
+                <Border.GestureRecognizers><TapGestureRecognizer/></Border.GestureRecognizers>
+                <Border.Shadow>
+                    <Shadow Brush="Black" Opacity="0.2" Offset="0,4" Radius="10"/>
+                </Border.Shadow>
+
+                <VerticalStackLayout Spacing="2">
+
+                    <Label Text="Create New Account" FontSize="20" FontAttributes="Bold"
+                           HorizontalOptions="Center" Margin="0,0,0,14"/>
+
+                    <!-- Account Name -->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Label Grid.Column="0" Text="Account Name" FontSize="14"
+                               TextColor="{DynamicResource TextPrimary}" FontAttributes="Bold" VerticalOptions="Center"/>
+                        <Border Grid.Column="1"
+                                WidthRequest="20" HeightRequest="20"
+                                StrokeShape="Ellipse" StrokeThickness="1.5"
+                                Stroke="{DynamicResource TextSecondary}"
+                                BackgroundColor="Transparent"
+                                VerticalOptions="Center">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding ToggleTooltipCommand}" CommandParameter="add_name"/>
+                            </Border.GestureRecognizers>
+                            <Label Text="?" FontSize="11" FontAttributes="Bold"
+                                   TextColor="{DynamicResource TextSecondary}"
+                                   HorizontalOptions="Center" VerticalOptions="Center"/>
+                        </Border>
+                    </Grid>
+                    <Border IsVisible="{Binding ActiveTooltip, Converter={StaticResource StringEqualsConverter}, ConverterParameter='add_name'}"
+                           BackgroundColor="{DynamicResource SurfaceSubtle}"
+                           Stroke="{DynamicResource StrokeCard}"
+                           StrokeThickness="1"
+                           StrokeShape="RoundRectangle 8"
+                           Padding="10,8"
+                           Margin="0,4,0,2">
+                        <Label Text="Give this account a clear, recognisable name. E.g. 'Main Checking', 'Joint Savings', or 'Business Account'."
+                               FontSize="12"
+                               TextColor="{DynamicResource TextSecondary}"
+                               LineBreakMode="WordWrap"/>
+                    </Border>
+                    <Border Stroke="{Binding NewAccountNameError, Converter={StaticResource NullOrValueStrokeConverter}, ConverterParameter='#DC3545'}"
+                            StrokeShape="RoundRectangle 10" StrokeThickness="1.5">
+                        <Entry Text="{Binding NewAccountName}"
+                               Placeholder="Account Name (e.g., Main Checking)"
+                               MaxLength="100"
+                               FontSize="16" Margin="15,10"/>
+                    </Border>
+                    <Label Text="{Binding NewAccountNameError}"
+                           TextColor="{DynamicResource Down}" FontSize="12"
+                           IsVisible="{Binding NewAccountNameError, Converter={StaticResource StringNotEmptyConverter}}"
+                           Margin="4,2,0,8"/>
+
+                    <!-- Initial Balance -->
+                    <Grid Margin="0,4,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Label Grid.Column="0" Text="Starting Balance" FontSize="14"
+                               TextColor="{DynamicResource TextPrimary}" FontAttributes="Bold" VerticalOptions="Center"/>
+                        <Border Grid.Column="1"
+                                WidthRequest="20" HeightRequest="20"
+                                StrokeShape="Ellipse" StrokeThickness="1.5"
+                                Stroke="{DynamicResource TextSecondary}"
+                                BackgroundColor="Transparent"
+                                VerticalOptions="Center">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding ToggleTooltipCommand}" CommandParameter="add_balance"/>
+                            </Border.GestureRecognizers>
+                            <Label Text="?" FontSize="11" FontAttributes="Bold"
+                                   TextColor="{DynamicResource TextSecondary}"
+                                   HorizontalOptions="Center" VerticalOptions="Center"/>
+                        </Border>
+                    </Grid>
+                    <Border IsVisible="{Binding ActiveTooltip, Converter={StaticResource StringEqualsConverter}, ConverterParameter='add_balance'}"
+                           BackgroundColor="{DynamicResource SurfaceSubtle}"
+                           Stroke="{DynamicResource StrokeCard}"
+                           StrokeThickness="1"
+                           StrokeShape="RoundRectangle 8"
+                           Padding="10,8"
+                           Margin="0,4,0,2">
+                        <Label Text="The current balance of this account right now. This becomes the starting point for all projections and calendar calculations."
+                               FontSize="12"
+                               TextColor="{DynamicResource TextSecondary}"
+                               LineBreakMode="WordWrap"/>
+                    </Border>
+                    <Border Stroke="{Binding NewAccountBalanceError, Converter={StaticResource NullOrValueStrokeConverter}, ConverterParameter='#DC3545'}"
+                            StrokeShape="RoundRectangle 10" StrokeThickness="1.5" Margin="0,4,0,0">
+                        <Entry Text="{Binding NewAccountBalance}"
+                               Placeholder="Starting Balance (e.g., 1000.00)"
+                               Keyboard="Numeric" FontSize="16" Margin="15,10"/>
+                    </Border>
+                    <Label Text="{Binding NewAccountBalanceError}"
+                           TextColor="{DynamicResource Down}" FontSize="12"
+                           IsVisible="{Binding NewAccountBalanceError, Converter={StaticResource StringNotEmptyConverter}}"
+                           Margin="4,2,0,8"/>
+
+                    <!-- API-level error -->
+                    <Label Text="{Binding AddErrorMessage}"
+                           TextColor="{DynamicResource Down}" FontSize="13"
+                           IsVisible="{Binding AddErrorMessage, Converter={StaticResource StringNotEmptyConverter}}"
+                           HorizontalOptions="Center" Margin="0,4,0,0"/>
+
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10" Margin="0,14,0,0">
+                        <Button Grid.Column="0" Text="Cancel" Command="{Binding CancelAddAccountCommand}"
+                                BackgroundColor="{DynamicResource SurfaceHi}" TextColor="{DynamicResource TextSecondary}"
+                                CornerRadius="10" Padding="0,12"/>
+                        <Button Grid.Column="1" Text="Create" Command="{Binding CreateAccountCommand}"
+                                BackgroundColor="{DynamicResource Accent}" TextColor="{DynamicResource SurfacePage}"
+                                CornerRadius="10" Padding="0,12"
+                                IsEnabled="{Binding IsLoading, Converter={StaticResource InvertedBoolConverter}}"/>
+                    </Grid>
+
+                    <ActivityIndicator IsRunning="{Binding IsLoading}" IsVisible="{Binding IsLoading}"
+                                       Color="{DynamicResource Accent}"/>
+                </VerticalStackLayout>
+            </Border>
+        </Border>
+
+        <!-- ════════════════════════════════════════════════════════════════
+             EDIT ACCOUNT DIALOG
+             ════════════════════════════════════════════════════════════════ -->
+        <Border Grid.RowSpan="2"
+                IsVisible="{Binding ShowEditAccountDialog}"
+                BackgroundColor="#80000000" Padding="0">
+            <Border.GestureRecognizers>
+                <TapGestureRecognizer Command="{Binding CancelEditAccountCommand}"/>
+            </Border.GestureRecognizers>
+            <Border StrokeShape="RoundRectangle 20"
+                    Background="{DynamicResource SurfaceCard}"
+                    Padding="20" Margin="30" VerticalOptions="Center">
+                <Border.GestureRecognizers><TapGestureRecognizer/></Border.GestureRecognizers>
+                <Border.Shadow>
+                    <Shadow Brush="Black" Opacity="0.2" Offset="0,4" Radius="10"/>
+                </Border.Shadow>
+
+                <VerticalStackLayout Spacing="2">
+
+                    <Label Text="Edit Account" FontSize="20" FontAttributes="Bold"
+                           HorizontalOptions="Center" Margin="0,0,0,14"/>
+
+                    <!-- Account Name -->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Label Grid.Column="0" Text="Account Name" FontSize="14"
+                               TextColor="{DynamicResource TextPrimary}" FontAttributes="Bold" VerticalOptions="Center"/>
+                        <Border Grid.Column="1"
+                                WidthRequest="20" HeightRequest="20"
+                                StrokeShape="Ellipse" StrokeThickness="1.5"
+                                Stroke="{DynamicResource TextSecondary}"
+                                BackgroundColor="Transparent"
+                                VerticalOptions="Center">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding ToggleTooltipCommand}" CommandParameter="edit_name"/>
+                            </Border.GestureRecognizers>
+                            <Label Text="?" FontSize="11" FontAttributes="Bold"
+                                   TextColor="{DynamicResource TextSecondary}"
+                                   HorizontalOptions="Center" VerticalOptions="Center"/>
+                        </Border>
+                    </Grid>
+                    <Border IsVisible="{Binding ActiveTooltip, Converter={StaticResource StringEqualsConverter}, ConverterParameter='edit_name'}"
+                           BackgroundColor="{DynamicResource SurfaceSubtle}"
+                           Stroke="{DynamicResource StrokeCard}"
+                           StrokeThickness="1"
+                           StrokeShape="RoundRectangle 8"
+                           Padding="10,8"
+                           Margin="0,4,0,2">
+                        <Label Text="Rename this account. The new name will appear everywhere in the app immediately."
+                               FontSize="12"
+                               TextColor="{DynamicResource TextSecondary}"
+                               LineBreakMode="WordWrap"/>
+                    </Border>
+                    <Border Stroke="{Binding EditAccountNameError, Converter={StaticResource NullOrValueStrokeConverter}, ConverterParameter='#DC3545'}"
+                            StrokeShape="RoundRectangle 10" StrokeThickness="1.5">
+                        <Entry Text="{Binding EditAccountName}"
+                               Placeholder="Account Name"
+                               MaxLength="100"
+                               FontSize="16" Margin="15,10"/>
+                    </Border>
+                    <Label Text="{Binding EditAccountNameError}"
+                           TextColor="{DynamicResource Down}" FontSize="12"
+                           IsVisible="{Binding EditAccountNameError, Converter={StaticResource StringNotEmptyConverter}}"
+                           Margin="4,2,0,8"/>
+
+                    <!-- Active toggle -->
+                    <HorizontalStackLayout Spacing="10" HorizontalOptions="Center" Margin="0,8,0,0">
+                        <Label Text="Active Status:" FontSize="16" VerticalOptions="Center"/>
+                        <Switch IsToggled="{Binding EditIsActive}" OnColor="{DynamicResource Accent}"/>
+                        <Label VerticalOptions="Center" FontSize="14" FontAttributes="Bold">
+                            <Label.Text>
+                                <Binding Path="EditIsActive">
+                                    <Binding.Converter><StaticResource Key="BoolToTextConverter"/></Binding.Converter>
+                                </Binding>
+                            </Label.Text>
+                        </Label>
+                    </HorizontalStackLayout>
+
+                    <!-- API-level error -->
+                    <Label Text="{Binding EditErrorMessage}"
+                           TextColor="{DynamicResource Down}" FontSize="13"
+                           IsVisible="{Binding EditErrorMessage, Converter={StaticResource StringNotEmptyConverter}}"
+                           HorizontalOptions="Center" Margin="0,8,0,0"/>
+
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10" Margin="0,14,0,0">
+                        <Button Grid.Column="0" Text="Cancel" Command="{Binding CancelEditAccountCommand}"
+                                BackgroundColor="{DynamicResource SurfaceHi}" TextColor="{DynamicResource TextSecondary}"
+                                CornerRadius="10" Padding="0,12"/>
+                        <Button Grid.Column="1" Text="Save" Command="{Binding UpdateAccountCommand}"
+                                BackgroundColor="{DynamicResource Accent}" TextColor="{DynamicResource SurfacePage}"
+                                CornerRadius="10" Padding="0,12"
+                                IsEnabled="{Binding IsLoading, Converter={StaticResource InvertedBoolConverter}}"/>
+                    </Grid>
+
+                    <ActivityIndicator IsRunning="{Binding IsLoading}" IsVisible="{Binding IsLoading}"
+                                       Color="{DynamicResource Accent}"/>
+                </VerticalStackLayout>
+            </Border>
+        </Border>
+
+    </Grid>
+
+    </Grid>
+
+</ContentPage>

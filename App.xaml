@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Application xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:converters="clr-namespace:HexFund.UI.Converters"
+             x:Class="HexFund.UI.App">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Resources/Styles/Colors.xaml" />
+                <ResourceDictionary Source="Resources/Styles/Styles.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+            
+            <!-- Value Converters -->
+            <converters:StringNotEmptyConverter x:Key="StringNotEmptyConverter" />
+            <converters:InvertedBoolConverter x:Key="InvertedBoolConverter" />
+            <converters:InvertedBoolToOpacityConverter x:Key="InvertedBoolToOpacityConverter" />
+            <converters:BoolToStringConverter x:Key="BoolToStringConverter" />
+            <converters:BoolToColorConverter x:Key="BoolToColorConverter" />
+            <converters:BoolToTextConverter x:Key="BoolToTextConverter" />
+            <converters:AccountSelectedConverter x:Key="AccountSelectedConverter" />
+            <converters:AccountIdToColorConverter x:Key="AccountIdToColorConverter" />
+            <converters:DecimalGreaterThanZeroConverter x:Key="DecimalGreaterThanZeroConverter" />
+            <converters:IntToBoolConverter x:Key="IntToBoolConverter" />
+            <converters:DateToBackgroundConverter x:Key="DateToBackgroundConverter" />
+            <converters:AmountToColorConverter x:Key="AmountToColorConverter" />
+            <converters:TransactionCountToTextConverter x:Key="TransactionCountToTextConverter" />
+            <converters:BoolToToggleBgConverter x:Key="BoolToToggleBgConverter"/>
+            <converters:BoolToToggleTextConverter x:Key="BoolToToggleTextConverter"/>
+            <converters:ThemeSwatchStrokeConverter x:Key="ThemeSwatchStrokeConverter"/>
+            <converters:NullOrValueStrokeConverter x:Key="NullOrValueStrokeConverter" />
+            <converters:BoolToDoubleConverter x:Key="BoolToDoubleConverter" />
+            <converters:SortFieldActiveConverter x:Key="SortFieldActiveConverter" />
+            <converters:SortChipTextColorConverter x:Key="SortChipTextColorConverter"/>
+            <converters:SortChipBackgroundConverter x:Key="SortChipBackgroundConverter"/>
+            <converters:StringEqualsConverter x:Key="StringEqualsConverter"/>
+            <converters:FrequencyNotOnceConverter x:Key="FrequencyNotOnceConverter"/>
+            <converters:FilterActiveBgConverter x:Key="FilterActiveBgConverter"/>
+            <converters:FilterActiveTextConverter x:Key="FilterActiveTextConverter"/>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

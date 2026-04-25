@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="hlg_emerald-grad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#35B88C" stop-opacity="1"></stop>
+      <stop offset="1" stop-color="#35B88C" stop-opacity=".55"></stop>
+    </linearGradient>
+  </defs>
+  
+  <path d="M32 4 56 18v28L32 60 8 46V18z" fill="none" stroke="url(#hlg_emerald-grad)" stroke-width="1.5"></path>
+  
+  <path d="M32 12 50 22v20L32 52 14 42V22z" fill="none" stroke="#35B88C" stroke-width="1" opacity=".6"></path>
+  
+  <g stroke="#35B88C" stroke-width=".8" fill="none" opacity=".85" stroke-linecap="round">
+    <path d="M32 8v3M48 16l-2 2M48 48l-2-2M32 56v-3M16 48l2-2M16 16l2 2"></path>
+  </g>
+  
+  <circle cx="32" cy="32" r="10" fill="#35B88C" opacity=".12"></circle>
+  <circle cx="32" cy="32" r="10" fill="none" stroke="#35B88C" stroke-width="1.2"></circle>
+  <text x="32" y="37" text-anchor="middle" font-size="14" font-weight="700" fill="#35B88C" font-family="Cinzel, Georgia, serif">$</text>
+</svg>

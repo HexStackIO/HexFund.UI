@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:HexFund.UI.ViewModels"
+             x:Class="HexFund.UI.Views.LoginPage"
+             x:DataType="vm:LoginViewModel"
+             BackgroundColor="{DynamicResource SurfacePage}"
+             Shell.NavBarIsVisible="False">
+
+    <!-- Full-bleed vault backdrop -->
+<Grid>
+        <Image Source="{Binding CurrentThemeBackdrop}"
+               Aspect="AspectFill"
+               InputTransparent="True"/>
+
+        <ScrollView>
+        <VerticalStackLayout Spacing="0" Padding="36,60,36,40" VerticalOptions="Center">
+
+            <!-- ── Hex logo mark ─────────────────────────────────────────── -->
+            <!-- ── Vault backdrop (full page) ────────────────────────────── -->
+            <!-- Backdrop sits behind scroll content via the outer Grid -->
+
+            <!-- ── Hex logo from asset pack ─────────────────────────────── -->
+            <Grid WidthRequest="96" HeightRequest="96"
+                  HorizontalOptions="Center"
+                  Margin="0,0,0,32">
+                <!-- Glow halo -->
+                <Border WidthRequest="96" HeightRequest="96"
+                        StrokeShape="Ellipse"
+                        BackgroundColor="{DynamicResource AccentGlow}"
+                        StrokeThickness="0"
+                        HorizontalOptions="Center"
+                        VerticalOptions="Center"/>
+                <!-- Asset pack logo — per-theme, auto-switches with theme -->
+                <Image Source="{Binding CurrentThemeLogo}"
+                       WidthRequest="72" HeightRequest="72"
+                       HorizontalOptions="Center"
+                       VerticalOptions="Center">
+                    <Image.Shadow>
+                        <Shadow Brush="{DynamicResource AccentGlow}"
+                                Opacity="0.8" Radius="18" Offset="0,0"/>
+                    </Image.Shadow>
+                </Image>
+            </Grid>
+
+            <!-- ── App name ──────────────────────────────────────────────── -->
+            <Label Text="HexFund"
+                   FontSize="38"
+                   FontFamily="CinzelBold"
+                   FontAttributes="Bold"
+                   TextColor="{DynamicResource AccentInk}"
+                   HorizontalOptions="Center"
+                   Margin="0,0,0,8"/>
+
+            <!-- ── Tagline ────────────────────────────────────────────────── -->
+            <Label Text="Plan. Track. Grow."
+                   FontSize="16"
+                   TextColor="{DynamicResource Accent}"
+                   HorizontalOptions="Center"
+                   Margin="0,0,0,6"/>
+
+            <!-- ── Subline ────────────────────────────────────────────────── -->
+            <Label Text="Take control of your finances."
+                   FontSize="14"
+                   TextColor="{DynamicResource TextSecondary}"
+                   HorizontalOptions="Center"
+                   HorizontalTextAlignment="Center"
+                   Margin="0,0,0,48"/>
+
+            <!-- ── Error message ─────────────────────────────────────────── -->
+            <Border IsVisible="{Binding ErrorMessage, Converter={StaticResource StringNotEmptyConverter}}"
+                    BackgroundColor="{DynamicResource SurfaceCard}"
+                    Stroke="{DynamicResource Down}"
+                    StrokeThickness="1"
+                    StrokeShape="RoundRectangle 10"
+                    Padding="14,10"
+                    Margin="0,0,0,16">
+                <Label Text="{Binding ErrorMessage}"
+                       TextColor="{DynamicResource Down}"
+                       FontSize="13"
+                       HorizontalOptions="Center"
+                       HorizontalTextAlignment="Center"/>
+            </Border>
+
+            <!-- ── Sign In button ────────────────────────────────────────── -->
+            <Border StrokeShape="RoundRectangle 12"
+                    BackgroundColor="{DynamicResource Accent}"
+                    StrokeThickness="0"
+                    IsVisible="{Binding IsLoading, Converter={StaticResource InvertedBoolConverter}}">
+                <Border.Shadow>
+                    <Shadow Brush="{DynamicResource Accent}"
+                            Opacity="0.4" Radius="16" Offset="0,4"/>
+                </Border.Shadow>
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding LoginCommand}"/>
+                </Border.GestureRecognizers>
+                <Label Text="Sign In / Register"
+                       FontSize="17"
+                       FontAttributes="Bold"
+                       TextColor="{DynamicResource SurfacePage}"
+                       HorizontalOptions="Center"
+                       Padding="0,16"/>
+            </Border>
+
+            <!-- ── Loading state ─────────────────────────────────────────── -->
+            <VerticalStackLayout IsVisible="{Binding IsLoading}"
+                                 Spacing="14"
+                                 HorizontalOptions="Center"
+                                 Margin="0,8,0,0">
+                <ActivityIndicator IsRunning="True"
+                                   Color="{DynamicResource Accent}"
+                                   HorizontalOptions="Center"/>
+                <Label Text="Signing in…"
+                       FontSize="13"
+                       TextColor="{DynamicResource TextSecondary}"
+                       HorizontalOptions="Center"/>
+            </VerticalStackLayout>
+
+        </VerticalStackLayout>
+    </ScrollView>
+
+    </Grid>
+
+</ContentPage>

@@ -1,0 +1,435 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:HexFund.UI.ViewModels"
+             xmlns:models="clr-namespace:HexFund.UI.Models"
+             x:Class="HexFund.UI.Views.CalendarPage"
+             x:DataType="vm:CalendarViewModel"
+             Title="Calendar"
+             BackgroundColor="{DynamicResource SurfacePage}">
+<Grid>
+        <Image Source="{Binding CurrentThemeBackdrop}"
+               Aspect="AspectFill"
+               InputTransparent="True"/>
+
+        <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" Padding="10">
+
+        <!-- ── No Account Banner ─────────────────────────────────────────── -->
+        <Border Grid.Row="0"
+                IsVisible="{Binding HasAccount, Converter={StaticResource InvertedBoolConverter}}"
+                BackgroundColor="{DynamicResource SurfaceCard}"
+                Stroke="{DynamicResource StrokeCard}"
+                StrokeThickness="1"
+                StrokeShape="RoundRectangle 12"
+                Padding="20"
+                Margin="0,10">
+            <VerticalStackLayout Spacing="10">
+                <Label Text="⚠️ No Account Selected"
+                       FontSize="18" FontAttributes="Bold"
+                       HorizontalOptions="Center"/>
+                <Label Text="{Binding NoAccountMessage}"
+                       FontSize="14" TextColor="{DynamicResource TextSecondary}"
+                       HorizontalOptions="Center"/>
+                <Button Text="Go to Accounts"
+                        Command="{Binding NavigateToAccountsCommand}"
+                        BackgroundColor="{DynamicResource Accent}"
+                        TextColor="{DynamicResource SurfacePage}"
+                        CornerRadius="8" Margin="0,10,0,0"/>
+            </VerticalStackLayout>
+        </Border>
+
+        <!-- ── Month Navigation ──────────────────────────────────────────── -->
+        <Grid Grid.Row="1"
+              ColumnDefinitions="Auto,*,Auto,Auto"
+              Margin="0,10,0,5"
+              IsVisible="{Binding HasAccount}">
+
+            <Button Grid.Column="0"
+                    Text="◀"
+                    Command="{Binding PreviousMonthCommand}"
+                    BackgroundColor="{DynamicResource SurfaceHi}"
+                    TextColor="{DynamicResource Accent}"
+                    BorderColor="{DynamicResource StrokeCard}"
+                    BorderWidth="1"
+                    CornerRadius="8"
+                    Padding="8,6"
+                    WidthRequest="40" HeightRequest="40"
+                    FontSize="16"/>
+
+            <Border Grid.Column="1"
+                    BackgroundColor="{DynamicResource SurfaceHi}"
+                    Stroke="{DynamicResource Accent}"
+                    StrokeThickness="1"
+                    StrokeShape="RoundRectangle 10"
+                    Padding="12,6"
+                    HorizontalOptions="Center"
+                    VerticalOptions="Center">
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding ShowMonthPickerCommand}"/>
+                </Border.GestureRecognizers>
+                <HorizontalStackLayout Spacing="6" HorizontalOptions="Center">
+                    <Label Text="{Binding MonthYearDisplay}"
+                           FontSize="18" FontAttributes="Bold"
+                           TextColor="{DynamicResource TextPrimary}"
+                           VerticalOptions="Center"/>
+                    <Label Text="📅" FontSize="14" VerticalOptions="Center"/>
+                </HorizontalStackLayout>
+            </Border>
+
+            <Button Grid.Column="2"
+                    Text="Today"
+                    Command="{Binding TodayCommand}"
+                    BackgroundColor="Transparent"
+                    TextColor="{DynamicResource Accent}"
+                    BorderColor="{DynamicResource Accent}"
+                    BorderWidth="1"
+                    Padding="10,6"
+                    FontSize="11"
+                    CornerRadius="8"
+                    WidthRequest="55" HeightRequest="32"
+                    VerticalOptions="Center"
+                    HorizontalOptions="End"
+                    Margin="6,0,0,0"/>
+
+            <Button Grid.Column="3"
+                    Text="▶"
+                    Command="{Binding NextMonthCommand}"
+                    BackgroundColor="{DynamicResource SurfaceHi}"
+                    TextColor="{DynamicResource Accent}"
+                    BorderColor="{DynamicResource StrokeCard}"
+                    BorderWidth="1"
+                    CornerRadius="8"
+                    Padding="8,6"
+                    WidthRequest="40" HeightRequest="40"
+                    FontSize="16"
+                    Margin="6,0,0,0"/>
+        </Grid>
+
+        <!-- ── Month Summary strip ───────────────────────────────────────── -->
+        <Border Grid.Row="2"
+                BackgroundColor="{DynamicResource SurfaceHi}"
+                Stroke="{DynamicResource StrokeCard}"
+                StrokeThickness="1"
+                StrokeShape="RoundRectangle 12"
+                Padding="12"
+                Margin="0,0,0,5"
+                IsVisible="{Binding HasAccount}">
+            <Grid ColumnDefinitions="*,*,*,*,*" ColumnSpacing="8">
+                <VerticalStackLayout Grid.Column="0">
+                    <Label Text="Starting" FontSize="10"
+                           TextColor="{DynamicResource TextSecondary}"/>
+                    <Label Text="{Binding StartingBalanceDisplay}"
+                           FontSize="14" FontAttributes="Bold"/>
+                </VerticalStackLayout>
+                <VerticalStackLayout Grid.Column="1">
+                    <Label Text="Income" FontSize="10"
+                           TextColor="{DynamicResource TextSecondary}"/>
+                    <Label Text="{Binding TotalIncomeDisplay}"
+                           FontSize="13" TextColor="{DynamicResource Up}"/>
+                </VerticalStackLayout>
+                <VerticalStackLayout Grid.Column="2">
+                    <Label Text="Expenses" FontSize="10"
+                           TextColor="{DynamicResource TextSecondary}"/>
+                    <Label Text="{Binding TotalExpensesDisplay}"
+                           FontSize="13" TextColor="{DynamicResource Down}"/>
+                </VerticalStackLayout>
+                <VerticalStackLayout Grid.Column="3">
+                    <Label Text="Net Change" FontSize="10"
+                           TextColor="{DynamicResource TextSecondary}"/>
+                    <Label Text="{Binding NetChangeDisplay}"
+                           FontSize="14" FontAttributes="Bold"
+                           TextColor="{Binding NetChangeColor}"/>
+                </VerticalStackLayout>
+                <VerticalStackLayout Grid.Column="4" HorizontalOptions="End">
+                    <Label Text="Ending" FontSize="10"
+                           TextColor="{DynamicResource TextSecondary}"/>
+                    <Label Text="{Binding EndingBalanceDisplay}"
+                           FontSize="14" FontAttributes="Bold"/>
+                </VerticalStackLayout>
+            </Grid>
+        </Border>
+
+        <!-- ── Calendar grid ─────────────────────────────────────────────── -->
+        <Grid Grid.Row="3"
+              RowDefinitions="Auto,*"
+              IsVisible="{Binding HasAccount}">
+
+            <!-- Day-of-week headers -->
+            <Grid Grid.Row="0"
+                  ColumnDefinitions="*,*,*,*,*,*,*"
+                  BackgroundColor="{DynamicResource SurfaceHi}"
+                  Padding="0,6">
+                <Label Grid.Column="0" Text="Sun" FontSize="11" FontAttributes="Bold"
+                       HorizontalOptions="Center" TextColor="{DynamicResource TextSecondary}"/>
+                <Label Grid.Column="1" Text="Mon" FontSize="11" FontAttributes="Bold"
+                       HorizontalOptions="Center" TextColor="{DynamicResource TextSecondary}"/>
+                <Label Grid.Column="2" Text="Tue" FontSize="11" FontAttributes="Bold"
+                       HorizontalOptions="Center" TextColor="{DynamicResource TextSecondary}"/>
+                <Label Grid.Column="3" Text="Wed" FontSize="11" FontAttributes="Bold"
+                       HorizontalOptions="Center" TextColor="{DynamicResource TextSecondary}"/>
+                <Label Grid.Column="4" Text="Thu" FontSize="11" FontAttributes="Bold"
+                       HorizontalOptions="Center" TextColor="{DynamicResource TextSecondary}"/>
+                <Label Grid.Column="5" Text="Fri" FontSize="11" FontAttributes="Bold"
+                       HorizontalOptions="Center" TextColor="{DynamicResource TextSecondary}"/>
+                <Label Grid.Column="6" Text="Sat" FontSize="11" FontAttributes="Bold"
+                       HorizontalOptions="Center" TextColor="{DynamicResource TextSecondary}"/>
+            </Grid>
+
+            <CollectionView Grid.Row="1"
+                            ItemsSource="{Binding GridDays}"
+                            SelectionMode="None"
+                            ItemSizingStrategy="MeasureFirstItem">
+                <CollectionView.ItemsLayout>
+                    <GridItemsLayout Orientation="Vertical"
+                                     Span="7"
+                                     HorizontalItemSpacing="1"
+                                     VerticalItemSpacing="1"/>
+                </CollectionView.ItemsLayout>
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="models:CalendarGridDay">
+                        <Border HeightRequest="70"
+                                Padding="3"
+                                BackgroundColor="{Binding CellBackground}"
+                                Stroke="{Binding CellStroke}"
+                                StrokeThickness="1.5">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="2"/>
+                            </Border.StrokeShape>
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer
+                                    Command="{Binding Source={RelativeSource AncestorType={x:Type vm:CalendarViewModel}}, Path=SelectGridDayCommand}"
+                                    CommandParameter="{Binding .}"/>
+                            </Border.GestureRecognizers>
+                            <VerticalStackLayout Spacing="2" VerticalOptions="Start">
+                                <Label Text="{Binding DayNumber}"
+                                       FontSize="14" FontAttributes="Bold"
+                                       TextColor="{Binding DayNumberColor}"
+                                       Margin="2,2,0,0"/>
+                                <VerticalStackLayout Spacing="1"
+                                                     IsVisible="{Binding HasData}"
+                                                     Margin="2,0,2,0"
+                                                     BindableLayout.ItemsSource="{Binding EventChips}">
+                                    <BindableLayout.ItemTemplate>
+                                        <DataTemplate x:DataType="models:CalendarEventChip">
+                                            <Border BackgroundColor="{Binding Color}"
+                                                    StrokeThickness="0"
+                                                    Padding="3,1"
+                                                    Margin="0,1">
+                                                <Border.StrokeShape>
+                                                    <RoundRectangle CornerRadius="3"/>
+                                                </Border.StrokeShape>
+                                                <Label Text="{Binding Label}"
+                                                       FontSize="9"
+                                                       TextColor="Black"
+                                                       LineBreakMode="TailTruncation"
+                                                       MaxLines="1"/>
+                                            </Border>
+                                        </DataTemplate>
+                                    </BindableLayout.ItemTemplate>
+                                </VerticalStackLayout>
+                            </VerticalStackLayout>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </Grid>
+
+        <!-- ── Transaction Detail Panel ───────────────────────────────────── -->
+        <Border Grid.Row="4"
+                IsVisible="{Binding IsTransactionDetailVisible}"
+                BackgroundColor="{DynamicResource SurfaceCard}"
+                Stroke="{DynamicResource StrokeCard}"
+                StrokeThickness="1"
+                StrokeShape="RoundRectangle 15"
+                Padding="15"
+                Margin="0,10,0,10">
+            <VerticalStackLayout Spacing="12">
+
+                <!-- Header -->
+                <Grid ColumnDefinitions="*,Auto">
+                    <Label Grid.Column="0"
+                           Text="{Binding SelectedDateDisplay}"
+                           FontSize="18" FontAttributes="Bold"/>
+                    <Border Grid.Column="1"
+                            WidthRequest="28" HeightRequest="28"
+                            StrokeShape="Ellipse" StrokeThickness="0"
+                            BackgroundColor="{DynamicResource SurfaceLo}"
+                            VerticalOptions="Center">
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding CloseDayDetailCommand}"/>
+                        </Border.GestureRecognizers>
+                        <Label Text="✕" FontSize="13"
+                               TextColor="{DynamicResource TextSecondary}"
+                               HorizontalOptions="Center" VerticalOptions="Center"/>
+                    </Border>
+                </Grid>
+
+                <!-- Day summary mini-cards -->
+                <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
+                    <Border Grid.Column="0"
+                            BackgroundColor="{DynamicResource SurfaceLo}"
+                            Stroke="{DynamicResource Up}"
+                            StrokeThickness="1"
+                            Padding="8" StrokeShape="RoundRectangle 8">
+                        <VerticalStackLayout Spacing="2">
+                            <Label Text="Income" FontSize="10"
+                                   TextColor="{DynamicResource Up}" FontAttributes="Bold"/>
+                            <Label Text="{Binding SelectedDayIncome, StringFormat='{0:C}'}"
+                                   FontSize="14" FontAttributes="Bold"
+                                   TextColor="{DynamicResource Up}"/>
+                        </VerticalStackLayout>
+                    </Border>
+                    <Border Grid.Column="1"
+                            BackgroundColor="{DynamicResource SurfaceLo}"
+                            Stroke="{DynamicResource Down}"
+                            StrokeThickness="1"
+                            Padding="8" StrokeShape="RoundRectangle 8">
+                        <VerticalStackLayout Spacing="2">
+                            <Label Text="Expenses" FontSize="10"
+                                   TextColor="{DynamicResource Down}" FontAttributes="Bold"/>
+                            <Label Text="{Binding SelectedDayExpenses, StringFormat='{0:C}'}"
+                                   FontSize="14" FontAttributes="Bold"
+                                   TextColor="{DynamicResource Down}"/>
+                        </VerticalStackLayout>
+                    </Border>
+                    <Border Grid.Column="2"
+                            BackgroundColor="{DynamicResource SurfaceLo}"
+                            Stroke="{DynamicResource StrokeCard}"
+                            StrokeThickness="1"
+                            Padding="8" StrokeShape="RoundRectangle 8">
+                        <VerticalStackLayout Spacing="2">
+                            <Label Text="Net Change" FontSize="10"
+                                   TextColor="{DynamicResource TextSecondary}" FontAttributes="Bold"/>
+                            <Label Text="{Binding SelectedDayNetChange, StringFormat='{0:C}'}"
+                                   FontSize="14" FontAttributes="Bold"
+                                   TextColor="{Binding SelectedDayNetChangeColor}"/>
+                        </VerticalStackLayout>
+                    </Border>
+                </Grid>
+
+                <!-- End of day balance -->
+                <Border Padding="12" StrokeThickness="1"
+                        BackgroundColor="{DynamicResource SurfaceHi}"
+                        Stroke="{DynamicResource StrokeHi}"
+                        StrokeShape="RoundRectangle 10">
+                    <HorizontalStackLayout Spacing="8" HorizontalOptions="Center">
+                        <Label Text="End of Day Balance:"
+                               FontSize="13" FontAttributes="Bold"
+                               TextColor="{DynamicResource TextSecondary}"
+                               VerticalOptions="Center"/>
+                        <Label Text="{Binding SelectedDayBalance, StringFormat='{0:C}'}"
+                               FontSize="18" FontAttributes="Bold"
+                               TextColor="{Binding SelectedDayBalanceColor}"
+                               VerticalOptions="Center"/>
+                    </HorizontalStackLayout>
+                </Border>
+
+                <BoxView HeightRequest="1" Color="{DynamicResource SurfaceDivider}"/>
+
+                <Label Text="Transactions" FontSize="14" FontAttributes="Bold"
+                       TextColor="{DynamicResource TextSecondary}"/>
+
+                <CollectionView ItemsSource="{Binding SelectedDayTransactions}"
+                                MaximumHeightRequest="250">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate x:DataType="models:TransactionOccurrence">
+                            <Grid ColumnDefinitions="*,Auto" Padding="0,10" RowSpacing="4">
+                                <VerticalStackLayout Grid.Column="0" Spacing="4">
+                                    <Label Text="{Binding Description}"
+                                           FontSize="15" FontAttributes="Bold"/>
+                                    <Label Text="{Binding CategoryDisplay}"
+                                           FontSize="12"
+                                           TextColor="{DynamicResource TextSecondary}"
+                                           IsVisible="{Binding Category, Converter={StaticResource StringNotEmptyConverter}}"/>
+                                </VerticalStackLayout>
+                                <Label Grid.Column="1"
+                                       Text="{Binding AmountDisplay}"
+                                       FontSize="16" FontAttributes="Bold"
+                                       TextColor="{Binding AmountColor}"
+                                       VerticalOptions="Center"/>
+                            </Grid>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                    <CollectionView.EmptyView>
+                        <Label Text="No transactions on this date"
+                               TextColor="{DynamicResource TextMuted}"
+                               FontSize="14"
+                               HorizontalOptions="Center"
+                               Margin="0,20"/>
+                    </CollectionView.EmptyView>
+                </CollectionView>
+            </VerticalStackLayout>
+        </Border>
+
+        <!-- ── Month Picker Modal ─────────────────────────────────────────── -->
+        <Grid Grid.RowSpan="5"
+              IsVisible="{Binding IsMonthPickerVisible}"
+              BackgroundColor="#CC000000">
+            <Grid.GestureRecognizers>
+                <TapGestureRecognizer Command="{Binding CancelMonthPickerCommand}"/>
+            </Grid.GestureRecognizers>
+            <Border VerticalOptions="Center"
+                    HorizontalOptions="Center"
+                    BackgroundColor="{DynamicResource SurfaceCard}"
+                    Stroke="{DynamicResource StrokeHi}"
+                    StrokeThickness="1"
+                    StrokeShape="RoundRectangle 20"
+                    Padding="24"
+                    Margin="30"
+                    WidthRequest="320">
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer/>
+                </Border.GestureRecognizers>
+                <VerticalStackLayout Spacing="20">
+                    <Label Text="Select Month/Year"
+                           FontSize="20" FontAttributes="Bold"
+                           HorizontalOptions="Center"/>
+                    <VerticalStackLayout Spacing="5">
+                        <Label Text="Month" FontSize="14"
+                               TextColor="{DynamicResource TextSecondary}"/>
+                        <Border Stroke="{DynamicResource StrokeCard}"
+                                StrokeShape="RoundRectangle 10" StrokeThickness="1">
+                            <Picker ItemsSource="{Binding AvailableMonths}"
+                                    SelectedItem="{Binding SelectedMonthName}"
+                                    FontSize="16" Margin="10,8"/>
+                        </Border>
+                    </VerticalStackLayout>
+                    <VerticalStackLayout Spacing="5">
+                        <Label Text="Year" FontSize="14"
+                               TextColor="{DynamicResource TextSecondary}"/>
+                        <Border Stroke="{DynamicResource StrokeCard}"
+                                StrokeShape="RoundRectangle 10" StrokeThickness="1">
+                            <Picker ItemsSource="{Binding AvailableYears}"
+                                    SelectedItem="{Binding SelectedYear}"
+                                    FontSize="16" Margin="10,8"/>
+                        </Border>
+                    </VerticalStackLayout>
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10" Margin="0,4,0,0">
+                        <Button Grid.Column="0" Text="Cancel"
+                                Command="{Binding CancelMonthPickerCommand}"
+                                BackgroundColor="{DynamicResource SurfaceHi}"
+                                TextColor="{DynamicResource TextSecondary}"
+                                BorderColor="{DynamicResource StrokeCard}" BorderWidth="1"
+                                CornerRadius="10"/>
+                        <Button Grid.Column="1" Text="Apply"
+                                Command="{Binding ApplyMonthSelectionCommand}"
+                                BackgroundColor="{DynamicResource Accent}"
+                                TextColor="{DynamicResource SurfacePage}"
+                                CornerRadius="10"/>
+                    </Grid>
+                </VerticalStackLayout>
+            </Border>
+        </Grid>
+
+        <!-- Loading spinner -->
+        <ActivityIndicator Grid.RowSpan="5"
+                           IsRunning="{Binding IsLoading}"
+                           IsVisible="{Binding IsLoading}"
+                           Color="{DynamicResource Accent}"
+                           VerticalOptions="Center"
+                           HorizontalOptions="Center"/>
+
+    </Grid>
+    </Grid>
+
+</ContentPage>

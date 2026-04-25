@@ -1,0 +1,602 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:HexFund.UI.ViewModels"
+             xmlns:models="clr-namespace:HexFund.UI.Models"
+             x:Class="HexFund.UI.Views.SettingsPage"
+             x:DataType="vm:SettingsViewModel"
+             Title="Settings"
+             BackgroundColor="{DynamicResource SurfacePage}">
+<Grid>
+        <Image Source="{Binding CurrentThemeBackdrop}"
+               Aspect="AspectFill"
+               InputTransparent="True"/>
+
+        <Grid>
+
+        <ScrollView>
+            <VerticalStackLayout Padding="20" Spacing="16">
+
+                <!-- ── Profile ─────────────────────────────────────────────── -->
+                <Border IsVisible="{Binding CanLogout}"
+                        StrokeShape="RoundRectangle 12"
+                        Stroke="{DynamicResource StrokeCard}"
+                        StrokeThickness="1"
+                        BackgroundColor="{DynamicResource SurfaceCard}"
+                        Padding="16">
+                    <VerticalStackLayout Spacing="12">
+                        <Label Text="Profile" FontSize="16" FontAttributes="Bold"
+                               TextColor="{DynamicResource TextSecondary}"/>
+                        <BoxView HeightRequest="1" Color="{DynamicResource SurfaceDivider}"/>
+
+                        <!-- Read-only view -->
+                        <VerticalStackLayout Spacing="10"
+                                             IsVisible="{Binding IsEditingProfile, Converter={StaticResource InvertedBoolConverter}}">
+                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10"
+                                  RowDefinitions="Auto,Auto" RowSpacing="8">
+                                <Label Grid.Row="0" Grid.Column="0" Text="Name"
+                                       FontAttributes="Bold" VerticalOptions="Center"/>
+                                <Label Grid.Row="0" Grid.Column="1"
+                                       Text="{Binding CurrentUserName}" VerticalOptions="Center"/>
+                                <Label Grid.Row="1" Grid.Column="0" Text="Email"
+                                       FontAttributes="Bold" VerticalOptions="Center"/>
+                                <Label Grid.Row="1" Grid.Column="1"
+                                       Text="{Binding CurrentUserEmail}" VerticalOptions="Center"
+                                       TextColor="{DynamicResource TextSecondary}"/>
+                            </Grid>
+
+                            <!-- Success message after save -->
+                            <Label Text="{Binding ProfileSuccess}"
+                                   TextColor="{DynamicResource Up}" FontSize="13"
+                                   IsVisible="{Binding ProfileSuccess, Converter={StaticResource StringNotEmptyConverter}}"/>
+
+                            <Button Text="Edit Name"
+                                    Command="{Binding StartEditProfileCommand}"
+                                    BackgroundColor="{DynamicResource SurfaceLo}"
+                                    TextColor="{Binding ThemePrimaryColor}"
+                                    CornerRadius="8" Padding="0,10"
+                                    FontAttributes="Bold"/>
+                        </VerticalStackLayout>
+
+                        <!-- Edit mode -->
+                        <VerticalStackLayout Spacing="10"
+                                             IsVisible="{Binding IsEditingProfile}">
+                            <Label Text="Email cannot be changed — it is your sign-in identity."
+                                   FontSize="12" TextColor="{DynamicResource TextSecondary}"
+                                   LineBreakMode="WordWrap"/>
+
+                            <Border Stroke="{DynamicResource StrokeCard}"
+                                    StrokeShape="RoundRectangle 10" StrokeThickness="1">
+                                <Entry Text="{Binding EditFirstName}" Placeholder="First name"
+                                       MaxLength="100" FontSize="15" Margin="12,8"/>
+                            </Border>
+
+                            <Border Stroke="{DynamicResource StrokeCard}"
+                                    StrokeShape="RoundRectangle 10" StrokeThickness="1">
+                                <Entry Text="{Binding EditLastName}" Placeholder="Last name"
+                                       MaxLength="100" FontSize="15" Margin="12,8"/>
+                            </Border>
+
+                            <Label Text="{Binding ProfileError}"
+                                   TextColor="{DynamicResource Down}" FontSize="13"
+                                   IsVisible="{Binding ProfileError, Converter={StaticResource StringNotEmptyConverter}}"/>
+
+                            <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                                <Button Grid.Column="0" Text="Cancel"
+                                        Command="{Binding CancelEditProfileCommand}"
+                                        BackgroundColor="{DynamicResource SurfaceHi}"
+                                        TextColor="{DynamicResource TextSecondary}"
+                                        CornerRadius="8" Padding="0,10"/>
+                                <Button Grid.Column="1" Text="Save"
+                                        Command="{Binding SaveProfileCommand}"
+                                        BackgroundColor="{Binding ThemePrimaryColor}"
+                                        TextColor="{DynamicResource AccentInk}"
+                                        CornerRadius="8" Padding="0,10"
+                                        IsEnabled="{Binding IsSavingProfile, Converter={StaticResource InvertedBoolConverter}}"/>
+                            </Grid>
+                        </VerticalStackLayout>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- ── Appearance ───────────────────────────────────────────── -->
+                <Border StrokeShape="RoundRectangle 12"
+                        Stroke="{DynamicResource StrokeCard}"
+                        StrokeThickness="1"
+                        BackgroundColor="{DynamicResource SurfaceCard}"
+                        Padding="16">
+                    <VerticalStackLayout Spacing="14">
+                        <Label Text="Appearance" FontSize="16" FontAttributes="Bold"
+                               TextColor="{DynamicResource TextSecondary}"/>
+                        <BoxView HeightRequest="1" Color="{DynamicResource SurfaceDivider}"/>
+
+                        <Label Text="Color Theme" FontSize="15" FontAttributes="Bold"/>
+
+                        <!-- Current theme row — tap to open modal -->
+                        <Border StrokeShape="RoundRectangle 10"
+                                Stroke="{DynamicResource StrokeCard}"
+                                StrokeThickness="1"
+                                BackgroundColor="{DynamicResource SurfaceLo}"
+                                Padding="14,12">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding OpenThemeModalCommand}"/>
+                            </Border.GestureRecognizers>
+                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                                <!-- Active swatch -->
+                                <Border Grid.Column="0"
+                                        WidthRequest="28" HeightRequest="28"
+                                        StrokeShape="Ellipse"
+                                        BackgroundColor="{Binding SelectedThemeColor}"
+                                        StrokeThickness="0"/>
+                                <VerticalStackLayout Grid.Column="1" Spacing="1" VerticalOptions="Center">
+                                    <Label Text="{Binding SelectedThemeLabel}"
+                                           FontSize="14" FontAttributes="Bold"/>
+                                    <Label Text="Tap to change theme"
+                                           FontSize="11" TextColor="{DynamicResource TextSecondary}"/>
+                                </VerticalStackLayout>
+                                <!-- Chevron -->
+                                <Label Grid.Column="2" Text="›" FontSize="22"
+                                       TextColor="{DynamicResource TextSecondary}"
+                                       VerticalOptions="Center"/>
+                            </Grid>
+                        </Border>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- ── Categories ───────────────────────────────────────────── -->
+                <Border IsVisible="{Binding CanLogout}"
+                        StrokeShape="RoundRectangle 12"
+                        Stroke="{DynamicResource StrokeCard}"
+                        StrokeThickness="1"
+                        BackgroundColor="{DynamicResource SurfaceCard}"
+                        Padding="16">
+                    <VerticalStackLayout Spacing="12">
+                        <Label Text="Transaction Categories" FontSize="16" FontAttributes="Bold"
+                               TextColor="{DynamicResource TextSecondary}"/>
+                        <BoxView HeightRequest="1" Color="{DynamicResource SurfaceDivider}"/>
+
+                        <Label FontSize="13" TextColor="{DynamicResource TextSecondary}"
+                               LineBreakMode="WordWrap">
+                            <Label.Text>
+                                <Binding Path="Categories.Count"
+                                         StringFormat="You have {0} categor{0:ies;y;ies} defined."/>
+                            </Label.Text>
+                        </Label>
+
+                        <Button Text="Manage Categories"
+                                Command="{Binding OpenCategoriesModalCommand}"
+                                BackgroundColor="{DynamicResource SurfaceLo}"
+                                TextColor="{Binding ThemePrimaryColor}"
+                                CornerRadius="8" Padding="0,10"
+                                FontAttributes="Bold"/>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- ── App Information ──────────────────────────────────────── -->
+                <Border StrokeShape="RoundRectangle 12"
+                        Stroke="{DynamicResource StrokeCard}"
+                        StrokeThickness="1"
+                        BackgroundColor="{DynamicResource SurfaceCard}"
+                        Padding="16">
+                    <VerticalStackLayout Spacing="12">
+                        <Label Text="App Information" FontSize="16" FontAttributes="Bold"
+                               TextColor="{DynamicResource TextSecondary}"/>
+                        <BoxView HeightRequest="1" Color="{DynamicResource SurfaceDivider}"/>
+
+                        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10"
+                              RowDefinitions="Auto,Auto" RowSpacing="10">
+                            <Label Grid.Row="0" Grid.Column="0" Text="Version"
+                                   FontAttributes="Bold" VerticalOptions="Center"/>
+                            <Label Grid.Row="0" Grid.Column="1"
+                                   Text="{Binding AppVersion}" VerticalOptions="Center"/>
+
+                            <Label Grid.Row="1" Grid.Column="0" Text="Build"
+                                   FontAttributes="Bold" VerticalOptions="Center"/>
+                            <Label Grid.Row="1" Grid.Column="1"
+                                   Text="{Binding BuildNumber}" VerticalOptions="Center"/>
+
+                            <!-- What's New button -->
+                            <Border Grid.Row="0" Grid.Column="2" Grid.RowSpan="2"
+                                    StrokeShape="RoundRectangle 8"
+                                    BackgroundColor="{DynamicResource SurfaceLo}"
+                                    Stroke="{DynamicResource StrokeCard}"
+                                    StrokeThickness="1"
+                                    Padding="10,6"
+                                    VerticalOptions="Center">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding OpenChangelogModalCommand}"/>
+                                </Border.GestureRecognizers>
+                                <Label Text="What's New"
+                                       FontSize="12" FontAttributes="Bold"
+                                       TextColor="{Binding ThemePrimaryColor}"/>
+                            </Border>
+                        </Grid>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- ── Actions ──────────────────────────────────────────────── -->
+                <Border StrokeShape="RoundRectangle 12"
+                        Stroke="{DynamicResource StrokeCard}"
+                        StrokeThickness="1"
+                        BackgroundColor="{DynamicResource SurfaceCard}"
+                        Padding="16">
+                    <VerticalStackLayout Spacing="12">
+                        <Label Text="Actions" FontSize="16" FontAttributes="Bold"
+                               TextColor="{DynamicResource TextSecondary}"/>
+                        <BoxView HeightRequest="1" Color="{DynamicResource SurfaceDivider}"/>
+                        <Button Text="🗑  Clear Cache"
+                                Command="{Binding ClearCacheCommand}"
+                                BackgroundColor="{DynamicResource SurfaceLo}"
+                                TextColor="{DynamicResource TextPrimary}"
+                                CornerRadius="8" Padding="0,12"/>
+                        <Button Text="Logout"
+                                Command="{Binding LogoutCommand}"
+                                IsVisible="{Binding CanLogout}"
+                                BackgroundColor="{DynamicResource Down}"
+                                TextColor="White"
+                                CornerRadius="8" Padding="0,12"/>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- ── Guest notice ──────────────────────────────────────────── -->
+                <Border IsVisible="{Binding CanLogout, Converter={StaticResource InvertedBoolConverter}}"
+                        StrokeShape="RoundRectangle 12"
+                        Stroke="{DynamicResource StrokeCard}" StrokeThickness="1"
+                        BackgroundColor="{DynamicResource SurfaceCard}"
+                        Padding="16">
+                    <VerticalStackLayout Spacing="8">
+                        <Label Text="ℹ️ You are not logged in"
+                               FontSize="16" FontAttributes="Bold"
+                               HorizontalOptions="Center"/>
+                        <Label Text="Please log in to access all features"
+                               HorizontalOptions="Center"
+                               HorizontalTextAlignment="Center"
+                               TextColor="{DynamicResource TextSecondary}"/>
+                    </VerticalStackLayout>
+                </Border>
+
+                <BoxView HeightRequest="20" Color="Transparent"/>
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <!-- ════════════════════════════════════════════════════════════════════
+             THEME SELECTION MODAL
+             4×2 grid — gem/metal swatches with HexFund palette
+             ════════════════════════════════════════════════════════════════════ -->
+        <Grid IsVisible="{Binding ShowThemeModal}" BackgroundColor="#CC000000">
+            <Grid.GestureRecognizers>
+                <TapGestureRecognizer Command="{Binding CloseThemeModalCommand}"/>
+            </Grid.GestureRecognizers>
+            <Border StrokeShape="RoundRectangle 20"
+                    BackgroundColor="{DynamicResource SurfaceCard}"
+                    Stroke="{DynamicResource StrokeHi}"
+                    StrokeThickness="1"
+                    Padding="24"
+                    Margin="20" VerticalOptions="Center">
+                <Border.GestureRecognizers><TapGestureRecognizer/></Border.GestureRecognizers>
+                <VerticalStackLayout Spacing="20">
+
+                    <!-- Header -->
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label Grid.Column="0" Text="Choose Theme"
+                               FontSize="20" FontAttributes="Bold" VerticalOptions="Center"/>
+                        <Button Grid.Column="1" Text="✕"
+                                Command="{Binding CloseThemeModalCommand}"
+                                BackgroundColor="Transparent"
+                                TextColor="{DynamicResource TextSecondary}"
+                                FontSize="20" Padding="8,0" WidthRequest="40"/>
+                    </Grid>
+
+                    <!-- Row 1: Gold · Sapphire · Emerald · Bronze -->
+                    <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="12">
+
+                        <!-- Gold (0) -->
+                        <VerticalStackLayout Grid.Column="0" Spacing="6">
+                            <Border WidthRequest="52" HeightRequest="52" StrokeShape="Ellipse"
+                                    BackgroundColor="#D4AF37"
+                                    Stroke="{Binding SelectedTheme, Converter={StaticResource ThemeSwatchStrokeConverter}, ConverterParameter='0'}"
+                                    StrokeThickness="3" HorizontalOptions="Center">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding SelectThemeCommand}" CommandParameter="0"/>
+                                </Border.GestureRecognizers>
+                            </Border>
+                            <Label Text="Gold" FontSize="11" HorizontalOptions="Center"
+                                   TextColor="{DynamicResource TextSecondary}"/>
+                        </VerticalStackLayout>
+
+                        <!-- Sapphire (1) -->
+                        <VerticalStackLayout Grid.Column="1" Spacing="6">
+                            <Border WidthRequest="52" HeightRequest="52" StrokeShape="Ellipse"
+                                    BackgroundColor="#4A7FD6"
+                                    Stroke="{Binding SelectedTheme, Converter={StaticResource ThemeSwatchStrokeConverter}, ConverterParameter='1'}"
+                                    StrokeThickness="3" HorizontalOptions="Center">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding SelectThemeCommand}" CommandParameter="1"/>
+                                </Border.GestureRecognizers>
+                            </Border>
+                            <Label Text="Sapphire" FontSize="11" HorizontalOptions="Center"
+                                   TextColor="{DynamicResource TextSecondary}"/>
+                        </VerticalStackLayout>
+
+                        <!-- Emerald (2) -->
+                        <VerticalStackLayout Grid.Column="2" Spacing="6">
+                            <Border WidthRequest="52" HeightRequest="52" StrokeShape="Ellipse"
+                                    BackgroundColor="#35B88C"
+                                    Stroke="{Binding SelectedTheme, Converter={StaticResource ThemeSwatchStrokeConverter}, ConverterParameter='2'}"
+                                    StrokeThickness="3" HorizontalOptions="Center">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding SelectThemeCommand}" CommandParameter="2"/>
+                                </Border.GestureRecognizers>
+                            </Border>
+                            <Label Text="Emerald" FontSize="11" HorizontalOptions="Center"
+                                   TextColor="{DynamicResource TextSecondary}"/>
+                        </VerticalStackLayout>
+
+                        <!-- Bronze (3) -->
+                        <VerticalStackLayout Grid.Column="3" Spacing="6">
+                            <Border WidthRequest="52" HeightRequest="52" StrokeShape="Ellipse"
+                                    BackgroundColor="#B87333"
+                                    Stroke="{Binding SelectedTheme, Converter={StaticResource ThemeSwatchStrokeConverter}, ConverterParameter='3'}"
+                                    StrokeThickness="3" HorizontalOptions="Center">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding SelectThemeCommand}" CommandParameter="3"/>
+                                </Border.GestureRecognizers>
+                            </Border>
+                            <Label Text="Bronze" FontSize="11" HorizontalOptions="Center"
+                                   TextColor="{DynamicResource TextSecondary}"/>
+                        </VerticalStackLayout>
+                    </Grid>
+
+                    <!-- Row 2: Obsidian · Ruby · Amethyst · Platinum -->
+                    <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="12">
+
+                        <!-- Obsidian (4) -->
+                        <VerticalStackLayout Grid.Column="0" Spacing="6">
+                            <Border WidthRequest="52" HeightRequest="52" StrokeShape="Ellipse"
+                                    BackgroundColor="#8E94A0"
+                                    Stroke="{Binding SelectedTheme, Converter={StaticResource ThemeSwatchStrokeConverter}, ConverterParameter='4'}"
+                                    StrokeThickness="3" HorizontalOptions="Center">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding SelectThemeCommand}" CommandParameter="4"/>
+                                </Border.GestureRecognizers>
+                            </Border>
+                            <Label Text="Obsidian" FontSize="11" HorizontalOptions="Center"
+                                   TextColor="{DynamicResource TextSecondary}"/>
+                        </VerticalStackLayout>
+
+                        <!-- Ruby (5) -->
+                        <VerticalStackLayout Grid.Column="1" Spacing="6">
+                            <Border WidthRequest="52" HeightRequest="52" StrokeShape="Ellipse"
+                                    BackgroundColor="#C73A57"
+                                    Stroke="{Binding SelectedTheme, Converter={StaticResource ThemeSwatchStrokeConverter}, ConverterParameter='5'}"
+                                    StrokeThickness="3" HorizontalOptions="Center">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding SelectThemeCommand}" CommandParameter="5"/>
+                                </Border.GestureRecognizers>
+                            </Border>
+                            <Label Text="Ruby" FontSize="11" HorizontalOptions="Center"
+                                   TextColor="{DynamicResource TextSecondary}"/>
+                        </VerticalStackLayout>
+
+                        <!-- Amethyst (6) -->
+                        <VerticalStackLayout Grid.Column="2" Spacing="6">
+                            <Border WidthRequest="52" HeightRequest="52" StrokeShape="Ellipse"
+                                    BackgroundColor="#9C6ED1"
+                                    Stroke="{Binding SelectedTheme, Converter={StaticResource ThemeSwatchStrokeConverter}, ConverterParameter='6'}"
+                                    StrokeThickness="3" HorizontalOptions="Center">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding SelectThemeCommand}" CommandParameter="6"/>
+                                </Border.GestureRecognizers>
+                            </Border>
+                            <Label Text="Amethyst" FontSize="11" HorizontalOptions="Center"
+                                   TextColor="{DynamicResource TextSecondary}"/>
+                        </VerticalStackLayout>
+
+                        <!-- Platinum (7) -->
+                        <VerticalStackLayout Grid.Column="3" Spacing="6">
+                            <Border WidthRequest="52" HeightRequest="52" StrokeShape="Ellipse"
+                                    BackgroundColor="#D9DDE2"
+                                    Stroke="{Binding SelectedTheme, Converter={StaticResource ThemeSwatchStrokeConverter}, ConverterParameter='7'}"
+                                    StrokeThickness="3" HorizontalOptions="Center">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding SelectThemeCommand}" CommandParameter="7"/>
+                                </Border.GestureRecognizers>
+                            </Border>
+                            <Label Text="Platinum" FontSize="11" HorizontalOptions="Center"
+                                   TextColor="{DynamicResource TextSecondary}"/>
+                        </VerticalStackLayout>
+                    </Grid>
+
+                </VerticalStackLayout>
+            </Border>
+        </Grid>
+
+        <!-- ════════════════════════════════════════════════════════════════════
+             WHAT'S NEW / CHANGELOG MODAL
+             ════════════════════════════════════════════════════════════════════ -->
+        <Grid IsVisible="{Binding ShowChangelogModal}" BackgroundColor="#CC000000">
+            <Grid.GestureRecognizers>
+                <TapGestureRecognizer Command="{Binding CloseChangelogModalCommand}"/>
+            </Grid.GestureRecognizers>
+            <Border StrokeShape="RoundRectangle 20"
+                    BackgroundColor="{DynamicResource SurfaceCard}"
+                    Stroke="{DynamicResource StrokeHi}"
+                    StrokeThickness="1"
+                    Padding="24"
+                    Margin="20" VerticalOptions="Center"
+                    MaximumHeightRequest="520">
+                <Border.GestureRecognizers><TapGestureRecognizer/></Border.GestureRecognizers>
+                <VerticalStackLayout Spacing="16">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label Grid.Column="0" Text="What's New"
+                               FontSize="20" FontAttributes="Bold" VerticalOptions="Center"/>
+                        <Button Grid.Column="1" Text="✕"
+                                Command="{Binding CloseChangelogModalCommand}"
+                                BackgroundColor="Transparent"
+                                TextColor="{DynamicResource TextSecondary}"
+                                FontSize="20" Padding="8,0" WidthRequest="40"/>
+                    </Grid>
+                    <BoxView HeightRequest="1" Color="{DynamicResource SurfaceDivider}"/>
+
+                    <ScrollView MaximumHeightRequest="380">
+                        <VerticalStackLayout Spacing="20">
+                            <CollectionView ItemsSource="{Binding PatchNotes}" SelectionMode="None">
+                                <CollectionView.ItemTemplate>
+                                    <DataTemplate x:DataType="models:PatchNote">
+                                        <VerticalStackLayout Spacing="8" Margin="0,0,0,12">
+                                            <Grid ColumnDefinitions="*,Auto">
+                                                <Label Grid.Column="0"
+                                                       Text="{Binding Version, StringFormat='v{0}'}"
+                                                       FontSize="16" FontAttributes="Bold"
+                                                       TextColor="{DynamicResource AccentInk}"/>
+                                                <Label Grid.Column="1"
+                                                       Text="{Binding Date}"
+                                                       FontSize="12"
+                                                       TextColor="{DynamicResource TextSecondary}"
+                                                       VerticalOptions="Center"/>
+                                            </Grid>
+                                            <VerticalStackLayout Spacing="4"
+                                                                 BindableLayout.ItemsSource="{Binding Changes}">
+                                                <BindableLayout.ItemTemplate>
+                                                    <DataTemplate x:DataType="x:String">
+                                                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+                                                            <Label Grid.Column="0" Text="•" FontSize="13"
+                                                                   TextColor="{DynamicResource TextSecondary}"
+                                                                   VerticalOptions="Start"/>
+                                                            <Label Grid.Column="1" Text="{Binding}"
+                                                                   FontSize="13" LineBreakMode="WordWrap"/>
+                                                        </Grid>
+                                                    </DataTemplate>
+                                                </BindableLayout.ItemTemplate>
+                                            </VerticalStackLayout>
+                                        </VerticalStackLayout>
+                                    </DataTemplate>
+                                </CollectionView.ItemTemplate>
+                            </CollectionView>
+                        </VerticalStackLayout>
+                    </ScrollView>
+                </VerticalStackLayout>
+            </Border>
+        </Grid>
+
+        <!-- ════════════════════════════════════════════════════════════════════
+             CATEGORIES MANAGEMENT MODAL
+             ════════════════════════════════════════════════════════════════════ -->
+        <Grid IsVisible="{Binding ShowCategoriesModal}" BackgroundColor="#CC000000">
+            <Grid.GestureRecognizers>
+                <TapGestureRecognizer Command="{Binding CloseCategoriesModalCommand}"/>
+            </Grid.GestureRecognizers>
+            <Border StrokeShape="RoundRectangle 20"
+                    BackgroundColor="{DynamicResource SurfaceCard}"
+                    Stroke="{DynamicResource StrokeHi}"
+                    StrokeThickness="1"
+                    Padding="24"
+                    Margin="20" VerticalOptions="Center"
+                    MaximumHeightRequest="560">
+                <Border.GestureRecognizers><TapGestureRecognizer/></Border.GestureRecognizers>
+                <VerticalStackLayout Spacing="16">
+
+                    <!-- Header -->
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label Grid.Column="0" Text="Transaction Categories"
+                               FontSize="20" FontAttributes="Bold" VerticalOptions="Center"/>
+                        <Button Grid.Column="1" Text="✕"
+                                Command="{Binding CloseCategoriesModalCommand}"
+                                BackgroundColor="Transparent"
+                                TextColor="{DynamicResource TextSecondary}"
+                                FontSize="20" Padding="8,0" WidthRequest="40"/>
+                    </Grid>
+                    <BoxView HeightRequest="1" Color="{DynamicResource SurfaceDivider}"/>
+
+                    <!-- Add new category -->
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                        <Border Grid.Column="0"
+                                Stroke="{DynamicResource StrokeCard}"
+                                StrokeShape="RoundRectangle 10" StrokeThickness="1">
+                            <Entry Text="{Binding NewCategoryName}"
+                                   Placeholder="New category name"
+                                   MaxLength="100" FontSize="15" Margin="12,8"/>
+                        </Border>
+                        <Button Grid.Column="1"
+                                Text="Add"
+                                Command="{Binding AddCategoryCommand}"
+                                BackgroundColor="{DynamicResource Accent}"
+                                TextColor="{DynamicResource AccentInk}"
+                                CornerRadius="10" Padding="16,0"
+                                IsEnabled="{Binding IsSavingCategory, Converter={StaticResource InvertedBoolConverter}}"/>
+                    </Grid>
+
+                    <Label Text="{Binding CategoryError}"
+                           TextColor="{DynamicResource Down}" FontSize="13"
+                           IsVisible="{Binding CategoryError, Converter={StaticResource StringNotEmptyConverter}}"/>
+
+                    <BoxView HeightRequest="1" Color="{DynamicResource SurfaceDivider}"/>
+
+                    <!-- Loading indicator -->
+                    <ActivityIndicator IsRunning="{Binding IsLoadingCategories}"
+                                       IsVisible="{Binding IsLoadingCategories}"
+                                       Color="{DynamicResource Accent}"
+                                       HorizontalOptions="Center"/>
+
+                    <!-- Category list -->
+                    <ScrollView MaximumHeightRequest="280"
+                                IsVisible="{Binding IsLoadingCategories, Converter={StaticResource InvertedBoolConverter}}">
+                        <VerticalStackLayout Spacing="0">
+
+                            <!-- Empty state -->
+                            <VerticalStackLayout IsVisible="{Binding HasCategories, Converter={StaticResource InvertedBoolConverter}}"
+                                                 Spacing="8" HorizontalOptions="Center"
+                                                 Margin="0,20">
+                                <Label Text="🏷️" FontSize="40" HorizontalOptions="Center"/>
+                                <Label Text="No categories yet" FontSize="15"
+                                       TextColor="{DynamicResource TextSecondary}"
+                                       HorizontalOptions="Center"/>
+                                <Label Text="Add one above to get started"
+                                       FontSize="12" TextColor="{DynamicResource TextMuted}"
+                                       HorizontalOptions="Center"/>
+                            </VerticalStackLayout>
+
+                            <!-- Category rows -->
+                            <CollectionView ItemsSource="{Binding Categories}"
+                                            SelectionMode="None"
+                                            IsVisible="{Binding HasCategories}">
+                                <CollectionView.ItemTemplate>
+                                    <DataTemplate x:DataType="models:UserCategory">
+                                        <Grid ColumnDefinitions="*,Auto"
+                                              Padding="0,10"
+                                              ColumnSpacing="10">
+                                            <Label Grid.Column="0"
+                                                   Text="{Binding Name}"
+                                                   FontSize="15"
+                                                   VerticalOptions="Center"/>
+                                            <Border Grid.Column="1"
+                                                    BackgroundColor="#331E0A0D"
+                                                    Stroke="{DynamicResource Down}"
+                                                    StrokeThickness="1"
+                                                    Padding="10,4"
+                                                    StrokeShape="RoundRectangle 6">
+                                                <Border.GestureRecognizers>
+                                                    <TapGestureRecognizer
+                                                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:SettingsViewModel}}, Path=DeleteCategoryCommand}"
+                                                        CommandParameter="{Binding .}"/>
+                                                </Border.GestureRecognizers>
+                                                <Label Text="Delete" FontSize="12"
+                                                       FontAttributes="Bold"
+                                                       TextColor="{DynamicResource Down}"/>
+                                            </Border>
+                                        </Grid>
+                                    </DataTemplate>
+                                </CollectionView.ItemTemplate>
+                            </CollectionView>
+                        </VerticalStackLayout>
+                    </ScrollView>
+
+                </VerticalStackLayout>
+            </Border>
+        </Grid>
+
+    </Grid>
+
+    </Grid>
+
+</ContentPage>

@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<?xaml-comp compile="true" ?>
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
+
+    <!--
+        HexFund — Global Styles
+        ══════════════════════════════════════════════════════════════════════
+        All colour values here use DynamicResource against the semantic tokens
+        injected by ThemeService.Apply(). There are NO AppThemeBinding usages
+        anywhere in this file — the vault substrate means OS light/dark mode
+        is irrelevant; ThemeService is the single source of truth.
+
+        Token reference (injected at runtime by ThemeService):
+          SurfacePage    – page / screen background       (#0A0B0D vault bg)
+          SurfaceCard    – card / panel background         (#141619)
+          SurfaceHi      – raised / hero card              (#1C1F23)
+          SurfaceLo      – input fields, sunken areas      (#0F1114)
+          SurfaceSubtle  – alias for SurfaceLo (back-compat)
+          SurfaceDivider – divider lines                   (#1F2126)
+          TextPrimary    – primary body text               (#EDEEF0)
+          TextSecondary  – de-emphasised / hint text       (#8B8F98)
+          TextMuted      – placeholder / disabled text     (#5A5E68)
+          StrokeCard     – card border                     (#26292F)
+          StrokeSection  – section border (alias)          (#26292F)
+          StrokeHi       – emphasis border                 (#383C45)
+          Primary        – accent colour (back-compat)
+          Accent         – accent colour (canonical)
+          AccentDim      – muted accent for secondary use
+          AccentInk      – light tinted text on accent bg
+          AccentGlow     – semi-transparent accent for glows
+          Up             – income / positive               (#3FB97A)
+          Down           – expense / negative              (#E05A6F)
+          Warn           – warning                         (#E0A03F)
+
+        FONT NOTE — Sprint font slot (DO NOT activate until TTF files are in
+        Resources/Fonts/ AND registered in MauiProgram.cs):
+          Label / Entry / Editor / Picker / SearchBar → FontFamily="InterRegular"
+          Button                                      → FontFamily="InterSemiBold"
+        When the files land, add the FontFamily setter back to each style below
+        and uncomment the AddFont calls in MauiProgram.cs. Setting FontFamily to
+        a name that has no matching asset causes a hard RuntimeException on Android
+        at view-inflation time — it does not degrade gracefully.
+    -->
+
+    <!-- ── Page ─────────────────────────────────────────────────────────────-->
+    <Style TargetType="Page" ApplyToDerivedTypes="True">
+        <Setter Property="BackgroundColor" Value="{DynamicResource SurfacePage}" />
+    </Style>
+
+    <!-- ── ContentPage ──────────────────────────────────────────────────────-->
+    <Style TargetType="ContentPage" ApplyToDerivedTypes="True">
+        <Setter Property="BackgroundColor" Value="{DynamicResource SurfacePage}" />
+    </Style>
+
+    <!-- ── Label ────────────────────────────────────────────────────────────-->
+    <Style TargetType="Label">
+        <Setter Property="FontFamily" Value="InterRegular"/>
+        <Setter Property="TextColor" Value="{DynamicResource TextPrimary}" />
+    </Style>
+
+    <!-- ── Entry ────────────────────────────────────────────────────────────-->
+    <Style TargetType="Entry">
+        <Setter Property="FontFamily" Value="InterRegular"/>
+        <Setter Property="TextColor"        Value="{DynamicResource TextPrimary}" />
+        <Setter Property="PlaceholderColor" Value="{DynamicResource TextMuted}" />
+        <Setter Property="BackgroundColor"  Value="{DynamicResource SurfaceLo}" />
+    </Style>
+
+    <!-- ── Editor ───────────────────────────────────────────────────────────-->
+    <Style TargetType="Editor">
+        <Setter Property="FontFamily" Value="InterRegular"/>
+        <Setter Property="TextColor"        Value="{DynamicResource TextPrimary}" />
+        <Setter Property="PlaceholderColor" Value="{DynamicResource TextMuted}" />
+        <Setter Property="BackgroundColor"  Value="{DynamicResource SurfaceLo}" />
+    </Style>
+
+    <!-- ── Button ───────────────────────────────────────────────────────────-->
+    <Style TargetType="Button">
+        <Setter Property="FontFamily" Value="InterSemiBold"/>
+        <Setter Property="TextColor"    Value="{DynamicResource TextPrimary}" />
+        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="VisualStateManager.VisualStateGroups">
+            <VisualStateGroupList>
+                <VisualStateGroup x:Name="CommonStates">
+                    <VisualState x:Name="Normal" />
+                    <VisualState x:Name="Disabled">
+                        <VisualState.Setters>
+                            <Setter Property="Opacity" Value="0.4" />
+                        </VisualState.Setters>
+                    </VisualState>
+                    <VisualState x:Name="Pressed">
+                        <VisualState.Setters>
+                            <Setter Property="Opacity" Value="0.75" />
+                        </VisualState.Setters>
+                    </VisualState>
+                </VisualStateGroup>
+            </VisualStateGroupList>
+        </Setter>
+    </Style>
+
+    <!-- ── Picker ───────────────────────────────────────────────────────────-->
+    <Style TargetType="Picker">
+        <Setter Property="FontFamily" Value="InterRegular"/>
+        <Setter Property="TextColor"        Value="{DynamicResource TextPrimary}" />
+        <Setter Property="TitleColor"       Value="{DynamicResource TextMuted}" />
+        <Setter Property="BackgroundColor"  Value="{DynamicResource SurfaceLo}" />
+    </Style>
+
+    <!-- ── ScrollView ───────────────────────────────────────────────────────-->
+    <Style TargetType="ScrollView">
+        <Setter Property="BackgroundColor" Value="Transparent" />
+    </Style>
+
+    <!-- ── Frame (legacy — prefer Border) ───────────────────────────────────-->
+    <Style TargetType="Frame">
+        <Setter Property="BackgroundColor"  Value="{DynamicResource SurfaceCard}" />
+        <Setter Property="BorderColor"      Value="{DynamicResource StrokeCard}" />
+        <Setter Property="CornerRadius"     Value="12" />
+        <Setter Property="HasShadow"        Value="False" />
+    </Style>
+
+    <!-- ── Border ───────────────────────────────────────────────────────────-->
+    <Style TargetType="Border">
+        <Setter Property="BackgroundColor" Value="Transparent" />
+        <Setter Property="Stroke"          Value="Transparent" />
+    </Style>
+
+    <!-- ── ActivityIndicator ────────────────────────────────────────────────-->
+    <Style TargetType="ActivityIndicator">
+        <Setter Property="Color" Value="{DynamicResource Accent}" />
+    </Style>
+
+    <!-- ── RefreshView ──────────────────────────────────────────────────────-->
+    <Style TargetType="RefreshView">
+        <Setter Property="RefreshColor" Value="{DynamicResource Accent}" />
+    </Style>
+
+    <!-- ── CheckBox ─────────────────────────────────────────────────────────-->
+    <Style TargetType="CheckBox">
+        <Setter Property="Color" Value="{DynamicResource Accent}" />
+    </Style>
+
+    <!-- ── Slider ───────────────────────────────────────────────────────────-->
+    <Style TargetType="Slider">
+        <Setter Property="MinimumTrackColor" Value="{DynamicResource Accent}" />
+        <Setter Property="MaximumTrackColor" Value="{DynamicResource StrokeCard}" />
+        <Setter Property="ThumbColor"        Value="{DynamicResource AccentInk}" />
+    </Style>
+
+    <!-- ── Switch ───────────────────────────────────────────────────────────-->
+    <Style TargetType="Switch">
+        <Setter Property="OnColor"   Value="{DynamicResource Accent}" />
+        <Setter Property="ThumbColor" Value="{DynamicResource AccentInk}" />
+    </Style>
+
+    <!-- ── SearchBar ────────────────────────────────────────────────────────-->
+    <Style TargetType="SearchBar">
+        <Setter Property="FontFamily" Value="InterRegular"/>
+        <Setter Property="TextColor"           Value="{DynamicResource TextPrimary}" />
+        <Setter Property="PlaceholderColor"    Value="{DynamicResource TextMuted}" />
+        <Setter Property="BackgroundColor"     Value="{DynamicResource SurfaceLo}" />
+        <Setter Property="CancelButtonColor"   Value="{DynamicResource TextSecondary}" />
+    </Style>
+
+</ResourceDictionary>

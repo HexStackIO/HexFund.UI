@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Shell
+    x:Class="HexFund.UI.AppShell"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:local="clr-namespace:HexFund.UI.Views"
+    x:Name="AppShellRoot"
+    FlyoutBehavior="Disabled"
+    Shell.NavBarIsVisible="True">
+
+    <!--
+        HexFund Shell — Fidelity Sprint
+        ════════════════════════════════════════════════════════════════════
+
+        Tab icons reference the hex_icons/ SVG set from the asset pack.
+        MAUI converts them to PNG at build time; reference without extension.
+
+        Icon tinting: MAUI applies Shell.UnselectedColor / Shell.TabBarUnselectedColor
+        to inactive tab icons automatically. Set these in AppShell.xaml.cs via
+        ApplyThemeToShell() — they read DynamicResource TextMuted and Accent.
+    -->
+
+    <!-- ── Authenticated TabBar ────────────────────────────────────────-->
+    <TabBar x:Name="MainTabBar">
+        <ShellContent
+            x:Name="HomeTab"
+            Title="Home"
+            Icon="home.png"
+            ContentTemplate="{DataTemplate local:HomePage}" />
+        <ShellContent
+            x:Name="CalendarTab"
+            Title="Calendar"
+            Icon="calendar.png"
+            ContentTemplate="{DataTemplate local:CalendarPage}" />
+        <ShellContent
+            x:Name="LedgerTab"
+            Title="Ledger"
+            Icon="ledger.png"
+            ContentTemplate="{DataTemplate local:TransactionsPage}" />
+        <ShellContent
+            x:Name="InsightsTab"
+            Title="Insights"
+            Icon="chart.png"
+            ContentTemplate="{DataTemplate local:InsightsPage}" />
+    </TabBar>
+
+    <!-- ── Unauthenticated TabBar ───────────────────────────────────────-->
+    <TabBar x:Name="AuthTabBar">
+        <ShellContent
+            x:Name="LoginTab"
+            Title="Login"
+            ContentTemplate="{DataTemplate local:LoginPage}" />
+        <ShellContent
+            x:Name="GuestSettingsTab"
+            Title="Settings"
+            Icon="settings.png"
+            ContentTemplate="{DataTemplate local:SettingsPage}" />
+    </TabBar>
+
+</Shell>

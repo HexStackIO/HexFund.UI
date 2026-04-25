@@ -1,0 +1,1088 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:HexFund.UI.ViewModels"
+             xmlns:models="clr-namespace:HexFund.UI.Models"
+             x:Class="HexFund.UI.Views.TransactionsPage"
+             x:DataType="vm:TransactionsViewModel"
+             Title="Ledger"
+             BackgroundColor="{DynamicResource SurfacePage}">
+<Grid>
+        <Image Source="{Binding CurrentThemeBackdrop}"
+               Aspect="AspectFill"
+               InputTransparent="True"/>
+
+        <Grid RowDefinitions="*,Auto">
+
+        <!-- ── No Account Banner ─────────────────────────────────────────── -->
+        <Frame Grid.Row="0"
+               IsVisible="{Binding HasAccount, Converter={StaticResource InvertedBoolConverter}}"
+               BackgroundColor="{DynamicResource SurfaceCard}"
+               CornerRadius="10" Padding="20" Margin="15,10">
+            <VerticalStackLayout Spacing="10">
+                <Label Text="⚠️ No Account Selected" FontSize="18" FontAttributes="Bold" HorizontalOptions="Center"/>
+                <Label Text="{Binding NoAccountMessage}" FontSize="14"
+                       TextColor="{DynamicResource TextSecondary}" HorizontalOptions="Center"/>
+                <Button Text="Go to Accounts" Command="{Binding NavigateToAccountsCommand}"
+                        BackgroundColor="{DynamicResource Accent}"
+                        TextColor="{DynamicResource SurfacePage}"
+                        CornerRadius="8" Margin="0,10,0,0"/>
+            </VerticalStackLayout>
+        </Frame>
+
+        <!-- ── Main Content ──────────────────────────────────────────────── -->
+        <RefreshView Grid.Row="0"
+                     Command="{Binding RefreshCommand}"
+                     IsRefreshing="{Binding IsLoading}"
+                     IsVisible="{Binding HasAccount}">
+
+            <!-- Inner content grid: Row 0 = header, Row 1 = skeleton + list -->
+            <Grid RowDefinitions="Auto,*" Padding="15,15,15,0">
+
+                <!-- ── Header: sort chips + history toggle ───────────────── -->
+                <!--
+                    SortChipBackgroundConverter + SortChipTextColorConverter are
+                    MultiValueConverters(ActiveSortField, ThemePrimaryColor).
+                    Active chip  → PrimaryColor fill, White text, arrow visible.
+                    Inactive chip → Transparent fill, PrimaryColor text, arrow hidden.
+                    Tapping the active chip again flips Asc/Desc.
+                -->
+                <Grid Grid.Row="0" RowDefinitions="Auto,Auto" Margin="0,10,0,6">
+
+                    <!-- Filter + History toggle row -->
+                    <HorizontalStackLayout Grid.Row="0" HorizontalOptions="End" Spacing="8">
+
+                        <!-- Filter button — highlights with Accent fill when a filter is active -->
+                        <Border BackgroundColor="{Binding IsFilterActive, Converter={StaticResource FilterActiveBgConverter}}"
+                                StrokeThickness="1"
+                                Stroke="{Binding IsFilterActive, Converter={StaticResource BoolToToggleBgConverter}}"
+                                Padding="12,6" StrokeShape="RoundRectangle 8">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding OpenFilterCommand}"/>
+                            </Border.GestureRecognizers>
+                            <HorizontalStackLayout Spacing="5">
+                                <Label Text="⚙" FontSize="12"
+                                       TextColor="{Binding IsFilterActive, Converter={StaticResource FilterActiveTextConverter}}"
+                                       VerticalOptions="Center"/>
+                                <Label Text="Filter" FontSize="13" FontAttributes="Bold"
+                                       TextColor="{Binding IsFilterActive, Converter={StaticResource FilterActiveTextConverter}}"/>
+                            </HorizontalStackLayout>
+                        </Border>
+
+                    </HorizontalStackLayout>
+
+                    <!-- Sort chips -->
+                    <ScrollView Grid.Row="1"
+                                Orientation="Horizontal"
+                                HorizontalScrollBarVisibility="Never"
+                                Margin="0,6,0,8">
+                        <HorizontalStackLayout Spacing="8">
+
+                            <!-- Date chip (index 0) -->
+                            <Border StrokeShape="RoundRectangle 16" StrokeThickness="1.5" Padding="12,6"
+                                    Stroke="{Binding ThemePrimaryColor}">
+                                <Border.BackgroundColor>
+                                    <MultiBinding Converter="{StaticResource SortChipBackgroundConverter}" ConverterParameter="0">
+                                        <Binding Path="ActiveSortField"/>
+                                        <Binding Path="ThemePrimaryColor"/>
+                                    </MultiBinding>
+                                </Border.BackgroundColor>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding SetSortCommand}" CommandParameter="0"/>
+                                </Border.GestureRecognizers>
+                                <HorizontalStackLayout Spacing="4">
+                                    <Label Text="Date" FontSize="13" FontAttributes="Bold" VerticalOptions="Center">
+                                        <Label.TextColor>
+                                            <MultiBinding Converter="{StaticResource SortChipTextColorConverter}" ConverterParameter="0">
+                                                <Binding Path="ActiveSortField"/>
+                                                <Binding Path="ThemePrimaryColor"/>
+                                            </MultiBinding>
+                                        </Label.TextColor>
+                                    </Label>
+                                    <Label Text="{Binding SortDirectionArrow}" FontSize="12" FontAttributes="Bold"
+                                           VerticalOptions="Center"
+                                           IsVisible="{Binding ActiveSortField, Converter={StaticResource SortFieldActiveConverter}, ConverterParameter='0'}">
+                                        <Label.TextColor>
+                                            <MultiBinding Converter="{StaticResource SortChipTextColorConverter}" ConverterParameter="0">
+                                                <Binding Path="ActiveSortField"/>
+                                                <Binding Path="ThemePrimaryColor"/>
+                                            </MultiBinding>
+                                        </Label.TextColor>
+                                    </Label>
+                                </HorizontalStackLayout>
+                            </Border>
+
+                            <!-- Name chip (index 1) -->
+                            <Border StrokeShape="RoundRectangle 16" StrokeThickness="1.5" Padding="12,6"
+                                    Stroke="{Binding ThemePrimaryColor}">
+                                <Border.BackgroundColor>
+                                    <MultiBinding Converter="{StaticResource SortChipBackgroundConverter}" ConverterParameter="1">
+                                        <Binding Path="ActiveSortField"/>
+                                        <Binding Path="ThemePrimaryColor"/>
+                                    </MultiBinding>
+                                </Border.BackgroundColor>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding SetSortCommand}" CommandParameter="1"/>
+                                </Border.GestureRecognizers>
+                                <HorizontalStackLayout Spacing="4">
+                                    <Label Text="Name" FontSize="13" FontAttributes="Bold" VerticalOptions="Center">
+                                        <Label.TextColor>
+                                            <MultiBinding Converter="{StaticResource SortChipTextColorConverter}" ConverterParameter="1">
+                                                <Binding Path="ActiveSortField"/>
+                                                <Binding Path="ThemePrimaryColor"/>
+                                            </MultiBinding>
+                                        </Label.TextColor>
+                                    </Label>
+                                    <Label Text="{Binding SortDirectionArrow}" FontSize="12" FontAttributes="Bold"
+                                           VerticalOptions="Center"
+                                           IsVisible="{Binding ActiveSortField, Converter={StaticResource SortFieldActiveConverter}, ConverterParameter='1'}">
+                                        <Label.TextColor>
+                                            <MultiBinding Converter="{StaticResource SortChipTextColorConverter}" ConverterParameter="1">
+                                                <Binding Path="ActiveSortField"/>
+                                                <Binding Path="ThemePrimaryColor"/>
+                                            </MultiBinding>
+                                        </Label.TextColor>
+                                    </Label>
+                                </HorizontalStackLayout>
+                            </Border>
+
+                            <!-- Amount chip (index 2) -->
+                            <Border StrokeShape="RoundRectangle 16" StrokeThickness="1.5" Padding="12,6"
+                                    Stroke="{Binding ThemePrimaryColor}">
+                                <Border.BackgroundColor>
+                                    <MultiBinding Converter="{StaticResource SortChipBackgroundConverter}" ConverterParameter="2">
+                                        <Binding Path="ActiveSortField"/>
+                                        <Binding Path="ThemePrimaryColor"/>
+                                    </MultiBinding>
+                                </Border.BackgroundColor>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding SetSortCommand}" CommandParameter="2"/>
+                                </Border.GestureRecognizers>
+                                <HorizontalStackLayout Spacing="4">
+                                    <Label Text="Amount" FontSize="13" FontAttributes="Bold" VerticalOptions="Center">
+                                        <Label.TextColor>
+                                            <MultiBinding Converter="{StaticResource SortChipTextColorConverter}" ConverterParameter="2">
+                                                <Binding Path="ActiveSortField"/>
+                                                <Binding Path="ThemePrimaryColor"/>
+                                            </MultiBinding>
+                                        </Label.TextColor>
+                                    </Label>
+                                    <Label Text="{Binding SortDirectionArrow}" FontSize="12" FontAttributes="Bold"
+                                           VerticalOptions="Center"
+                                           IsVisible="{Binding ActiveSortField, Converter={StaticResource SortFieldActiveConverter}, ConverterParameter='2'}">
+                                        <Label.TextColor>
+                                            <MultiBinding Converter="{StaticResource SortChipTextColorConverter}" ConverterParameter="2">
+                                                <Binding Path="ActiveSortField"/>
+                                                <Binding Path="ThemePrimaryColor"/>
+                                            </MultiBinding>
+                                        </Label.TextColor>
+                                    </Label>
+                                </HorizontalStackLayout>
+                            </Border>
+
+                            <!-- Recurrence chip (index 3) -->
+                            <Border StrokeShape="RoundRectangle 16" StrokeThickness="1.5" Padding="12,6"
+                                    Stroke="{Binding ThemePrimaryColor}">
+                                <Border.BackgroundColor>
+                                    <MultiBinding Converter="{StaticResource SortChipBackgroundConverter}" ConverterParameter="3">
+                                        <Binding Path="ActiveSortField"/>
+                                        <Binding Path="ThemePrimaryColor"/>
+                                    </MultiBinding>
+                                </Border.BackgroundColor>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding SetSortCommand}" CommandParameter="3"/>
+                                </Border.GestureRecognizers>
+                                <HorizontalStackLayout Spacing="4">
+                                    <Label Text="Recurrence" FontSize="13" FontAttributes="Bold" VerticalOptions="Center">
+                                        <Label.TextColor>
+                                            <MultiBinding Converter="{StaticResource SortChipTextColorConverter}" ConverterParameter="3">
+                                                <Binding Path="ActiveSortField"/>
+                                                <Binding Path="ThemePrimaryColor"/>
+                                            </MultiBinding>
+                                        </Label.TextColor>
+                                    </Label>
+                                    <Label Text="{Binding SortDirectionArrow}" FontSize="12" FontAttributes="Bold"
+                                           VerticalOptions="Center"
+                                           IsVisible="{Binding ActiveSortField, Converter={StaticResource SortFieldActiveConverter}, ConverterParameter='3'}">
+                                        <Label.TextColor>
+                                            <MultiBinding Converter="{StaticResource SortChipTextColorConverter}" ConverterParameter="3">
+                                                <Binding Path="ActiveSortField"/>
+                                                <Binding Path="ThemePrimaryColor"/>
+                                            </MultiBinding>
+                                        </Label.TextColor>
+                                    </Label>
+                                </HorizontalStackLayout>
+                            </Border>
+
+                        </HorizontalStackLayout>
+                    </ScrollView>
+
+                </Grid>
+                <!-- end header Grid.Row="0" -->
+
+                <!-- ── Skeleton (Grid.Row="1") ───────────────────────────── -->
+                <VerticalStackLayout Grid.Row="1" IsVisible="{Binding ShowSkeleton}" Spacing="10">
+                    <Border BackgroundColor="{DynamicResource SurfaceCard}" StrokeShape="RoundRectangle 12" Stroke="{DynamicResource StrokeCard}" StrokeThickness="1" Padding="15" HeightRequest="80">
+                        <Grid RowDefinitions="Auto,Auto" RowSpacing="10">
+                            <BoxView Grid.Row="0" HeightRequest="16" WidthRequest="160" CornerRadius="4" Color="{DynamicResource StrokeHi}" HorizontalOptions="Start"/>
+                            <BoxView Grid.Row="1" HeightRequest="12" WidthRequest="100" CornerRadius="4" Color="{DynamicResource StrokeHi}" HorizontalOptions="Start"/>
+                        </Grid>
+                    </Border>
+                    <Border BackgroundColor="{DynamicResource SurfaceCard}" StrokeShape="RoundRectangle 12" Stroke="{DynamicResource StrokeCard}" StrokeThickness="1" Padding="15" HeightRequest="80">
+                        <Grid RowDefinitions="Auto,Auto" RowSpacing="10">
+                            <BoxView Grid.Row="0" HeightRequest="16" WidthRequest="200" CornerRadius="4" Color="{DynamicResource StrokeHi}" HorizontalOptions="Start"/>
+                            <BoxView Grid.Row="1" HeightRequest="12" WidthRequest="120" CornerRadius="4" Color="{DynamicResource StrokeHi}" HorizontalOptions="Start"/>
+                        </Grid>
+                    </Border>
+                    <Border BackgroundColor="{DynamicResource SurfaceCard}" StrokeShape="RoundRectangle 12" Stroke="{DynamicResource StrokeCard}" StrokeThickness="1" Padding="15" HeightRequest="80">
+                        <Grid RowDefinitions="Auto,Auto" RowSpacing="10">
+                            <BoxView Grid.Row="0" HeightRequest="16" WidthRequest="140" CornerRadius="4" Color="{DynamicResource StrokeHi}" HorizontalOptions="Start"/>
+                            <BoxView Grid.Row="1" HeightRequest="12" WidthRequest="90"  CornerRadius="4" Color="{DynamicResource StrokeHi}" HorizontalOptions="Start"/>
+                        </Grid>
+                    </Border>
+                    <Border BackgroundColor="{DynamicResource SurfaceCard}" StrokeShape="RoundRectangle 12" Stroke="{DynamicResource StrokeCard}" StrokeThickness="1" Padding="15" HeightRequest="80">
+                        <Grid RowDefinitions="Auto,Auto" RowSpacing="10">
+                            <BoxView Grid.Row="0" HeightRequest="16" WidthRequest="180" CornerRadius="4" Color="{DynamicResource StrokeHi}" HorizontalOptions="Start"/>
+                            <BoxView Grid.Row="1" HeightRequest="12" WidthRequest="110" CornerRadius="4" Color="{DynamicResource StrokeHi}" HorizontalOptions="Start"/>
+                        </Grid>
+                    </Border>
+                    <Border BackgroundColor="{DynamicResource SurfaceCard}" StrokeShape="RoundRectangle 12" Stroke="{DynamicResource StrokeCard}" StrokeThickness="1" Padding="15" HeightRequest="80">
+                        <Grid RowDefinitions="Auto,Auto" RowSpacing="10">
+                            <BoxView Grid.Row="0" HeightRequest="16" WidthRequest="150" CornerRadius="4" Color="{DynamicResource StrokeHi}" HorizontalOptions="Start"/>
+                            <BoxView Grid.Row="1" HeightRequest="12" WidthRequest="80"  CornerRadius="4" Color="{DynamicResource StrokeHi}" HorizontalOptions="Start"/>
+                        </Grid>
+                    </Border>
+                    <Border BackgroundColor="{DynamicResource SurfaceCard}" StrokeShape="RoundRectangle 12" Stroke="{DynamicResource StrokeCard}" StrokeThickness="1" Padding="15" HeightRequest="80">
+                        <Grid RowDefinitions="Auto,Auto" RowSpacing="10">
+                            <BoxView Grid.Row="0" HeightRequest="16" WidthRequest="190" CornerRadius="4" Color="{DynamicResource StrokeHi}" HorizontalOptions="Start"/>
+                            <BoxView Grid.Row="1" HeightRequest="12" WidthRequest="100" CornerRadius="4" Color="{DynamicResource StrokeHi}" HorizontalOptions="Start"/>
+                        </Grid>
+                    </Border>
+                </VerticalStackLayout>
+
+                <!-- ── Transaction list (Grid.Row="1") ──────────────────── -->
+                <CollectionView Grid.Row="1" ItemsSource="{Binding Transactions}" SelectionMode="None" IsVisible="{Binding ShowList}">
+                    <CollectionView.Header><BoxView HeightRequest="5" Color="Transparent"/></CollectionView.Header>
+                    <CollectionView.Footer><BoxView HeightRequest="80" Color="Transparent"/></CollectionView.Footer>
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate x:DataType="vm:TransactionCardViewModel">
+                            <Border BackgroundColor="{DynamicResource SurfaceCard}"
+                                    StrokeShape="RoundRectangle 12"
+                                    Stroke="{DynamicResource StrokeCard}"
+                                    StrokeThickness="1" Margin="0,0,0,8">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding OpenEditCommand}"/>
+                                </Border.GestureRecognizers>
+                                <Grid ColumnDefinitions="4,*">
+                                    <BoxView Grid.Column="0" Color="{Binding AmountColor}" CornerRadius="12,0,12,0"/>
+                                    <Grid Grid.Column="1" RowDefinitions="Auto,Auto,Auto" Padding="12,12,15,12" RowSpacing="6">
+
+                                        <!-- Row 0: Description + Amount -->
+                                        <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
+                                            <Label Grid.Column="0" Text="{Binding Description}"
+                                                   FontSize="16" FontAttributes="Bold"
+                                                   LineBreakMode="TailTruncation" VerticalOptions="Center"/>
+                                            <Label Grid.Column="1" Text="{Binding AmountDisplay}"
+                                                   FontSize="16" FontAttributes="Bold"
+                                                   TextColor="{Binding AmountColor}"
+                                                   Margin="10,0,0,0" VerticalOptions="Center"/>
+                                        </Grid>
+
+                                        <!-- Row 1: Date range + chips -->
+                                        <Grid Grid.Row="1" ColumnDefinitions="*,Auto">
+                                            <Label Grid.Column="0" Text="{Binding DateRangeDisplay}"
+                                                   FontSize="12" TextColor="{StaticResource Gray500}"
+                                                   VerticalOptions="Center"/>
+                                            <HorizontalStackLayout Grid.Column="1" Spacing="6">
+                                                <Border BackgroundColor="{DynamicResource SurfaceLo}"
+                                                        StrokeThickness="0" Padding="7,3"
+                                                        StrokeShape="RoundRectangle 5">
+                                                    <Label Text="{Binding FrequencyDisplay}" FontSize="11"
+                                                           TextColor="{DynamicResource Accent}"/>
+                                                </Border>
+                                                <Border BackgroundColor="{DynamicResource SurfaceLo}"
+                                                        StrokeThickness="0" Padding="7,3"
+                                                        StrokeShape="RoundRectangle 5"
+                                                        IsVisible="{Binding HasCategory}">
+                                                    <Label Text="{Binding Category}" FontSize="11"
+                                                           TextColor="{DynamicResource TextSecondary}"/>
+                                                </Border>
+                                            </HorizontalStackLayout>
+                                        </Grid>
+
+                                        <!-- Row 2: Status + actions + accordion -->
+                                        <VerticalStackLayout Grid.Row="2" Spacing="8">
+                                            <BoxView HeightRequest="1" Color="{DynamicResource SurfaceDivider}"
+                                                     Margin="-12,0,-15,0"/>
+
+                                            <!-- Status dot -->
+                                            <HorizontalStackLayout Spacing="5">
+                                                <Ellipse WidthRequest="7" HeightRequest="7"
+                                                         Fill="{Binding IsActive, Converter={StaticResource BoolToColorConverter}, ConverterParameter=Active}"
+                                                         VerticalOptions="Center"/>
+                                                <Label Text="{Binding IsActive, Converter={StaticResource BoolToStringConverter}, ConverterParameter='Unhidden|Hidden'}"
+                                                       TextColor="{Binding IsActive, Converter={StaticResource BoolToColorConverter}, ConverterParameter=Active}"
+                                                       FontSize="12" VerticalOptions="Center"/>
+                                            </HorizontalStackLayout>
+
+                                            <!-- Action buttons + History toggle chevron -->
+                                            <Grid ColumnDefinitions="*,Auto">
+                                                <HorizontalStackLayout Grid.Column="0" Spacing="8">
+                                                    <!-- Future Edit — hidden on superseded records -->
+                                                    <Border BackgroundColor="{DynamicResource SurfaceLo}"
+                                                            StrokeThickness="0" Padding="10,4"
+                                                            StrokeShape="RoundRectangle 6"
+                                                            IsVisible="{Binding IsSuperseded, Converter={StaticResource InvertedBoolConverter}}">
+                                                        <Border.GestureRecognizers>
+                                                            <TapGestureRecognizer Command="{Binding OpenAmendCommand}"/>
+                                                        </Border.GestureRecognizers>
+                                                        <Label Text="Future Edit" FontSize="12"
+                                                               FontAttributes="Bold" TextColor="{DynamicResource Up}"/>
+                                                    </Border>
+
+                                                    <!-- Hide / Unhide -->
+                                                    <Border BackgroundColor="{Binding IsActive, Converter={StaticResource BoolToToggleBgConverter}}"
+                                                            StrokeThickness="0" Padding="10,4"
+                                                            StrokeShape="RoundRectangle 6">
+                                                        <Border.GestureRecognizers>
+                                                            <TapGestureRecognizer Command="{Binding ToggleActiveCommand}"/>
+                                                        </Border.GestureRecognizers>
+                                                        <Label Text="{Binding IsActive, Converter={StaticResource BoolToStringConverter}, ConverterParameter='Hide|Unhide'}"
+                                                               FontSize="12" FontAttributes="Bold"
+                                                               TextColor="{Binding IsActive, Converter={StaticResource BoolToToggleTextConverter}}"/>
+                                                    </Border>
+
+                                                    <!-- Delete -->
+                                                    <Border BackgroundColor="{DynamicResource SurfaceLo}"
+                                                            StrokeThickness="0" Padding="10,4"
+                                                            StrokeShape="RoundRectangle 6">
+                                                        <Border.GestureRecognizers>
+                                                            <TapGestureRecognizer Command="{Binding DeleteCommand}"/>
+                                                        </Border.GestureRecognizers>
+                                                        <Label Text="Delete" FontSize="12"
+                                                               FontAttributes="Bold" TextColor="{DynamicResource Down}"/>
+                                                    </Border>
+                                                </HorizontalStackLayout>
+
+                                                <!-- History chevron — only visible when predecessors exist -->
+                                                <Border Grid.Column="1"
+                                                        BackgroundColor="{Binding IsExpanded, Converter={StaticResource BoolToToggleBgConverter}}"
+                                                        StrokeThickness="0" Padding="10,4"
+                                                        StrokeShape="RoundRectangle 6"
+                                                        IsVisible="{Binding HasHistory}">
+                                                    <Border.GestureRecognizers>
+                                                        <TapGestureRecognizer Command="{Binding ToggleHistoryCommand}"/>
+                                                    </Border.GestureRecognizers>
+                                                    <Label FontSize="12" FontAttributes="Bold"
+                                                           TextColor="{Binding IsExpanded, Converter={StaticResource BoolToToggleTextConverter}}">
+                                                        <Label.Triggers>
+                                                            <DataTrigger TargetType="Label"
+                                                                         Binding="{Binding IsExpanded}" Value="True">
+                                                                <Setter Property="Text" Value="⌃ History"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger TargetType="Label"
+                                                                         Binding="{Binding IsExpanded}" Value="False">
+                                                                <Setter Property="Text" Value="⌄ History"/>
+                                                            </DataTrigger>
+                                                        </Label.Triggers>
+                                                    </Label>
+                                                </Border>
+                                            </Grid>
+
+                                            <!-- ══ AMENDMENT HISTORY ACCORDION ══════════════════════════
+                                                 Expands when ToggleHistoryCommand is fired.
+                                                 Each predecessor row shows old amount, date range,
+                                                 and Edit / Restore actions.
+                                                 ═══════════════════════════════════════════════════════ -->
+                                            <Border IsVisible="{Binding IsExpanded}"
+                                                    BackgroundColor="{DynamicResource SurfaceLo}"
+                                                    StrokeShape="RoundRectangle 10"
+                                                    StrokeThickness="0"
+                                                    Padding="12,10"
+                                                    Margin="-4,0,-4,0">
+                                                <VerticalStackLayout Spacing="0">
+
+                                                    <Label Text="AMENDMENT HISTORY"
+                                                           FontSize="10" FontAttributes="Bold"
+                                                           TextColor="{DynamicResource TextSecondary}"
+                                                           CharacterSpacing="1.5"
+                                                           Margin="0,0,0,10"/>
+
+                                                    <!-- Predecessor rows -->
+                                                    <VerticalStackLayout Spacing="0"
+                                                        BindableLayout.ItemsSource="{Binding Predecessors}">
+                                                        <BindableLayout.ItemTemplate>
+                                                            <DataTemplate x:DataType="vm:TransactionCardViewModel">
+                                                                <Grid ColumnDefinitions="3,*" Margin="0,0,0,8">
+                                                                    <!-- Accent stripe -->
+                                                                    <BoxView Grid.Column="0"
+                                                                             Color="{Binding AmountColor}"
+                                                                             CornerRadius="3" WidthRequest="3"/>
+                                                                    <Border Grid.Column="1"
+                                                                            BackgroundColor="{DynamicResource SurfaceCard}"
+                                                                            StrokeShape="RoundRectangle 8"
+                                                                            StrokeThickness="0"
+                                                                            Padding="10,8"
+                                                                            Margin="6,0,0,0">
+                                                                        <VerticalStackLayout Spacing="6">
+                                                                            <!-- Description + amount -->
+                                                                            <Grid ColumnDefinitions="*,Auto">
+                                                                                <Label Grid.Column="0"
+                                                                                       Text="{Binding Description}"
+                                                                                       FontSize="13" FontAttributes="Bold"
+                                                                                       LineBreakMode="TailTruncation"
+                                                                                       VerticalOptions="Center"/>
+                                                                                <Label Grid.Column="1"
+                                                                                       Text="{Binding AmountDisplay}"
+                                                                                       FontSize="13" FontAttributes="Bold"
+                                                                                       TextColor="{Binding AmountColor}"
+                                                                                       Margin="8,0,0,0"
+                                                                                       VerticalOptions="Center"/>
+                                                                            </Grid>
+                                                                            <!-- Date range -->
+                                                                            <Label Text="{Binding DateRangeDisplay}"
+                                                                                   FontSize="11"
+                                                                                   TextColor="{DynamicResource TextMuted}"/>
+                                                                            <!-- Edit + Restore actions -->
+                                                                            <HorizontalStackLayout Spacing="8" Margin="0,2,0,0">
+                                                                                <!-- Edit predecessor -->
+                                                                                <Border BackgroundColor="{DynamicResource SurfaceLo}"
+                                                                                        StrokeThickness="0" Padding="8,3"
+                                                                                        StrokeShape="RoundRectangle 5">
+                                                                                    <Border.GestureRecognizers>
+                                                                                        <TapGestureRecognizer Command="{Binding EditPredecessorCommand}"/>
+                                                                                    </Border.GestureRecognizers>
+                                                                                    <Label Text="Edit" FontSize="11"
+                                                                                           FontAttributes="Bold"
+                                                                                           TextColor="{DynamicResource Accent}"/>
+                                                                                </Border>
+                                                                                <!-- Restore — makes this version active again -->
+                                                                                <Border BackgroundColor="{DynamicResource SurfaceLo}"
+                                                                                        StrokeThickness="0" Padding="8,3"
+                                                                                        StrokeShape="RoundRectangle 5">
+                                                                                    <Border.GestureRecognizers>
+                                                                                        <TapGestureRecognizer Command="{Binding RestoreCommand}"/>
+                                                                                    </Border.GestureRecognizers>
+                                                                                    <Label Text="↩ Restore" FontSize="11"
+                                                                                           FontAttributes="Bold"
+                                                                                           TextColor="{DynamicResource Warn}"/>
+                                                                                </Border>
+                                                                            </HorizontalStackLayout>
+                                                                        </VerticalStackLayout>
+                                                                    </Border>
+                                                                </Grid>
+                                                            </DataTemplate>
+                                                        </BindableLayout.ItemTemplate>
+                                                    </VerticalStackLayout>
+
+                                                </VerticalStackLayout>
+                                            </Border>
+
+                                        </VerticalStackLayout>
+                                    </Grid>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                    <CollectionView.EmptyView>
+                        <VerticalStackLayout HorizontalOptions="Center" VerticalOptions="Center" Spacing="10" Margin="0,50,0,0" IsVisible="{Binding ShowList}">
+                            <Label Text="📋" FontSize="60" HorizontalOptions="Center"/>
+                            <Label Text="No transactions yet" FontSize="18" FontAttributes="Bold" HorizontalOptions="Center" TextColor="{DynamicResource TextSecondary}"/>
+                            <Label Text="Tap the + button to add your first transaction" FontSize="14" TextColor="{DynamicResource TextSecondary}" HorizontalOptions="Center"/>
+                        </VerticalStackLayout>
+                    </CollectionView.EmptyView>
+                </CollectionView>
+
+            </Grid>
+            <!-- end inner content Grid RowDefinitions="Auto,*" -->
+
+        </RefreshView>
+
+        <!-- ── FAB ──────────────────────────────────────────────────────── -->
+        <Border Grid.Row="1" BackgroundColor="{DynamicResource Accent}"
+                StrokeShape="Ellipse" StrokeThickness="0"
+                WidthRequest="60" HeightRequest="60"
+                HorizontalOptions="End" VerticalOptions="End" Margin="0,0,20,20">
+            <Border.Shadow><Shadow Brush="Black" Opacity="0.3" Radius="8" Offset="0,4"/></Border.Shadow>
+            <Border.GestureRecognizers>
+                <TapGestureRecognizer Command="{Binding NavigateToAddEntryCommand}"/>
+            </Border.GestureRecognizers>
+            <Image Source="plus.png"
+                   WidthRequest="24" HeightRequest="24"
+                   HorizontalOptions="Center" VerticalOptions="Center"/>
+        </Border>
+
+        <!-- ════════════════════════════════════════════════════════════════
+             EDIT TRANSACTION DIALOG
+             ════════════════════════════════════════════════════════════════ -->
+        <Grid Grid.RowSpan="2" IsVisible="{Binding ShowEditTransactionDialog}" BackgroundColor="#80000000">
+            <Grid.GestureRecognizers>
+                <TapGestureRecognizer Command="{Binding CancelEditTransactionCommand}"/>
+            </Grid.GestureRecognizers>
+            <ScrollView VerticalOptions="Center" Margin="20">
+                <Border BackgroundColor="{DynamicResource SurfaceCard}"
+                        StrokeShape="RoundRectangle 20" StrokeThickness="0" Padding="20">
+                    <Border.GestureRecognizers><TapGestureRecognizer/></Border.GestureRecognizers>
+                    <VerticalStackLayout Spacing="2">
+
+                        <Label Text="Edit Transaction" FontSize="20" FontAttributes="Bold"
+                               HorizontalOptions="Center" Margin="0,0,0,14"/>
+
+                        <!-- Description -->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Label Grid.Column="0" Text="Description" FontSize="13"
+                                   TextColor="{DynamicResource TextSecondary}" FontAttributes="Bold" VerticalOptions="Center"/>
+                            <Border Grid.Column="1"
+                                    WidthRequest="20" HeightRequest="20"
+                                    StrokeShape="Ellipse" StrokeThickness="1.5"
+                                    Stroke="{DynamicResource TextSecondary}"
+                                    BackgroundColor="Transparent"
+                                    VerticalOptions="Center">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding ToggleTooltipCommand}" CommandParameter="edit_description"/>
+                                </Border.GestureRecognizers>
+                                <Label Text="?" FontSize="11" FontAttributes="Bold"
+                                       TextColor="{DynamicResource TextSecondary}"
+                                       HorizontalOptions="Center" VerticalOptions="Center"/>
+                            </Border>
+                        </Grid>
+                        <Border IsVisible="{Binding ActiveTooltip, Converter={StaticResource StringEqualsConverter}, ConverterParameter='edit_description'}"
+                               BackgroundColor="{DynamicResource SurfaceLo}"
+                               Stroke="{DynamicResource StrokeCard}"
+                               StrokeThickness="1"
+                               StrokeShape="RoundRectangle 8"
+                               Padding="10,8"
+                               Margin="0,4,0,2">
+                            <Label Text="The name shown on the transaction card and calendar chips."
+                                   FontSize="12"
+                                   TextColor="{DynamicResource TextSecondary}"
+                                   LineBreakMode="WordWrap"/>
+                        </Border>
+                        <Border Stroke="{Binding EditDescriptionError, Converter={StaticResource NullOrValueStrokeConverter}, ConverterParameter='#DC3545'}"
+                                StrokeShape="RoundRectangle 10" StrokeThickness="1.5">
+                            <Entry Text="{Binding EditDescription}" Placeholder="Description" MaxLength="40" FontSize="16" Margin="15,10"/>
+                        </Border>
+                        <Label Text="{Binding EditDescriptionError}" TextColor="{DynamicResource Down}" FontSize="12"
+                               IsVisible="{Binding EditDescriptionError, Converter={StaticResource StringNotEmptyConverter}}"
+                               Margin="4,2,0,6"/>
+
+                        <!-- Amount -->
+                        <Grid Margin="0,6,0,2">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Label Grid.Column="0" Text="Amount" FontSize="13"
+                                   TextColor="{DynamicResource TextSecondary}" FontAttributes="Bold" VerticalOptions="Center"/>
+                            <Border Grid.Column="1"
+                                    WidthRequest="20" HeightRequest="20"
+                                    StrokeShape="Ellipse" StrokeThickness="1.5"
+                                    Stroke="{DynamicResource TextSecondary}"
+                                    BackgroundColor="Transparent"
+                                    VerticalOptions="Center">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding ToggleTooltipCommand}" CommandParameter="edit_amount"/>
+                                </Border.GestureRecognizers>
+                                <Label Text="?" FontSize="11" FontAttributes="Bold"
+                                       TextColor="{DynamicResource TextSecondary}"
+                                       HorizontalOptions="Center" VerticalOptions="Center"/>
+                            </Border>
+                        </Grid>
+                        <Border IsVisible="{Binding ActiveTooltip, Converter={StaticResource StringEqualsConverter}, ConverterParameter='edit_amount'}"
+                               BackgroundColor="{DynamicResource SurfaceLo}"
+                               Stroke="{DynamicResource StrokeCard}"
+                               StrokeThickness="1"
+                               StrokeShape="RoundRectangle 8"
+                               Padding="10,8"
+                               Margin="0,4,0,2">
+                            <Label Text="Enter the value without a sign. Use the Income / Expense toggle to set direction."
+                                   FontSize="12"
+                                   TextColor="{DynamicResource TextSecondary}"
+                                   LineBreakMode="WordWrap"/>
+                        </Border>
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10" Margin="0,4,0,0">
+                            <Border Grid.Column="0"
+                                    Stroke="{Binding EditAmountError, Converter={StaticResource NullOrValueStrokeConverter}, ConverterParameter='#DC3545'}"
+                                    StrokeShape="RoundRectangle 10" StrokeThickness="1.5">
+                                <Entry Text="{Binding EditAmount}" Placeholder="Amount" Keyboard="Numeric" FontSize="16" Margin="15,10"/>
+                            </Border>
+                            <Button Grid.Column="1" Text="{Binding EditIncomeLabel}"
+                                    Command="{Binding ToggleEditIncomeExpenseCommand}"
+                                    BackgroundColor="{Binding EditIncomeColor}"
+                                    TextColor="White" CornerRadius="10" Padding="15,0" WidthRequest="110"/>
+                        </Grid>
+                        <Label Text="{Binding EditAmountError}" TextColor="{DynamicResource Down}" FontSize="12"
+                               IsVisible="{Binding EditAmountError, Converter={StaticResource StringNotEmptyConverter}}"
+                               Margin="4,2,0,6"/>
+
+                        <!-- Category -->
+                        <Grid Margin="0,6,0,2">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Label Grid.Column="0" Text="Category" FontSize="13"
+                                   TextColor="{DynamicResource TextSecondary}" FontAttributes="Bold" VerticalOptions="Center"/>
+                            <Border Grid.Column="1"
+                                    WidthRequest="20" HeightRequest="20"
+                                    StrokeShape="Ellipse" StrokeThickness="1.5"
+                                    Stroke="{DynamicResource TextSecondary}"
+                                    BackgroundColor="Transparent"
+                                    VerticalOptions="Center">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding ToggleTooltipCommand}" CommandParameter="edit_category"/>
+                                </Border.GestureRecognizers>
+                                <Label Text="?" FontSize="11" FontAttributes="Bold"
+                                       TextColor="{DynamicResource TextSecondary}"
+                                       HorizontalOptions="Center" VerticalOptions="Center"/>
+                            </Border>
+                        </Grid>
+                        <Border IsVisible="{Binding ActiveTooltip, Converter={StaticResource StringEqualsConverter}, ConverterParameter='edit_category'}"
+                               BackgroundColor="{DynamicResource SurfaceLo}"
+                               Stroke="{DynamicResource StrokeCard}"
+                               StrokeThickness="1"
+                               StrokeShape="RoundRectangle 8"
+                               Padding="10,8"
+                               Margin="0,4,0,2">
+                            <Label Text="Select a category. Manage your category list in Settings."
+                                   FontSize="12"
+                                   TextColor="{DynamicResource TextSecondary}"
+                                   LineBreakMode="WordWrap"/>
+                        </Border>
+                        <Border Stroke="{DynamicResource StrokeCard}"
+                                StrokeShape="RoundRectangle 10" StrokeThickness="1" Margin="0,4,0,0">
+                            <Picker ItemsSource="{Binding AvailableCategories}"
+                                    SelectedItem="{Binding EditCategory}"
+                                    Title="Select category"
+                                    FontSize="15" Margin="10,8"
+                                    TextColor="{DynamicResource TextPrimary}"
+                                    BackgroundColor="Transparent"/>
+                        </Border>
+                        <Label Text="{Binding EditCategoryError}" TextColor="{DynamicResource Down}" FontSize="12"
+                               IsVisible="{Binding EditCategoryError, Converter={StaticResource StringNotEmptyConverter}}"
+                               Margin="4,2,0,6"/>
+
+                        <!-- Frequency -->
+                        <Border Stroke="{StaticResource Gray300}" StrokeShape="RoundRectangle 10" StrokeThickness="1" Margin="0,6,0,0">
+                            <Picker ItemsSource="{Binding FrequencyOptions}" SelectedItem="{Binding EditFrequency}"
+                                    Title="Frequency" FontSize="16" Margin="15,10"/>
+                        </Border>
+
+                        <!-- Start date -->
+                        <Border Stroke="{StaticResource Gray300}" StrokeShape="RoundRectangle 10" StrokeThickness="1" Margin="0,8,0,0">
+                            <DatePicker Date="{Binding EditStartDate}" Format="MMM dd, yyyy" FontSize="16" Margin="15,10"/>
+                        </Border>
+
+                        <!-- End date -->
+                        <HorizontalStackLayout Spacing="10" Margin="0,8,0,0">
+                            <CheckBox IsChecked="{Binding EditHasEndDate}"
+                                      IsEnabled="{Binding EditFrequency,
+                                                  Converter={StaticResource FrequencyNotOnceConverter}}"
+                                      VerticalOptions="Center"/>
+                            <Label VerticalOptions="Center" FontSize="15">
+                                <Label.Triggers>
+                                    <DataTrigger TargetType="Label"
+                                                 Binding="{Binding EditFrequency}"
+                                                 Value="{x:Static models:FrequencyType.Once}">
+                                        <Setter Property="Text" Value="End date (matches start date)"/>
+                                        <Setter Property="TextColor" Value="{DynamicResource TextSecondary}"/>
+                                    </DataTrigger>
+                                    <DataTrigger TargetType="Label"
+                                                 Binding="{Binding EditFrequency}"
+                                                 Value="{x:Static models:FrequencyType.Daily}">
+                                        <Setter Property="Text" Value="Set end date"/>
+                                    </DataTrigger>
+                                    <DataTrigger TargetType="Label"
+                                                 Binding="{Binding EditFrequency}"
+                                                 Value="{x:Static models:FrequencyType.Weekly}">
+                                        <Setter Property="Text" Value="Set end date"/>
+                                    </DataTrigger>
+                                    <DataTrigger TargetType="Label"
+                                                 Binding="{Binding EditFrequency}"
+                                                 Value="{x:Static models:FrequencyType.BiWeekly}">
+                                        <Setter Property="Text" Value="Set end date"/>
+                                    </DataTrigger>
+                                    <DataTrigger TargetType="Label"
+                                                 Binding="{Binding EditFrequency}"
+                                                 Value="{x:Static models:FrequencyType.Monthly}">
+                                        <Setter Property="Text" Value="Set end date"/>
+                                    </DataTrigger>
+                                    <DataTrigger TargetType="Label"
+                                                 Binding="{Binding EditFrequency}"
+                                                 Value="{x:Static models:FrequencyType.BiMonthly}">
+                                        <Setter Property="Text" Value="Set end date"/>
+                                    </DataTrigger>
+                                    <DataTrigger TargetType="Label"
+                                                 Binding="{Binding EditFrequency}"
+                                                 Value="{x:Static models:FrequencyType.FirstThirdFriday}">
+                                        <Setter Property="Text" Value="Set end date"/>
+                                    </DataTrigger>
+                                </Label.Triggers>
+                            </Label>
+                        </HorizontalStackLayout>
+                        <Border Stroke="{StaticResource Gray300}" StrokeShape="RoundRectangle 10"
+                                StrokeThickness="1" IsVisible="{Binding EditHasEndDate}">
+                            <DatePicker Date="{Binding EditEndDate}" Format="MMM dd, yyyy"
+                                        MinimumDate="{Binding EditStartDate}" FontSize="16" Margin="15,10"
+                                        IsEnabled="{Binding EditFrequency,
+                                                    Converter={StaticResource FrequencyNotOnceConverter}}"/>
+                        </Border>
+                        <Label Text="{Binding EditDateRangeError}" TextColor="{DynamicResource Down}" FontSize="12"
+                               IsVisible="{Binding EditDateRangeError, Converter={StaticResource StringNotEmptyConverter}}"
+                               Margin="4,2,0,4"/>
+
+                        <!-- Active -->
+                        <HorizontalStackLayout Spacing="10" Margin="0,8,0,0">
+                            <CheckBox IsChecked="{Binding EditIsActive}" VerticalOptions="Center"/>
+                            <Label Text="Transaction is active" VerticalOptions="Center" FontSize="15"/>
+                        </HorizontalStackLayout>
+
+                        <!-- Color picker -->
+                        <VerticalStackLayout Spacing="8" Margin="0,10,0,0">
+                            <Label Text="Transaction Color" FontSize="13" TextColor="{DynamicResource TextSecondary}" FontAttributes="Bold"/>
+                            <Border HeightRequest="8" StrokeThickness="0" BackgroundColor="{Binding EditColorPreview}" StrokeShape="RoundRectangle 4"/>
+                            <ScrollView Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
+                            <HorizontalStackLayout Spacing="8" HorizontalOptions="Start" Padding="2,4">
+                                <Border WidthRequest="34" HeightRequest="34" StrokeShape="Ellipse" StrokeThickness="2"
+                                        Stroke="{Binding EditColor, Converter={StaticResource NullOrValueStrokeConverter}, ConverterParameter='null'}" BackgroundColor="Transparent">
+                                    <Border.GestureRecognizers><TapGestureRecognizer Command="{Binding SelectEditColorCommand}" CommandParameter=""/></Border.GestureRecognizers>
+                                    <Label Text="✕" FontSize="16" HorizontalOptions="Center" VerticalOptions="Center" TextColor="{DynamicResource TextPrimary}"/>
+                                </Border>
+                                <Border WidthRequest="34" HeightRequest="34" StrokeShape="Ellipse" StrokeThickness="2" BackgroundColor="#E53935" Stroke="{Binding EditColor, Converter={StaticResource NullOrValueStrokeConverter}, ConverterParameter='#E53935'}"><Border.GestureRecognizers><TapGestureRecognizer Command="{Binding SelectEditColorCommand}" CommandParameter="#E53935"/></Border.GestureRecognizers></Border>
+                                <Border WidthRequest="34" HeightRequest="34" StrokeShape="Ellipse" StrokeThickness="2" BackgroundColor="#E85D04" Stroke="{Binding EditColor, Converter={StaticResource NullOrValueStrokeConverter}, ConverterParameter='#E85D04'}"><Border.GestureRecognizers><TapGestureRecognizer Command="{Binding SelectEditColorCommand}" CommandParameter="#E85D04"/></Border.GestureRecognizers></Border>
+                                <Border WidthRequest="34" HeightRequest="34" StrokeShape="Ellipse" StrokeThickness="2" BackgroundColor="#F9C74F" Stroke="{Binding EditColor, Converter={StaticResource NullOrValueStrokeConverter}, ConverterParameter='#F9C74F'}"><Border.GestureRecognizers><TapGestureRecognizer Command="{Binding SelectEditColorCommand}" CommandParameter="#F9C74F"/></Border.GestureRecognizers></Border>
+                                <Border WidthRequest="34" HeightRequest="34" StrokeShape="Ellipse" StrokeThickness="2" BackgroundColor="#2D6A4F" Stroke="{Binding EditColor, Converter={StaticResource NullOrValueStrokeConverter}, ConverterParameter='#2D6A4F'}"><Border.GestureRecognizers><TapGestureRecognizer Command="{Binding SelectEditColorCommand}" CommandParameter="#2D6A4F"/></Border.GestureRecognizers></Border>
+                                <Border WidthRequest="34" HeightRequest="34" StrokeShape="Ellipse" StrokeThickness="2" BackgroundColor="#0077B6" Stroke="{Binding EditColor, Converter={StaticResource NullOrValueStrokeConverter}, ConverterParameter='#0077B6'}"><Border.GestureRecognizers><TapGestureRecognizer Command="{Binding SelectEditColorCommand}" CommandParameter="#0077B6"/></Border.GestureRecognizers></Border>
+                                <Border WidthRequest="34" HeightRequest="34" StrokeShape="Ellipse" StrokeThickness="2" BackgroundColor="#512BD4" Stroke="{Binding EditColor, Converter={StaticResource NullOrValueStrokeConverter}, ConverterParameter='#512BD4'}"><Border.GestureRecognizers><TapGestureRecognizer Command="{Binding SelectEditColorCommand}" CommandParameter="#512BD4"/></Border.GestureRecognizers></Border>
+                                <Border WidthRequest="34" HeightRequest="34" StrokeShape="Ellipse" StrokeThickness="2" BackgroundColor="#C77DFF" Stroke="{Binding EditColor, Converter={StaticResource NullOrValueStrokeConverter}, ConverterParameter='#C77DFF'}"><Border.GestureRecognizers><TapGestureRecognizer Command="{Binding SelectEditColorCommand}" CommandParameter="#C77DFF"/></Border.GestureRecognizers></Border>
+                                <Border WidthRequest="34" HeightRequest="34" StrokeShape="Ellipse" StrokeThickness="2" BackgroundColor="#455A64" Stroke="{Binding EditColor, Converter={StaticResource NullOrValueStrokeConverter}, ConverterParameter='#455A64'}"><Border.GestureRecognizers><TapGestureRecognizer Command="{Binding SelectEditColorCommand}" CommandParameter="#455A64"/></Border.GestureRecognizers></Border>
+                            </HorizontalStackLayout>
+                            </ScrollView>
+                        </VerticalStackLayout>
+
+                        <Label Text="{Binding ErrorMessage}" TextColor="{DynamicResource Down}" FontSize="13"
+                               IsVisible="{Binding HasError}" HorizontalOptions="Center" Margin="0,10,0,0"/>
+
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="10" Margin="0,14,0,0">
+                            <Button Grid.Column="0" Text="Cancel" Command="{Binding CancelEditTransactionCommand}"
+                                    BackgroundColor="{DynamicResource SurfaceHi}" TextColor="{DynamicResource TextSecondary}"
+                                    CornerRadius="10" Padding="0,12"/>
+                            <Button Grid.Column="1" Text="Save" Command="{Binding UpdateTransactionCommand}"
+                                    BackgroundColor="{DynamicResource Accent}" TextColor="{DynamicResource SurfacePage}"
+                                    CornerRadius="10" Padding="0,12" IsEnabled="{Binding IsNotLoading}"/>
+                        </Grid>
+
+                    </VerticalStackLayout>
+                </Border>
+            </ScrollView>
+        </Grid>
+
+        <!-- ════════════════════════════════════════════════════════════════
+             AMEND TRANSACTION DIALOG
+             ════════════════════════════════════════════════════════════════ -->
+        <Grid Grid.RowSpan="2" IsVisible="{Binding ShowAmendDialog}" BackgroundColor="#80000000">
+            <Grid.GestureRecognizers>
+                <TapGestureRecognizer Command="{Binding CancelAmendTransactionCommand}"/>
+            </Grid.GestureRecognizers>
+            <ScrollView VerticalOptions="Center" Margin="20">
+                <Border BackgroundColor="{DynamicResource SurfaceCard}"
+                        StrokeShape="RoundRectangle 20" StrokeThickness="0" Padding="20">
+                    <Border.GestureRecognizers><TapGestureRecognizer/></Border.GestureRecognizers>
+                    <VerticalStackLayout Spacing="2">
+
+                        <Label Text="Make Amendment" FontSize="20" FontAttributes="Bold"
+                               HorizontalOptions="Center" Margin="0,0,0,2"/>
+                        <Label Text="{Binding TransactionToAmend.Description}" FontSize="14"
+                               TextColor="{StaticResource Gray500}" HorizontalOptions="Center" Margin="0,0,0,14"/>
+
+                        <!-- Effective date -->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Label Grid.Column="0" Text="Effective From" FontSize="13"
+                                   TextColor="{DynamicResource TextSecondary}" FontAttributes="Bold" VerticalOptions="Center"/>
+                            <Border Grid.Column="1"
+                                    WidthRequest="20" HeightRequest="20"
+                                    StrokeShape="Ellipse" StrokeThickness="1.5"
+                                    Stroke="{DynamicResource TextSecondary}"
+                                    BackgroundColor="Transparent"
+                                    VerticalOptions="Center">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding ToggleTooltipCommand}" CommandParameter="amend_date"/>
+                                </Border.GestureRecognizers>
+                                <Label Text="?" FontSize="11" FontAttributes="Bold"
+                                       TextColor="{DynamicResource TextSecondary}"
+                                       HorizontalOptions="Center" VerticalOptions="Center"/>
+                            </Border>
+                        </Grid>
+                        <Border IsVisible="{Binding ActiveTooltip, Converter={StaticResource StringEqualsConverter}, ConverterParameter='amend_date'}"
+                               BackgroundColor="{DynamicResource SurfaceLo}"
+                               Stroke="{DynamicResource StrokeCard}"
+                               StrokeThickness="1"
+                               StrokeShape="RoundRectangle 8"
+                               Padding="10,8"
+                               Margin="0,4,0,2">
+                            <Label Text="The date the new amount takes effect. The original transaction will be kept as a historical record up to the day before this date."
+                                   FontSize="12"
+                                   TextColor="{DynamicResource TextSecondary}"
+                                   LineBreakMode="WordWrap"/>
+                        </Border>
+                        <Border Stroke="{Binding AmendEffectiveDateError, Converter={StaticResource NullOrValueStrokeConverter}, ConverterParameter='#DC3545'}"
+                                StrokeShape="RoundRectangle 10" StrokeThickness="1.5">
+                            <DatePicker Date="{Binding AmendEffectiveDate}" Format="MMM dd, yyyy" FontSize="16" Margin="15,10"/>
+                        </Border>
+                        <Label Text="{Binding AmendEffectiveDateError}" TextColor="{DynamicResource Down}" FontSize="12"
+                               IsVisible="{Binding AmendEffectiveDateError, Converter={StaticResource StringNotEmptyConverter}}"
+                               Margin="4,2,0,6"/>
+
+                        <!-- Amount -->
+                        <Grid Margin="0,6,0,2">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Label Grid.Column="0" Text="New Amount" FontSize="13"
+                                   TextColor="{DynamicResource TextSecondary}" FontAttributes="Bold" VerticalOptions="Center"/>
+                            <Border Grid.Column="1"
+                                    WidthRequest="20" HeightRequest="20"
+                                    StrokeShape="Ellipse" StrokeThickness="1.5"
+                                    Stroke="{DynamicResource TextSecondary}"
+                                    BackgroundColor="Transparent"
+                                    VerticalOptions="Center">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding ToggleTooltipCommand}" CommandParameter="amend_amount"/>
+                                </Border.GestureRecognizers>
+                                <Label Text="?" FontSize="11" FontAttributes="Bold"
+                                       TextColor="{DynamicResource TextSecondary}"
+                                       HorizontalOptions="Center" VerticalOptions="Center"/>
+                            </Border>
+                        </Grid>
+                        <Border IsVisible="{Binding ActiveTooltip, Converter={StaticResource StringEqualsConverter}, ConverterParameter='amend_amount'}"
+                               BackgroundColor="{DynamicResource SurfaceLo}"
+                               Stroke="{DynamicResource StrokeCard}"
+                               StrokeThickness="1"
+                               StrokeShape="RoundRectangle 8"
+                               Padding="10,8"
+                               Margin="0,4,0,2">
+                            <Label Text="The new amount that applies from the effective date onward. Use the Income / Expense toggle to set the direction."
+                                   FontSize="12"
+                                   TextColor="{DynamicResource TextSecondary}"
+                                   LineBreakMode="WordWrap"/>
+                        </Border>
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                            <Border Grid.Column="0"
+                                    Stroke="{Binding AmendAmountError, Converter={StaticResource NullOrValueStrokeConverter}, ConverterParameter='#DC3545'}"
+                                    StrokeShape="RoundRectangle 10" StrokeThickness="1.5">
+                                <Entry Text="{Binding AmendAmount}" Placeholder="Amount" Keyboard="Numeric" FontSize="16" Margin="15,10"/>
+                            </Border>
+                            <Button Grid.Column="1" Text="{Binding AmendIncomeLabel}"
+                                    Command="{Binding ToggleAmendIncomeExpenseCommand}"
+                                    BackgroundColor="{Binding AmendIncomeColor}"
+                                    TextColor="White" CornerRadius="10" Padding="15,0" WidthRequest="110"/>
+                        </Grid>
+                        <Label Text="{Binding AmendAmountError}" TextColor="{DynamicResource Down}" FontSize="12"
+                               IsVisible="{Binding AmendAmountError, Converter={StaticResource StringNotEmptyConverter}}"
+                               Margin="4,2,0,6"/>
+
+                        <!-- Optional overrides -->
+                        <Grid Margin="0,10,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Label Grid.Column="0" Text="Optional Overrides" FontSize="13"
+                                   TextColor="{DynamicResource TextSecondary}" FontAttributes="Bold" VerticalOptions="Center"/>
+                            <Border Grid.Column="1"
+                                    WidthRequest="20" HeightRequest="20"
+                                    StrokeShape="Ellipse" StrokeThickness="1.5"
+                                    Stroke="{DynamicResource TextSecondary}"
+                                    BackgroundColor="Transparent"
+                                    VerticalOptions="Center">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding ToggleTooltipCommand}" CommandParameter="amend_overrides"/>
+                                </Border.GestureRecognizers>
+                                <Label Text="?" FontSize="11" FontAttributes="Bold"
+                                       TextColor="{DynamicResource TextSecondary}"
+                                       HorizontalOptions="Center" VerticalOptions="Center"/>
+                            </Border>
+                        </Grid>
+                        <Border IsVisible="{Binding ActiveTooltip, Converter={StaticResource StringEqualsConverter}, ConverterParameter='amend_overrides'}"
+                               BackgroundColor="{DynamicResource SurfaceLo}"
+                               Stroke="{DynamicResource StrokeCard}"
+                               StrokeThickness="1"
+                               StrokeShape="RoundRectangle 8"
+                               Padding="10,8"
+                               Margin="0,4,0,2">
+                            <Label Text="Override the description, category, or color from this date forward. Leave any field blank to keep the original transaction's value."
+                                   FontSize="12"
+                                   TextColor="{DynamicResource TextSecondary}"
+                                   LineBreakMode="WordWrap"/>
+                        </Border>
+                        <Label Text="Leave blank to keep the existing value" FontSize="12" TextColor="{StaticResource Gray400}"/>
+
+                        <Border Stroke="{Binding AmendDescriptionError, Converter={StaticResource NullOrValueStrokeConverter}, ConverterParameter='#DC3545'}"
+                                StrokeShape="RoundRectangle 10" StrokeThickness="1.5" Margin="0,8,0,0">
+                            <Entry Text="{Binding AmendDescription}" Placeholder="Description (optional)" MaxLength="40" FontSize="16" Margin="15,10"/>
+                        </Border>
+                        <Label Text="{Binding AmendDescriptionError}" TextColor="{DynamicResource Down}" FontSize="12"
+                               IsVisible="{Binding AmendDescriptionError, Converter={StaticResource StringNotEmptyConverter}}"
+                               Margin="4,2,0,6"/>
+
+                        <Border Stroke="{DynamicResource StrokeCard}"
+                                StrokeShape="RoundRectangle 10" StrokeThickness="1">
+                            <Picker ItemsSource="{Binding AvailableCategories}"
+                                    SelectedItem="{Binding AmendCategory}"
+                                    Title="Keep existing / select override"
+                                    FontSize="15" Margin="10,8"
+                                    TextColor="{DynamicResource TextPrimary}"
+                                    BackgroundColor="Transparent"/>
+                        </Border>
+                        <Label Text="{Binding AmendCategoryError}" TextColor="{DynamicResource Down}" FontSize="12"
+                               IsVisible="{Binding AmendCategoryError, Converter={StaticResource StringNotEmptyConverter}}"
+                               Margin="4,2,0,6"/>
+
+                        <!-- Color override -->
+                        <VerticalStackLayout Spacing="8" Margin="0,8,0,0">
+                            <Label Text="Color Override (optional)" FontSize="13" TextColor="{DynamicResource TextSecondary}" FontAttributes="Bold"/>
+                            <Border HeightRequest="8" StrokeThickness="0" BackgroundColor="{Binding AmendColorPreview}" StrokeShape="RoundRectangle 4"/>
+                            <ScrollView Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
+                            <HorizontalStackLayout Spacing="8" HorizontalOptions="Start" Padding="2,4">
+                                <Border WidthRequest="34" HeightRequest="34" StrokeShape="Ellipse" StrokeThickness="2"
+                                        Stroke="{Binding AmendColor, Converter={StaticResource NullOrValueStrokeConverter}, ConverterParameter='null'}" BackgroundColor="Transparent">
+                                    <Border.GestureRecognizers><TapGestureRecognizer Command="{Binding SelectAmendColorCommand}" CommandParameter=""/></Border.GestureRecognizers>
+                                    <Label Text="✕" FontSize="16" HorizontalOptions="Center" VerticalOptions="Center" TextColor="{DynamicResource TextPrimary}"/>
+                                </Border>
+                                <Border WidthRequest="34" HeightRequest="34" StrokeShape="Ellipse" StrokeThickness="2" BackgroundColor="#E53935" Stroke="{Binding AmendColor, Converter={StaticResource NullOrValueStrokeConverter}, ConverterParameter='#E53935'}"><Border.GestureRecognizers><TapGestureRecognizer Command="{Binding SelectAmendColorCommand}" CommandParameter="#E53935"/></Border.GestureRecognizers></Border>
+                                <Border WidthRequest="34" HeightRequest="34" StrokeShape="Ellipse" StrokeThickness="2" BackgroundColor="#E85D04" Stroke="{Binding AmendColor, Converter={StaticResource NullOrValueStrokeConverter}, ConverterParameter='#E85D04'}"><Border.GestureRecognizers><TapGestureRecognizer Command="{Binding SelectAmendColorCommand}" CommandParameter="#E85D04"/></Border.GestureRecognizers></Border>
+                                <Border WidthRequest="34" HeightRequest="34" StrokeShape="Ellipse" StrokeThickness="2" BackgroundColor="#F9C74F" Stroke="{Binding AmendColor, Converter={StaticResource NullOrValueStrokeConverter}, ConverterParameter='#F9C74F'}"><Border.GestureRecognizers><TapGestureRecognizer Command="{Binding SelectAmendColorCommand}" CommandParameter="#F9C74F"/></Border.GestureRecognizers></Border>
+                                <Border WidthRequest="34" HeightRequest="34" StrokeShape="Ellipse" StrokeThickness="2" BackgroundColor="#2D6A4F" Stroke="{Binding AmendColor, Converter={StaticResource NullOrValueStrokeConverter}, ConverterParameter='#2D6A4F'}"><Border.GestureRecognizers><TapGestureRecognizer Command="{Binding SelectAmendColorCommand}" CommandParameter="#2D6A4F"/></Border.GestureRecognizers></Border>
+                                <Border WidthRequest="34" HeightRequest="34" StrokeShape="Ellipse" StrokeThickness="2" BackgroundColor="#0077B6" Stroke="{Binding AmendColor, Converter={StaticResource NullOrValueStrokeConverter}, ConverterParameter='#0077B6'}"><Border.GestureRecognizers><TapGestureRecognizer Command="{Binding SelectAmendColorCommand}" CommandParameter="#0077B6"/></Border.GestureRecognizers></Border>
+                                <Border WidthRequest="34" HeightRequest="34" StrokeShape="Ellipse" StrokeThickness="2" BackgroundColor="#512BD4" Stroke="{Binding AmendColor, Converter={StaticResource NullOrValueStrokeConverter}, ConverterParameter='#512BD4'}"><Border.GestureRecognizers><TapGestureRecognizer Command="{Binding SelectAmendColorCommand}" CommandParameter="#512BD4"/></Border.GestureRecognizers></Border>
+                                <Border WidthRequest="34" HeightRequest="34" StrokeShape="Ellipse" StrokeThickness="2" BackgroundColor="#C77DFF" Stroke="{Binding AmendColor, Converter={StaticResource NullOrValueStrokeConverter}, ConverterParameter='#C77DFF'}"><Border.GestureRecognizers><TapGestureRecognizer Command="{Binding SelectAmendColorCommand}" CommandParameter="#C77DFF"/></Border.GestureRecognizers></Border>
+                                <Border WidthRequest="34" HeightRequest="34" StrokeShape="Ellipse" StrokeThickness="2" BackgroundColor="#455A64" Stroke="{Binding AmendColor, Converter={StaticResource NullOrValueStrokeConverter}, ConverterParameter='#455A64'}"><Border.GestureRecognizers><TapGestureRecognizer Command="{Binding SelectAmendColorCommand}" CommandParameter="#455A64"/></Border.GestureRecognizers></Border>
+                            </HorizontalStackLayout>
+                            </ScrollView>
+                        </VerticalStackLayout>
+
+                        <Label Text="{Binding ErrorMessage}" TextColor="{DynamicResource Down}" FontSize="13"
+                               IsVisible="{Binding HasError}" HorizontalOptions="Center" Margin="0,10,0,0"/>
+
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="10" Margin="0,14,0,0">
+                            <Button Grid.Column="0" Text="Cancel" Command="{Binding CancelAmendTransactionCommand}"
+                                    BackgroundColor="{DynamicResource SurfaceHi}" TextColor="{DynamicResource TextSecondary}"
+                                    CornerRadius="10" Padding="0,12"/>
+                            <Button Grid.Column="1" Text="Future Edit" Command="{Binding ApplyAmendmentCommand}"
+                                    BackgroundColor="{DynamicResource Accent}" TextColor="{DynamicResource SurfacePage}"
+                                    CornerRadius="10" Padding="0,12" IsEnabled="{Binding IsNotLoading}"/>
+                        </Grid>
+
+                    </VerticalStackLayout>
+                </Border>
+            </ScrollView>
+        </Grid>
+
+        <!-- ════════════════════════════════════════════════════════════════
+             FILTER DIALOG
+             ════════════════════════════════════════════════════════════════ -->
+        <Grid Grid.RowSpan="2" IsVisible="{Binding ShowFilterDialog}" BackgroundColor="#80000000">
+            <Grid.GestureRecognizers>
+                <TapGestureRecognizer Command="{Binding CancelFilterCommand}"/>
+            </Grid.GestureRecognizers>
+            <ScrollView VerticalOptions="Center" Margin="20">
+                <Border BackgroundColor="{DynamicResource SurfaceCard}"
+                        StrokeShape="RoundRectangle 20" StrokeThickness="0" Padding="20">
+                    <Border.GestureRecognizers><TapGestureRecognizer/></Border.GestureRecognizers>
+                    <VerticalStackLayout Spacing="14">
+
+                        <Label Text="Filter Transactions" FontSize="20" FontAttributes="Bold"
+                               HorizontalOptions="Center" Margin="0,0,0,4"/>
+
+                        <!-- Recurrence -->
+                        <Label Text="Recurrence" FontSize="13" FontAttributes="Bold"
+                               TextColor="{DynamicResource TextSecondary}"/>
+                        <Border Stroke="{DynamicResource StrokeCard}" StrokeShape="RoundRectangle 10" StrokeThickness="1">
+                            <Picker ItemsSource="{Binding FrequencyOptions}"
+                                    SelectedItem="{Binding PendingFilterRecurrence}"
+                                    Title="Any recurrence" FontSize="15" Margin="10,8"/>
+                        </Border>
+
+                        <!-- Date range -->
+                        <Label Text="Date Range" FontSize="13" FontAttributes="Bold"
+                               TextColor="{DynamicResource TextSecondary}" Margin="0,4,0,0"/>
+                        <Grid ColumnDefinitions="*,Auto,*" ColumnSpacing="8">
+                            <Border Grid.Column="0" Stroke="{DynamicResource StrokeCard}"
+                                    StrokeShape="RoundRectangle 10" StrokeThickness="1">
+                                <DatePicker Date="{Binding PendingFilterDateFrom}"
+                                            Format="MMM dd, yyyy" FontSize="13" Margin="10,8"/>
+                            </Border>
+                            <Label Grid.Column="1" Text="–" VerticalOptions="Center"
+                                   TextColor="{DynamicResource TextSecondary}" FontSize="16"/>
+                            <Border Grid.Column="2" Stroke="{DynamicResource StrokeCard}"
+                                    StrokeShape="RoundRectangle 10" StrokeThickness="1">
+                                <DatePicker Date="{Binding PendingFilterDateTo}"
+                                            Format="MMM dd, yyyy" FontSize="13" Margin="10,8"/>
+                            </Border>
+                        </Grid>
+
+                        <!-- Amount range -->
+                        <Label Text="Amount Range" FontSize="13" FontAttributes="Bold"
+                               TextColor="{DynamicResource TextSecondary}" Margin="0,4,0,0"/>
+                        <Grid ColumnDefinitions="*,Auto,*" ColumnSpacing="8">
+                            <Border Grid.Column="0" Stroke="{DynamicResource StrokeCard}"
+                                    StrokeShape="RoundRectangle 10" StrokeThickness="1">
+                                <Entry Text="{Binding PendingFilterAmountMin}"
+                                       Placeholder="Min $" Keyboard="Numeric" FontSize="15" Margin="10,8"/>
+                            </Border>
+                            <Label Grid.Column="1" Text="–" VerticalOptions="Center"
+                                   TextColor="{DynamicResource TextSecondary}" FontSize="16"/>
+                            <Border Grid.Column="2" Stroke="{DynamicResource StrokeCard}"
+                                    StrokeShape="RoundRectangle 10" StrokeThickness="1">
+                                <Entry Text="{Binding PendingFilterAmountMax}"
+                                       Placeholder="Max $" Keyboard="Numeric" FontSize="15" Margin="10,8"/>
+                            </Border>
+                        </Grid>
+
+                        <!-- Category -->
+                        <Label Text="Category" FontSize="13" FontAttributes="Bold"
+                               TextColor="{DynamicResource TextSecondary}" Margin="0,4,0,0"/>
+                        <Border Stroke="{DynamicResource StrokeCard}" StrokeShape="RoundRectangle 10" StrokeThickness="1">
+                            <Picker ItemsSource="{Binding AvailableCategories}"
+                                    SelectedItem="{Binding PendingFilterCategory}"
+                                    Title="Any category" FontSize="15" Margin="10,8"/>
+                        </Border>
+
+                        <!-- Actions -->
+                        <Grid ColumnDefinitions="Auto,*,*" ColumnSpacing="10" Margin="0,8,0,0">
+                            <Button Grid.Column="0" Text="Clear"
+                                    Command="{Binding ClearFilterCommand}"
+                                    BackgroundColor="{DynamicResource SurfaceLo}"
+                                    TextColor="{DynamicResource TextSecondary}"
+                                    CornerRadius="10" Padding="16,12"/>
+                            <Button Grid.Column="1" Text="Cancel"
+                                    Command="{Binding CancelFilterCommand}"
+                                    BackgroundColor="{DynamicResource SurfaceHi}"
+                                    TextColor="{DynamicResource TextSecondary}"
+                                    CornerRadius="10" Padding="0,12"/>
+                            <Button Grid.Column="2" Text="Apply"
+                                    Command="{Binding ApplyFilterCommand}"
+                                    BackgroundColor="{DynamicResource Accent}"
+                                    TextColor="{DynamicResource SurfacePage}"
+                                    CornerRadius="10" Padding="0,12"/>
+                        </Grid>
+
+                    </VerticalStackLayout>
+                </Border>
+            </ScrollView>
+        </Grid>
+
+    </Grid>
+
+    </Grid>
+
+</ContentPage>

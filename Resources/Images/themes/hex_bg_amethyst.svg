@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1920" viewBox="0 0 1080 1920" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <radialGradient id="bd-glow" cx="50%" cy="0%" r="80%">
+      <stop offset="0%" stop-color="#9C6ED1" stop-opacity="0.16"></stop>
+      <stop offset="60%" stop-color="#9C6ED1" stop-opacity="0"></stop>
+    </radialGradient>
+    <pattern id="bd-hex" x="0" y="0" width="56" height="64.6" patternUnits="userSpaceOnUse">
+      <path d="M28 0 56 16v32L28 64 0 48V16z" fill="none" stroke="#9C6ED1" stroke-width="1.1" opacity=".28"></path>
+    </pattern>
+  </defs>
+  <rect width="1080" height="1920" fill="#0A0B0D"></rect>
+  <rect width="1080" height="1920" fill="url(#bd-hex)"></rect>
+  <rect width="1080" height="1920" fill="url(#bd-glow)"></rect>
+</svg>

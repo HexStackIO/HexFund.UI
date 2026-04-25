@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <defs>
+    <radialGradient id="ai-glow" cx="50%" cy="40%" r="55%">
+      <stop offset="0%" stop-color="#D4AF37" stop-opacity=".35"></stop>
+      <stop offset="70%" stop-color="#D4AF37" stop-opacity="0"></stop>
+    </radialGradient>
+    <linearGradient id="ai-ring" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#D4AF37" stop-opacity="1"></stop>
+      <stop offset="1" stop-color="#D4AF37" stop-opacity=".55"></stop>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="#0A0B0D"></rect>
+  <rect width="512" height="512" fill="url(#ai-glow)"></rect>
+  <g transform="translate(256,256) scale(7) translate(-32,-32)">
+    <path d="M32 4 56 18v28L32 60 8 46V18z" fill="none" stroke="url(#ai-ring)" stroke-width="1.6" stroke-linejoin="round"></path>
+    <path d="M32 12 50 22v20L32 52 14 42V22z" fill="none" stroke="#D4AF37" stroke-width="1" opacity=".6" stroke-linejoin="round"></path>
+    <g stroke="#D4AF37" stroke-width=".8" fill="none" opacity=".85" stroke-linecap="round">
+      <path d="M32 8v3M48 16l-2 2M48 48l-2-2M32 56v-3M16 48l2-2M16 16l2 2"></path>
+    </g>
+    <circle cx="32" cy="32" r="10" fill="#D4AF37" fill-opacity=".14"></circle>
+    <circle cx="32" cy="32" r="10" fill="none" stroke="#D4AF37" stroke-width="1.3"></circle>
+    <text x="32" y="37.5" text-anchor="middle" font-size="14" font-weight="700" fill="#D4AF37" font-family="Cinzel, Georgia, serif">$</text>
+  </g>
+</svg>

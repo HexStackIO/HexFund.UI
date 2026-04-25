@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="fg-ring" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#D4AF37" stop-opacity="1"></stop>
+      <stop offset="1" stop-color="#D4AF37" stop-opacity=".6"></stop>
+    </linearGradient>
+  </defs>
+  <g transform="translate(256,256) scale(6) translate(-32,-32)">
+    <path d="M32 4 56 18v28L32 60 8 46V18z" fill="none" stroke="url(#fg-ring)" stroke-width="1.6" stroke-linejoin="round"></path>
+    <path d="M32 12 50 22v20L32 52 14 42V22z" fill="none" stroke="#D4AF37" stroke-width="1" opacity=".6" stroke-linejoin="round"></path>
+    <circle cx="32" cy="32" r="10" fill="#D4AF37" fill-opacity=".14"></circle>
+    <circle cx="32" cy="32" r="10" fill="none" stroke="#D4AF37" stroke-width="1.3"></circle>
+    <text x="32" y="37.5" text-anchor="middle" font-size="14" font-weight="700" fill="#D4AF37" font-family="Cinzel, Georgia, serif">$</text>
+  </g>
+</svg>
