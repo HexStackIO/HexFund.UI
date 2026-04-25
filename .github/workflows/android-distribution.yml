@@ -76,12 +76,11 @@ jobs:
             -c Release \
             -p:TargetFrameworks=net9.0-android \
             -p:AndroidSigningKeyStore="${{ github.workspace }}/hexfund.keystore" \
+            -p:AndroidSigningStorePass="${{ secrets.KEYSTORE_PASSWORD }}" \
+            -p:AndroidSigningKeyAlias="${{ secrets.KEY_ALIAS }}" \
+            -p:AndroidSigningKeyPass="${{ secrets.KEY_PASSWORD }}" \
             -p:AndroidPackageFormat=apk \
             -o "${{ github.workspace }}/output"
-        env:
-          ANDROID_SIGNING_STORE_PASS: ${{ secrets.KEYSTORE_PASSWORD }}
-          ANDROID_SIGNING_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          ANDROID_SIGNING_KEY_PASS: ${{ secrets.KEY_PASSWORD }}
 
       - name: Locate APK
         id: find_apk
