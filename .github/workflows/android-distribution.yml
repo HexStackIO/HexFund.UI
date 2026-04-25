@@ -69,19 +69,31 @@ jobs:
         run: |
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > "${{ github.workspace }}/hexfund.keystore"
 
-      - name: Build signed AAB
+      - name: Build AAB
         run: |
           dotnet publish HexFund.UI.csproj \
             -f net9.0-android \
             -c Release \
             -p:TargetFrameworks=net9.0-android \
-            -p:AndroidSigningKeyStore="${{ github.workspace }}/hexfund.keystore" \
-            -p:AndroidSigningStorePass="${{ secrets.KEYSTORE_PASSWORD }}" \
-            -p:AndroidSigningKeyAlias="${{ secrets.KEY_ALIAS }}" \
-            -p:AndroidSigningKeyPass="${{ secrets.KEY_PASSWORD }}" \
             -p:AndroidPackageFormat=aab \
             -o "${{ github.workspace }}/output"
-            
+
+      - name: Sign AAB
+        run: |
+          AAB=$(find "${{ github.workspace }}/output" -name "*.aab" | head -1)
+          echo "Signing: $AAB"
+          $JAVA_HOME/bin/jarsigner \
+            -verbose \
+            -sigalg SHA256withRSA \
+            -digestalg SHA-256 \
+            -keystore "${{ github.workspace }}/hexfund.keystore" \
+            -storepass "${{ secrets.KEYSTORE_PASSWORD }}" \
+            -keypass "${{ secrets.KEY_PASSWORD }}" \
+            "$AAB" \
+            "${{ secrets.KEY_ALIAS }}"
+          echo "Verifying signature..."
+          $JAVA_HOME/bin/jarsigner -verify "$AAB" && echo "AAB signed successfully"
+              
       - name: Verify AAB is signed
         run: |
           AAB=$(find "${{ github.workspace }}/output" -name "*.aab" | head -1)
