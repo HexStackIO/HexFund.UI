@@ -23,11 +23,9 @@
 
 		<!-- Android -->
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">21.0</SupportedOSPlatformVersion>
-		<AndroidPackageFormat>apk</AndroidPackageFormat>
 		
 		<!-- iOS -->
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">14.2</SupportedOSPlatformVersion>
-		<AndroidSigningKeyStore>hexfund.keystore</AndroidSigningKeyStore>
 		<Platforms>AnyCPU</Platforms>
 	</PropertyGroup>
 
@@ -55,19 +53,6 @@
 		<!-- iOS: enable NativeAOT-style compilation via Mono AOT.
 		     This pre-compiles IL to native ARM code at build time. -->
 		<MtouchUseLlvm Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">true</MtouchUseLlvm>
-	</PropertyGroup>
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net9.0-android|AnyCPU'">
-	  <AndroidKeyStore>False</AndroidKeyStore>
-	  <AndroidSigningStorePass>$(ANDROID_SIGNING_STORE_PASS)</AndroidSigningStorePass>
-	  <AndroidSigningKeyAlias>$(ANDROID_SIGNING_KEY_ALIAS)</AndroidSigningKeyAlias>
-	  <AndroidSigningKeyPass>$(ANDROID_SIGNING_KEY_PASS)</AndroidSigningKeyPass>
-	</PropertyGroup>
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net9.0-android|AnyCPU'">
-	  <AndroidKeyStore>True</AndroidKeyStore>
-	  <AndroidSigningStorePass>$(ANDROID_SIGNING_STORE_PASS)</AndroidSigningStorePass>
-	  <AndroidSigningKeyAlias>$(ANDROID_SIGNING_KEY_ALIAS)</AndroidSigningKeyAlias>
-	  <AndroidSigningKeyPass>$(ANDROID_SIGNING_KEY_PASS)</AndroidSigningKeyPass>
-	  <DebugSymbols>True</DebugSymbols>
 	</PropertyGroup>
 
 	<ItemGroup>
