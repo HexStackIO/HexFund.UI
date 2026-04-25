@@ -237,6 +237,36 @@
                     </VerticalStackLayout>
                 </Border>
 
+                <!-- ── Danger Zone ──────────────────────────────────────────── -->
+                <Border IsVisible="{Binding CanLogout}"
+                        StrokeShape="RoundRectangle 12"
+                        Stroke="{DynamicResource Down}"
+                        StrokeThickness="1.5"
+                        BackgroundColor="{DynamicResource SurfaceCard}"
+                        Padding="16">
+                    <VerticalStackLayout Spacing="12">
+                        <HorizontalStackLayout Spacing="8">
+                            <Label Text="⚠️" FontSize="16" VerticalOptions="Center"/>
+                            <Label Text="Danger Zone" FontSize="16" FontAttributes="Bold"
+                                   TextColor="{DynamicResource Down}"
+                                   VerticalOptions="Center"/>
+                        </HorizontalStackLayout>
+                        <BoxView HeightRequest="1" Color="{DynamicResource Down}" Opacity="0.3"/>
+                        <Label FontSize="13" TextColor="{DynamicResource TextSecondary}"
+                               LineBreakMode="WordWrap">
+                            <Label.Text>Permanently delete your account and all associated data — transactions, accounts, categories, and your sign-in identity. This action cannot be undone.</Label.Text>
+                        </Label>
+                        <Button Text="Delete My Account"
+                                Command="{Binding OpenDeleteAccountModalCommand}"
+                                BackgroundColor="Transparent"
+                                TextColor="{DynamicResource Down}"
+                                BorderColor="{DynamicResource Down}"
+                                BorderWidth="1.5"
+                                CornerRadius="8" Padding="0,12"
+                                FontAttributes="Bold"/>
+                    </VerticalStackLayout>
+                </Border>
+
                 <!-- ── Guest notice ──────────────────────────────────────────── -->
                 <Border IsVisible="{Binding CanLogout, Converter={StaticResource InvertedBoolConverter}}"
                         StrokeShape="RoundRectangle 12"
@@ -590,6 +620,123 @@
                             </CollectionView>
                         </VerticalStackLayout>
                     </ScrollView>
+
+                </VerticalStackLayout>
+            </Border>
+        </Grid>
+
+        <!-- ════════════════════════════════════════════════════════════════════
+             DELETE ACCOUNT MODAL
+             Two friction layers: typed confirmation phrase + final alert.
+             Satisfies Google Play / App Store data deletion requirements.
+             ════════════════════════════════════════════════════════════════════ -->
+        <Grid IsVisible="{Binding ShowDeleteAccountModal}" BackgroundColor="#EE000000">
+            <Grid.GestureRecognizers>
+                <!-- Tapping the backdrop closes the modal -->
+                <TapGestureRecognizer Command="{Binding CloseDeleteAccountModalCommand}"/>
+            </Grid.GestureRecognizers>
+            <Border StrokeShape="RoundRectangle 20"
+                    BackgroundColor="{DynamicResource SurfaceCard}"
+                    Stroke="{DynamicResource Down}"
+                    StrokeThickness="1.5"
+                    Padding="24"
+                    Margin="20" VerticalOptions="Center">
+                <Border.GestureRecognizers><TapGestureRecognizer/></Border.GestureRecognizers>
+                <VerticalStackLayout Spacing="16">
+
+                    <!-- Header -->
+                    <Grid ColumnDefinitions="*,Auto">
+                        <VerticalStackLayout Grid.Column="0" Spacing="2">
+                            <Label Text="⚠️ Delete Account"
+                                   FontSize="20" FontAttributes="Bold"
+                                   TextColor="{DynamicResource Down}"/>
+                            <Label Text="This action is permanent and cannot be undone."
+                                   FontSize="12" TextColor="{DynamicResource TextSecondary}"
+                                   LineBreakMode="WordWrap"/>
+                        </VerticalStackLayout>
+                        <Button Grid.Column="1" Text="✕"
+                                Command="{Binding CloseDeleteAccountModalCommand}"
+                                BackgroundColor="Transparent"
+                                TextColor="{DynamicResource TextSecondary}"
+                                FontSize="20" Padding="8,0" WidthRequest="40"
+                                VerticalOptions="Start"/>
+                    </Grid>
+
+                    <BoxView HeightRequest="1" Color="{DynamicResource Down}" Opacity="0.4"/>
+
+                    <!-- What will be deleted -->
+                    <Border StrokeShape="RoundRectangle 10"
+                            BackgroundColor="{DynamicResource SurfaceLo}"
+                            StrokeThickness="0" Padding="14,12">
+                        <VerticalStackLayout Spacing="8">
+                            <Label Text="The following will be permanently deleted:"
+                                   FontSize="13" FontAttributes="Bold"
+                                   TextColor="{DynamicResource TextSecondary}"/>
+                            <VerticalStackLayout Spacing="4">
+                                <Label Text="• All accounts and balances" FontSize="13"/>
+                                <Label Text="• All transactions and history" FontSize="13"/>
+                                <Label Text="• All categories" FontSize="13"/>
+                                <Label Text="• Your profile and sign-in identity" FontSize="13"/>
+                            </VerticalStackLayout>
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <!-- Typed confirmation -->
+                    <VerticalStackLayout Spacing="8">
+                        <Label FontSize="13" TextColor="{DynamicResource TextSecondary}"
+                               LineBreakMode="WordWrap">
+                            <Label.FormattedText>
+                                <FormattedString>
+                                    <Span Text="Type "/>
+                                    <Span Text="DELETE MY ACCOUNT"
+                                          FontAttributes="Bold"
+                                          TextColor="{DynamicResource Down}"/>
+                                    <Span Text=" to confirm:"/>
+                                </FormattedString>
+                            </Label.FormattedText>
+                        </Label>
+                        <Border Stroke="{DynamicResource Down}"
+                                StrokeShape="RoundRectangle 10" StrokeThickness="1.5"
+                                BackgroundColor="{DynamicResource SurfaceLo}">
+                            <Entry Text="{Binding DeleteConfirmationText}"
+                                   Placeholder="DELETE MY ACCOUNT"
+                                   FontSize="15" Margin="12,8"
+                                   TextColor="{DynamicResource TextPrimary}"
+                                   PlaceholderColor="{DynamicResource TextMuted}"
+                                   AutomationId="DeleteConfirmationEntry"/>
+                        </Border>
+                    </VerticalStackLayout>
+
+                    <!-- Error message -->
+                    <Label Text="{Binding DeleteAccountError}"
+                           TextColor="{DynamicResource Down}" FontSize="13"
+                           LineBreakMode="WordWrap"
+                           IsVisible="{Binding DeleteAccountError, Converter={StaticResource StringNotEmptyConverter}}"/>
+
+                    <!-- Action buttons -->
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                        <Button Grid.Column="0" Text="Cancel"
+                                Command="{Binding CloseDeleteAccountModalCommand}"
+                                BackgroundColor="{DynamicResource SurfaceHi}"
+                                TextColor="{DynamicResource TextSecondary}"
+                                BorderColor="{DynamicResource StrokeCard}" BorderWidth="1"
+                                CornerRadius="10" Padding="0,12"/>
+                        <Button Grid.Column="1"
+                                Text="Delete Everything"
+                                Command="{Binding ConfirmDeleteAccountCommand}"
+                                IsEnabled="{Binding CanConfirmDelete}"
+                                IsVisible="{Binding IsDeletingAccount, Converter={StaticResource InvertedBoolConverter}}"
+                                BackgroundColor="{DynamicResource Down}"
+                                TextColor="White"
+                                CornerRadius="10" Padding="0,12"
+                                FontAttributes="Bold"/>
+                        <ActivityIndicator Grid.Column="1"
+                                           IsRunning="{Binding IsDeletingAccount}"
+                                           IsVisible="{Binding IsDeletingAccount}"
+                                           Color="{DynamicResource Down}"
+                                           VerticalOptions="Center"
+                                           HorizontalOptions="Center"/>
+                    </Grid>
 
                 </VerticalStackLayout>
             </Border>

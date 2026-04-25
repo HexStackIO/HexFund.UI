@@ -42,6 +42,7 @@ public interface IApiService
     // Utilities
     void SetAuthToken(string token);
     Task<bool> LogoutAsync();
+    Task<bool> DeleteUserAsync();
     void ClearCache();
     void InvalidateCalendarCache(Guid accountId);
 }
@@ -94,6 +95,27 @@ public class ApiService : IApiService
             return true;
         }
         catch (Exception ex) { Debug.WriteLine($"Logout error: {ex}"); return false; }
+    }
+
+    /// <summary>
+    /// Permanently deletes the authenticated user's account and all associated
+    /// data from the server. The caller is responsible for also revoking the
+    /// local MSAL token cache after this returns true.
+    /// </summary>
+    public async Task<bool> DeleteUserAsync()
+    {
+        try
+        {
+            var response = await _httpClient.DeleteAsync("auth/user");
+            if (!response.IsSuccessStatusCode)
+            {
+                Debug.WriteLine($"DeleteUser error: {response.StatusCode}");
+                return false;
+            }
+            _cacheService.Clear();
+            return true;
+        }
+        catch (Exception ex) { Debug.WriteLine($"DeleteUser error: {ex}"); return false; }
     }
 
     public async Task<AuthResponse?> RegisterAsync(RegisterRequest request)

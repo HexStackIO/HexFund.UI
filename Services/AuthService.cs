@@ -12,6 +12,12 @@ public interface IAuthService
     Task<bool> LoginAsync();
     Task<bool> RegisterAsync();
     Task LogoutAsync();
+    /// <summary>
+    /// Permanently deletes all user data from the server and removes all
+    /// locally cached MSAL tokens. After this returns the user is signed out
+    /// and cannot sign back into the same account.
+    /// </summary>
+    Task<bool> DeleteAccountAndDataAsync();
     event Action? AuthStateChanged;
 }
 
@@ -139,6 +145,38 @@ public class AuthService : IAuthService
                 AuthStateChanged?.Invoke();
             });
         }
+    }
+
+    public async Task<bool> DeleteAccountAndDataAsync()
+    {
+        // 1. Tell the server to delete all user data (transactions, accounts,
+        //    categories, profile). This must succeed before we clear local state —
+        //    if the API call fails the user can try again.
+        var deleted = await _apiService.DeleteUserAsync();
+        if (!deleted) return false;
+
+        // 2. Revoke all MSAL tokens from the local cache. This signs the user
+        //    out of Entra ID on this device and prevents silent re-authentication.
+        try
+        {
+            var accounts = await _msalClient.GetAccountsAsync();
+            foreach (var account in accounts)
+                await _msalClient.RemoveAsync(account);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"MSAL token removal error: {ex.Message}");
+            // Non-fatal — server data is already deleted. Local token will expire
+            // naturally and the account no longer exists on the server anyway.
+        }
+
+        // 3. Clear local state exactly as logout does.
+        Token = null;
+        CurrentUser = null;
+        Preferences.Remove("token_expiry");
+
+        await MainThread.InvokeOnMainThreadAsync(() => AuthStateChanged?.Invoke());
+        return true;
     }
 
     private void SaveTokenExpiry(DateTimeOffset expiresOn)

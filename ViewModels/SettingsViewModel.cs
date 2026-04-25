@@ -82,6 +82,9 @@ public partial class SettingsViewModel : BaseViewModel
         _                    => Color.FromArgb("#D4AF37"),
     };
 
+    partial void OnDeleteConfirmationTextChanged(string value) =>
+        OnPropertyChanged(nameof(CanConfirmDelete));
+
     partial void OnSelectedThemeChanged(ColorTheme value)
     {
         ThemeService.Apply(value);
@@ -109,6 +112,22 @@ public partial class SettingsViewModel : BaseViewModel
     [ObservableProperty] private bool isLoadingCategories;
 
     public bool HasCategories => Categories.Count > 0;
+
+    // ── Delete account ────────────────────────────────────────────────────────
+    [ObservableProperty] private bool showDeleteAccountModal;
+    [ObservableProperty] private string deleteConfirmationText = string.Empty;
+    [ObservableProperty] private bool isDeletingAccount;
+    [ObservableProperty] private string deleteAccountError = string.Empty;
+
+    /// <summary>
+    /// The user must type this exact phrase to unlock the final delete button,
+    /// preventing accidental taps on a destructive irreversible action.
+    /// </summary>
+    public const string DeleteConfirmationPhrase = "DELETE MY ACCOUNT";
+
+    public bool CanConfirmDelete =>
+        DeleteConfirmationText.Trim().Equals(
+            DeleteConfirmationPhrase, StringComparison.Ordinal);
 
     // ── Constructor ───────────────────────────────────────────────────────────
 
@@ -414,6 +433,68 @@ public partial class SettingsViewModel : BaseViewModel
         catch (Exception ex)
         {
             await mainPage.DisplayAlert("Error", $"Error: {ex.Message}", "OK");
+        }
+    }
+
+    [RelayCommand]
+    private void OpenDeleteAccountModal()
+    {
+        DeleteConfirmationText = string.Empty;
+        DeleteAccountError = string.Empty;
+        ShowDeleteAccountModal = true;
+    }
+
+    [RelayCommand]
+    private void CloseDeleteAccountModal()
+    {
+        ShowDeleteAccountModal = false;
+        DeleteConfirmationText = string.Empty;
+        DeleteAccountError = string.Empty;
+    }
+
+    [RelayCommand]
+    private async Task ConfirmDeleteAccountAsync()
+    {
+        if (!CanConfirmDelete) return;
+
+        var mainPage = Application.Current?.MainPage;
+        if (mainPage == null) return;
+
+        // Final explicit confirmation — belt-and-suspenders after the typed phrase.
+        var confirmed = await mainPage.DisplayAlert(
+            "This cannot be undone",
+            "Your account, all financial data, and your sign-in identity will be permanently deleted. There is no recovery.\n\nProceed?",
+            "Yes, permanently delete everything",
+            "Cancel");
+
+        if (!confirmed) return;
+
+        IsDeletingAccount = true;
+        DeleteAccountError = string.Empty;
+
+        try
+        {
+            var success = await _authService.DeleteAccountAndDataAsync();
+
+            if (!success)
+            {
+                DeleteAccountError =
+                    "Deletion failed. Please check your connection and try again. " +
+                    "If the problem persists, contact support.";
+                return;
+            }
+
+            // Auth state change fires automatically from DeleteAccountAndDataAsync,
+            // which will route the app back to the login screen.
+            ShowDeleteAccountModal = false;
+        }
+        catch (Exception ex)
+        {
+            DeleteAccountError = $"An unexpected error occurred: {ex.Message}";
+        }
+        finally
+        {
+            IsDeletingAccount = false;
         }
     }
 
