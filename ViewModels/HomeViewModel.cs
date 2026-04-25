@@ -29,6 +29,13 @@ public partial class HomeViewModel : BaseViewModel
     [ObservableProperty] private bool hasError;
     [ObservableProperty] private string? errorMessage;
 
+    // ── Selected account display ──────────────────────────────────────────────
+    public string SelectedAccountName =>
+        _accountStateService.SelectedAccount?.AccountName ?? "No Account";
+
+    public Guid? SelectedAccountId =>
+        _accountStateService.SelectedAccount?.AccountId;
+
     // ── Balance hero ──────────────────────────────────────────────────────────
     [ObservableProperty] private decimal totalBalance;
     [ObservableProperty] private decimal monthNetChange;
@@ -83,7 +90,12 @@ public partial class HomeViewModel : BaseViewModel
     }
 
     private void OnSelectedAccountChanged() =>
-        MainThread.BeginInvokeOnMainThread(async () => await LoadAsync());
+        MainThread.BeginInvokeOnMainThread(async () =>
+        {
+            OnPropertyChanged(nameof(SelectedAccountName));
+            OnPropertyChanged(nameof(SelectedAccountId));
+            await LoadAsync();
+        });
 
     /// <summary>
     /// Fires when a transaction is created, edited, or deleted anywhere in the app.
@@ -270,6 +282,17 @@ public partial class HomeViewModel : BaseViewModel
     [RelayCommand]
     private async Task GoToSettingsAsync() =>
         await Shell.Current.GoToAsync("settings");
+
+    /// <summary>Tap an account row in the Home preview to select that account.</summary>
+    [RelayCommand]
+    private async Task SelectAccountAsync(Account account)
+    {
+        if (account == null) return;
+        _accountStateService.SelectedAccount = account;
+        // LoadAsync is triggered by OnSelectedAccountChanged, but we also need
+        // to notify SelectedAccountId so the indicator updates immediately.
+        OnPropertyChanged(nameof(SelectedAccountId));
+    }
 
     [RelayCommand]
     private async Task RefreshAsync() => await LoadAsync(forceRefresh: true);

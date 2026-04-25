@@ -51,11 +51,30 @@
                     Spacing="14"
                     IsVisible="{Binding HasAccount}">
 
-                    <!-- Month label -->
-                    <Label Text="{Binding CurrentMonthLabel}"
-                           FontSize="13"
-                           TextColor="{DynamicResource TextSecondary}"
-                           HorizontalOptions="Center"/>
+                    <!-- Month navigator -->
+                    <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,4">
+                        <Button Grid.Column="0"
+                                Text="◀"
+                                Command="{Binding PreviousMonthCommand}"
+                                BackgroundColor="{DynamicResource SurfaceHi}"
+                                TextColor="{DynamicResource Accent}"
+                                BorderColor="{DynamicResource StrokeCard}" BorderWidth="1"
+                                CornerRadius="8" WidthRequest="40" HeightRequest="36"
+                                FontSize="14" Padding="0"/>
+                        <Label Grid.Column="1"
+                               Text="{Binding CurrentMonthLabel}"
+                               FontSize="16" FontAttributes="Bold"
+                               HorizontalOptions="Center" VerticalOptions="Center"
+                               TextColor="{DynamicResource TextPrimary}"/>
+                        <Button Grid.Column="2"
+                                Text="▶"
+                                Command="{Binding NextMonthCommand}"
+                                BackgroundColor="{DynamicResource SurfaceHi}"
+                                TextColor="{DynamicResource Accent}"
+                                BorderColor="{DynamicResource StrokeCard}" BorderWidth="1"
+                                CornerRadius="8" WidthRequest="40" HeightRequest="36"
+                                FontSize="14" Padding="0" Margin="0,0,0,0"/>
+                    </Grid>
 
                     <!-- ════════════════════════════════════════════════════
                          SECTION 1 — Smart Alerts

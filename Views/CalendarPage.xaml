@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:HexFund.UI.ViewModels"
              xmlns:models="clr-namespace:HexFund.UI.Models"
+             xmlns:controls="clr-namespace:HexFund.UI.Controls"
              x:Class="HexFund.UI.Views.CalendarPage"
              x:DataType="vm:CalendarViewModel"
              Title="Calendar"
@@ -111,41 +112,65 @@
                 Stroke="{DynamicResource StrokeCard}"
                 StrokeThickness="1"
                 StrokeShape="RoundRectangle 12"
-                Padding="12"
+                Padding="10,8"
                 Margin="0,0,0,5"
                 IsVisible="{Binding HasAccount}">
-            <Grid ColumnDefinitions="*,*,*,*,*" ColumnSpacing="8">
-                <VerticalStackLayout Grid.Column="0">
-                    <Label Text="Starting" FontSize="10"
-                           TextColor="{DynamicResource TextSecondary}"/>
-                    <Label Text="{Binding StartingBalanceDisplay}"
-                           FontSize="14" FontAttributes="Bold"/>
-                </VerticalStackLayout>
-                <VerticalStackLayout Grid.Column="1">
-                    <Label Text="Income" FontSize="10"
-                           TextColor="{DynamicResource TextSecondary}"/>
-                    <Label Text="{Binding TotalIncomeDisplay}"
-                           FontSize="13" TextColor="{DynamicResource Up}"/>
-                </VerticalStackLayout>
-                <VerticalStackLayout Grid.Column="2">
-                    <Label Text="Expenses" FontSize="10"
-                           TextColor="{DynamicResource TextSecondary}"/>
-                    <Label Text="{Binding TotalExpensesDisplay}"
-                           FontSize="13" TextColor="{DynamicResource Down}"/>
-                </VerticalStackLayout>
-                <VerticalStackLayout Grid.Column="3">
-                    <Label Text="Net Change" FontSize="10"
-                           TextColor="{DynamicResource TextSecondary}"/>
-                    <Label Text="{Binding NetChangeDisplay}"
-                           FontSize="14" FontAttributes="Bold"
-                           TextColor="{Binding NetChangeColor}"/>
-                </VerticalStackLayout>
-                <VerticalStackLayout Grid.Column="4" HorizontalOptions="End">
-                    <Label Text="Ending" FontSize="10"
-                           TextColor="{DynamicResource TextSecondary}"/>
-                    <Label Text="{Binding EndingBalanceDisplay}"
-                           FontSize="14" FontAttributes="Bold"/>
-                </VerticalStackLayout>
+            <Grid RowDefinitions="Auto,Auto" RowSpacing="6">
+                <!-- Row 0: Starting balance (large, prominent) + Ending balance -->
+                <Grid Grid.Row="0" ColumnDefinitions="*,*" ColumnSpacing="8">
+                    <VerticalStackLayout Grid.Column="0">
+                        <Label Text="Starting" FontSize="10"
+                               TextColor="{DynamicResource TextSecondary}"/>
+                        <Label Text="{Binding StartingBalanceDisplay}"
+                               FontSize="13" FontAttributes="Bold"
+                               LineBreakMode="TailTruncation"/>
+                    </VerticalStackLayout>
+                    <VerticalStackLayout Grid.Column="1" HorizontalOptions="End">
+                        <Label Text="Ending" FontSize="10"
+                               TextColor="{DynamicResource TextSecondary}"
+                               HorizontalOptions="End"/>
+                        <Label Text="{Binding EndingBalanceDisplay}"
+                               FontSize="13" FontAttributes="Bold"
+                               LineBreakMode="TailTruncation"
+                               HorizontalOptions="End"/>
+                    </VerticalStackLayout>
+                </Grid>
+                <!-- Row 1: Income / Expenses / Net change chips -->
+                <Grid Grid.Row="1" ColumnDefinitions="*,*,*" ColumnSpacing="6">
+                    <Border Grid.Column="0" BackgroundColor="{DynamicResource SurfaceLo}"
+                            StrokeThickness="0" Padding="6,3" StrokeShape="RoundRectangle 6">
+                        <VerticalStackLayout Spacing="1">
+                            <Label Text="Income" FontSize="9"
+                                   TextColor="{DynamicResource Up}"/>
+                            <Label Text="{Binding TotalIncomeDisplay}"
+                                   FontSize="12" FontAttributes="Bold"
+                                   TextColor="{DynamicResource Up}"
+                                   LineBreakMode="TailTruncation"/>
+                        </VerticalStackLayout>
+                    </Border>
+                    <Border Grid.Column="1" BackgroundColor="{DynamicResource SurfaceLo}"
+                            StrokeThickness="0" Padding="6,3" StrokeShape="RoundRectangle 6">
+                        <VerticalStackLayout Spacing="1">
+                            <Label Text="Expenses" FontSize="9"
+                                   TextColor="{DynamicResource Down}"/>
+                            <Label Text="{Binding TotalExpensesDisplay}"
+                                   FontSize="12" FontAttributes="Bold"
+                                   TextColor="{DynamicResource Down}"
+                                   LineBreakMode="TailTruncation"/>
+                        </VerticalStackLayout>
+                    </Border>
+                    <Border Grid.Column="2" BackgroundColor="{DynamicResource SurfaceLo}"
+                            StrokeThickness="0" Padding="6,3" StrokeShape="RoundRectangle 6">
+                        <VerticalStackLayout Spacing="1">
+                            <Label Text="Net" FontSize="9"
+                                   TextColor="{DynamicResource TextSecondary}"/>
+                            <Label Text="{Binding NetChangeDisplay}"
+                                   FontSize="12" FontAttributes="Bold"
+                                   TextColor="{Binding NetChangeColor}"
+                                   LineBreakMode="TailTruncation"/>
+                        </VerticalStackLayout>
+                    </Border>
+                </Grid>
             </Grid>
         </Border>
 
@@ -175,63 +200,69 @@
                        HorizontalOptions="Center" TextColor="{DynamicResource TextSecondary}"/>
             </Grid>
 
-            <CollectionView Grid.Row="1"
-                            ItemsSource="{Binding GridDays}"
-                            SelectionMode="None"
-                            ItemSizingStrategy="MeasureFirstItem">
-                <CollectionView.ItemsLayout>
-                    <GridItemsLayout Orientation="Vertical"
-                                     Span="7"
-                                     HorizontalItemSpacing="1"
-                                     VerticalItemSpacing="1"/>
-                </CollectionView.ItemsLayout>
-                <CollectionView.ItemTemplate>
-                    <DataTemplate x:DataType="models:CalendarGridDay">
-                        <Border HeightRequest="70"
-                                Padding="3"
-                                BackgroundColor="{Binding CellBackground}"
-                                Stroke="{Binding CellStroke}"
-                                StrokeThickness="1.5">
-                            <Border.StrokeShape>
-                                <RoundRectangle CornerRadius="2"/>
-                            </Border.StrokeShape>
-                            <Border.GestureRecognizers>
-                                <TapGestureRecognizer
-                                    Command="{Binding Source={RelativeSource AncestorType={x:Type vm:CalendarViewModel}}, Path=SelectGridDayCommand}"
-                                    CommandParameter="{Binding .}"/>
-                            </Border.GestureRecognizers>
-                            <VerticalStackLayout Spacing="2" VerticalOptions="Start">
-                                <Label Text="{Binding DayNumber}"
-                                       FontSize="14" FontAttributes="Bold"
-                                       TextColor="{Binding DayNumberColor}"
-                                       Margin="2,2,0,0"/>
-                                <VerticalStackLayout Spacing="1"
-                                                     IsVisible="{Binding HasData}"
-                                                     Margin="2,0,2,0"
-                                                     BindableLayout.ItemsSource="{Binding EventChips}">
-                                    <BindableLayout.ItemTemplate>
-                                        <DataTemplate x:DataType="models:CalendarEventChip">
-                                            <Border BackgroundColor="{Binding Color}"
-                                                    StrokeThickness="0"
-                                                    Padding="3,1"
-                                                    Margin="0,1">
-                                                <Border.StrokeShape>
-                                                    <RoundRectangle CornerRadius="3"/>
-                                                </Border.StrokeShape>
-                                                <Label Text="{Binding Label}"
-                                                       FontSize="9"
-                                                       TextColor="Black"
-                                                       LineBreakMode="TailTruncation"
-                                                       MaxLines="1"/>
-                                            </Border>
-                                        </DataTemplate>
-                                    </BindableLayout.ItemTemplate>
+            <!-- The CollectionView is replaced with SwipeableCollectionView whose
+                 platform handler intercepts horizontal flings at the native level
+                 before RecyclerView/UICollectionView can consume them. -->
+            <Grid x:Name="CalendarGridWrapper" Grid.Row="1">
+                <controls:SwipeableCollectionView
+                                x:Name="CalendarCollectionView"
+                                ItemsSource="{Binding GridDays}"
+                                SelectionMode="None"
+                                ItemSizingStrategy="MeasureFirstItem">
+                    <CollectionView.ItemsLayout>
+                        <GridItemsLayout Orientation="Vertical"
+                                         Span="7"
+                                         HorizontalItemSpacing="1"
+                                         VerticalItemSpacing="1"/>
+                    </CollectionView.ItemsLayout>
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate x:DataType="models:CalendarGridDay">
+                            <Border HeightRequest="70"
+                                    Padding="3"
+                                    BackgroundColor="{Binding CellBackground}"
+                                    Stroke="{Binding CellStroke}"
+                                    StrokeThickness="1.5">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="2"/>
+                                </Border.StrokeShape>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer
+                                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:CalendarViewModel}}, Path=SelectGridDayCommand}"
+                                        CommandParameter="{Binding .}"/>
+                                </Border.GestureRecognizers>
+                                <VerticalStackLayout Spacing="2" VerticalOptions="Start">
+                                    <Label Text="{Binding DayNumber}"
+                                           FontSize="14" FontAttributes="Bold"
+                                           TextColor="{Binding DayNumberColor}"
+                                           Margin="2,2,0,0"/>
+                                    <VerticalStackLayout Spacing="1"
+                                                         IsVisible="{Binding HasData}"
+                                                         Margin="2,0,2,0"
+                                                         BindableLayout.ItemsSource="{Binding EventChips}">
+                                        <BindableLayout.ItemTemplate>
+                                            <DataTemplate x:DataType="models:CalendarEventChip">
+                                                <Border BackgroundColor="{Binding Color}"
+                                                        StrokeThickness="0"
+                                                        Padding="3,1"
+                                                        Margin="0,1">
+                                                    <Border.StrokeShape>
+                                                        <RoundRectangle CornerRadius="3"/>
+                                                    </Border.StrokeShape>
+                                                    <Label Text="{Binding Label}"
+                                                           FontSize="9"
+                                                           TextColor="Black"
+                                                           LineBreakMode="TailTruncation"
+                                                           MaxLines="1"/>
+                                                </Border>
+                                            </DataTemplate>
+                                        </BindableLayout.ItemTemplate>
+                                    </VerticalStackLayout>
                                 </VerticalStackLayout>
-                            </VerticalStackLayout>
-                        </Border>
-                    </DataTemplate>
-                </CollectionView.ItemTemplate>
-            </CollectionView>
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </controls:SwipeableCollectionView>
+            </Grid>
         </Grid>
 
         <!-- ── Transaction Detail Panel ───────────────────────────────────── -->
@@ -246,11 +277,25 @@
             <VerticalStackLayout Spacing="12">
 
                 <!-- Header -->
-                <Grid ColumnDefinitions="*,Auto">
+                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
                     <Label Grid.Column="0"
                            Text="{Binding SelectedDateDisplay}"
-                           FontSize="18" FontAttributes="Bold"/>
+                           FontSize="18" FontAttributes="Bold"
+                           VerticalOptions="Center"/>
+                    <!-- Add transaction for this day -->
                     <Border Grid.Column="1"
+                            WidthRequest="32" HeightRequest="32"
+                            StrokeShape="RoundRectangle 8" StrokeThickness="0"
+                            BackgroundColor="{DynamicResource Accent}"
+                            VerticalOptions="Center">
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding NavigateToAddEntryCommand}"/>
+                        </Border.GestureRecognizers>
+                        <Label Text="＋" FontSize="16" FontAttributes="Bold"
+                               TextColor="{DynamicResource SurfacePage}"
+                               HorizontalOptions="Center" VerticalOptions="Center"/>
+                    </Border>
+                    <Border Grid.Column="2"
                             WidthRequest="28" HeightRequest="28"
                             StrokeShape="Ellipse" StrokeThickness="0"
                             BackgroundColor="{DynamicResource SurfaceLo}"

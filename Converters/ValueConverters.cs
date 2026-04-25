@@ -569,3 +569,23 @@ public class FilterActiveTextConverter : IValueConverter
     public object ConvertBack(object? v, Type t, object? p, CultureInfo c)
         => throw new NotImplementedException();
 }
+
+/// <summary>
+/// MultiValueConverter: (Guid accountId, Guid? selectedAccountId) → bool.
+/// Returns true when the two GUIDs match — used to show the active-account
+/// indicator dot on the Home page account list.
+/// </summary>
+public class AccountIsSelectedConverter : IMultiValueConverter
+{
+    public object Convert(object[] values, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (values.Length < 2) return false;
+        var id = values[0] is Guid g ? g : (Guid?)null;
+        var selected = values[1] is Guid s ? s :
+                       values[1] is Guid n ? n : (Guid?)null;
+        return id.HasValue && selected.HasValue && id.Value == selected.Value;
+    }
+
+    public object[] ConvertBack(object value, Type[] targetTypes, object? parameter, CultureInfo culture)
+        => throw new NotImplementedException();
+}

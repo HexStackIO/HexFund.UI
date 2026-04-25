@@ -36,6 +36,7 @@
             <converters:FrequencyNotOnceConverter x:Key="FrequencyNotOnceConverter"/>
             <converters:FilterActiveBgConverter x:Key="FilterActiveBgConverter"/>
             <converters:FilterActiveTextConverter x:Key="FilterActiveTextConverter"/>
+            <converters:AccountIsSelectedConverter x:Key="AccountIsSelectedConverter"/>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

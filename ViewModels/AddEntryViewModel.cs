@@ -39,6 +39,12 @@ public partial class AddEntryViewModel : BaseViewModel
     [ObservableProperty] private bool hasEndDate;
     [ObservableProperty] private string? selectedColor;
 
+    // ── Add Category inline ───────────────────────────────────────────────────
+    [ObservableProperty] private bool showNewCategoryInput;
+    [ObservableProperty] private string newCategoryName = string.Empty;
+    [ObservableProperty] private string newCategoryError = string.Empty;
+    [ObservableProperty] private bool isSavingCategory;
+
     public List<FrequencyType> FrequencyOptions { get; } = new()
     {
         FrequencyType.Once,
@@ -124,16 +130,21 @@ public partial class AddEntryViewModel : BaseViewModel
         try
         {
             var cats = await _apiService.GetCategoriesAsync();
-            var names = new List<string> { "Uncategorized" };
-            names.AddRange(cats.Select(c => c.Name));
-            AvailableCategories = names;
-            if (!AvailableCategories.Contains(SelectedCategory))
-                SelectedCategory = "Uncategorized";
+            RebuildCategoryList(cats);
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"AddEntryVM category load: {ex.Message}");
         }
+    }
+
+    private void RebuildCategoryList(List<UserCategory> cats)
+    {
+        var names = new List<string> { "Uncategorized" };
+        names.AddRange(cats.Select(c => c.Name));
+        AvailableCategories = names;
+        if (!AvailableCategories.Contains(SelectedCategory))
+            SelectedCategory = "Uncategorized";
     }
 
     private void ResetForm()
@@ -153,6 +164,9 @@ public partial class AddEntryViewModel : BaseViewModel
         DateRangeError    = string.Empty;
         ErrorMessage      = string.Empty;
         HasError          = false;
+        ShowNewCategoryInput = false;
+        NewCategoryName   = string.Empty;
+        NewCategoryError  = string.Empty;
 
         OnPropertyChanged(nameof(IncomeLabel));
         OnPropertyChanged(nameof(IncomeColor));
@@ -188,6 +202,81 @@ public partial class AddEntryViewModel : BaseViewModel
         SelectedColor = string.IsNullOrEmpty(color) ? null : color;
         OnPropertyChanged(nameof(ColorPreview));
     }
+
+    // ── Add-category inline commands ──────────────────────────────────────────
+
+    [RelayCommand]
+    private void ShowAddCategory()
+    {
+        NewCategoryName  = string.Empty;
+        NewCategoryError = string.Empty;
+        ShowNewCategoryInput = true;
+    }
+
+    [RelayCommand]
+    private void CancelAddCategory()
+    {
+        ShowNewCategoryInput = false;
+        NewCategoryName  = string.Empty;
+        NewCategoryError = string.Empty;
+    }
+
+    [RelayCommand]
+    private async Task SaveNewCategoryAsync()
+    {
+        var trimmed = NewCategoryName.Trim();
+        if (string.IsNullOrWhiteSpace(trimmed))
+        {
+            NewCategoryError = "Category name cannot be empty.";
+            return;
+        }
+        if (trimmed.Length > 50)
+        {
+            NewCategoryError = "Category name must be 50 characters or fewer.";
+            return;
+        }
+        if (AvailableCategories.Contains(trimmed, StringComparer.OrdinalIgnoreCase))
+        {
+            NewCategoryError = "That category already exists.";
+            return;
+        }
+
+        NewCategoryError = string.Empty;
+        IsSavingCategory = true;
+
+        try
+        {
+            var created = await _apiService.CreateCategoryAsync(
+                new CreateCategoryRequest { Name = trimmed });
+
+            if (created != null)
+            {
+                // Reload full list from server to stay in sync
+                var cats = await _apiService.GetCategoriesAsync(forceRefresh: true);
+                RebuildCategoryList(cats);
+                SelectedCategory = trimmed;
+            }
+            else
+            {
+                NewCategoryError = "Failed to create category. Please try again.";
+                return;
+            }
+        }
+        catch (Exception ex)
+        {
+            NewCategoryError = $"Error: {ex.Message}";
+            return;
+        }
+        finally
+        {
+            IsSavingCategory = false;
+        }
+
+        ShowNewCategoryInput = false;
+        NewCategoryName = string.Empty;
+    }
+
+    // ── Submit ────────────────────────────────────────────────────────────────
 
     [RelayCommand]
     private async Task SubmitAsync()
@@ -230,7 +319,6 @@ public partial class AddEntryViewModel : BaseViewModel
                                   ? null : SelectedCategory.Trim(),
                 Frequency   = SelectedFrequency,
                 StartDate   = StartDate,
-                // Once has a single occurrence — server rejects EndDate == StartDate, so never send it
                 EndDate     = (HasEndDate && SelectedFrequency != FrequencyType.Once) ? EndDate : null,
                 Color       = SelectedColor,
             };
@@ -280,8 +368,6 @@ public partial class AddEntryViewModel : BaseViewModel
         OnPropertyChanged(nameof(AccountName));
         OnPropertyChanged(nameof(HasAccount));
     }
-
-    // ── Item 3: Once end-date auto-sync ───────────────────────────────────────
 
     partial void OnSelectedFrequencyChanged(FrequencyType value)
     {

@@ -136,15 +136,64 @@
 
                 <!-- Category -->
                 <VerticalStackLayout Spacing="6">
-                    <Label Text="Category" FontSize="13" FontAttributes="Bold"
-                           TextColor="{DynamicResource TextSecondary}"/>
-                    <Border Stroke="{DynamicResource StrokeCard}"
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label Grid.Column="0" Text="Category" FontSize="13" FontAttributes="Bold"
+                               TextColor="{DynamicResource TextSecondary}" VerticalOptions="Center"/>
+                        <Border Grid.Column="1"
+                                IsVisible="{Binding ShowNewCategoryInput, Converter={StaticResource InvertedBoolConverter}}"
+                                StrokeShape="RoundRectangle 8" StrokeThickness="1"
+                                Stroke="{DynamicResource Accent}"
+                                BackgroundColor="Transparent"
+                                Padding="8,3">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding ShowAddCategoryCommand}"/>
+                            </Border.GestureRecognizers>
+                            <Label Text="+ New" FontSize="11" FontAttributes="Bold"
+                                   TextColor="{DynamicResource Accent}"/>
+                        </Border>
+                    </Grid>
+
+                    <!-- Picker row — hidden while the new-category input is open -->
+                    <Border IsVisible="{Binding ShowNewCategoryInput, Converter={StaticResource InvertedBoolConverter}}"
+                            Stroke="{DynamicResource StrokeCard}"
                             StrokeShape="RoundRectangle 12" StrokeThickness="1"
                             BackgroundColor="{DynamicResource SurfaceLo}">
                         <Picker ItemsSource="{Binding AvailableCategories}"
                                 SelectedItem="{Binding SelectedCategory}"
                                 Title="Select category" FontSize="15" Margin="12,8"/>
                     </Border>
+
+                    <!-- Inline new-category input -->
+                    <Border IsVisible="{Binding ShowNewCategoryInput}"
+                            Stroke="{DynamicResource Accent}"
+                            StrokeShape="RoundRectangle 12" StrokeThickness="1"
+                            BackgroundColor="{DynamicResource SurfaceLo}"
+                            Padding="12,8">
+                        <VerticalStackLayout Spacing="8">
+                            <Entry Placeholder="Category name"
+                                   Text="{Binding NewCategoryName}"
+                                   FontSize="15"
+                                   ReturnCommand="{Binding SaveNewCategoryCommand}"/>
+                            <Label Text="{Binding NewCategoryError}" FontSize="12"
+                                   TextColor="{DynamicResource Down}"
+                                   IsVisible="{Binding NewCategoryError, Converter={StaticResource StringNotEmptyConverter}}"/>
+                            <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                                <Button Grid.Column="0" Text="Cancel"
+                                        Command="{Binding CancelAddCategoryCommand}"
+                                        BackgroundColor="{DynamicResource SurfaceHi}"
+                                        TextColor="{DynamicResource TextSecondary}"
+                                        BorderColor="{DynamicResource StrokeCard}" BorderWidth="1"
+                                        CornerRadius="8" HeightRequest="38" FontSize="13"/>
+                                <Button Grid.Column="1" Text="Save"
+                                        Command="{Binding SaveNewCategoryCommand}"
+                                        IsEnabled="{Binding IsSavingCategory, Converter={StaticResource InvertedBoolConverter}}"
+                                        BackgroundColor="{DynamicResource Accent}"
+                                        TextColor="{DynamicResource SurfacePage}"
+                                        CornerRadius="8" HeightRequest="38" FontSize="13"/>
+                            </Grid>
+                        </VerticalStackLayout>
+                    </Border>
+
                     <Label Text="{Binding CategoryError}" FontSize="12"
                            TextColor="{DynamicResource Down}"
                            IsVisible="{Binding CategoryError, Converter={StaticResource StringNotEmptyConverter}}"/>

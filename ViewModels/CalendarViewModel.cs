@@ -532,6 +532,8 @@ public partial class CalendarViewModel : BaseViewModel
         if (SelectedAccount == null) return;
         if (SelectedDate?.Date == date.Date) { CloseDayDetail(); return; }
 
+        // Update date display immediately so the header is always correct
+        // regardless of whether data is already cached or needs fetching.
         SelectedDate = date;
         SelectedDateDisplay = date.ToString("MMMM dd, yyyy");
         IsTransactionDetailVisible = true;
@@ -628,6 +630,13 @@ public partial class CalendarViewModel : BaseViewModel
     private async Task NavigateToAccounts()
     {
         try { await Shell.Current.GoToAsync("accounts"); }
+        catch { }
+    }
+
+    [RelayCommand]
+    private async Task NavigateToAddEntry()
+    {
+        try { await Shell.Current.GoToAsync("add"); }
         catch { }
     }
 }

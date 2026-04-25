@@ -1,5 +1,6 @@
 using CommunityToolkit.Maui;
 using HexFund.UI.Config;
+using HexFund.UI.Controls;
 using HexFund.UI.Services;
 using HexFund.UI.ViewModels;
 using HexFund.UI.Views;
@@ -25,6 +26,16 @@ public static class MauiProgram
                 fonts.AddFont("CinzelBold.ttf",    "CinzelBold");
                 fonts.AddFont("InterRegular.ttf",  "InterRegular");
                 fonts.AddFont("InterSemiBold.ttf", "InterSemiBold");
+            })
+            .ConfigureMauiHandlers(handlers =>
+            {
+#if ANDROID
+                handlers.AddHandler<SwipeableCollectionView,
+                    HexFund.UI.Platforms.Android.SwipeableCollectionViewHandler>();
+#elif IOS
+                handlers.AddHandler<SwipeableCollectionView,
+                    HexFund.UI.Platforms.iOS.SwipeableCollectionViewHandler>();
+#endif
             })
             .ConfigureLifecycleEvents(lifecycle =>
             {

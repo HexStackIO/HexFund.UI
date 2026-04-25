@@ -36,7 +36,7 @@
                        FontAttributes="Bold"
                        TextColor="{DynamicResource TextPrimary}"
                        LineBreakMode="NoWrap"/>
-                <Label Text="{Binding CurrentThemeName}"
+                <Label Text="{Binding SelectedAccountName}"
                        FontSize="9"
                        CharacterSpacing="2"
                        TextColor="{DynamicResource Accent}"
@@ -332,9 +332,14 @@
                                                  BindableLayout.ItemsSource="{Binding PreviewAccounts}">
                                 <BindableLayout.ItemTemplate>
                                     <DataTemplate x:DataType="models:Account">
-                                        <Grid ColumnDefinitions="Auto,*,Auto"
+                                        <Grid ColumnDefinitions="Auto,*,Auto,Auto"
                                               ColumnSpacing="12"
                                               Padding="0,10">
+                                            <Grid.GestureRecognizers>
+                                                <TapGestureRecognizer
+                                                    Command="{Binding Source={RelativeSource AncestorType={x:Type vm:HomeViewModel}}, Path=SelectAccountCommand}"
+                                                    CommandParameter="{Binding .}"/>
+                                            </Grid.GestureRecognizers>
                                             <BoxView Grid.Column="0"
                                                      WidthRequest="3" HeightRequest="32"
                                                      CornerRadius="2"
@@ -353,6 +358,18 @@
                                                    FontSize="15" FontAttributes="Bold"
                                                    TextColor="{DynamicResource AccentInk}"
                                                    VerticalOptions="Center"/>
+                                            <!-- Active account indicator dot -->
+                                            <Ellipse Grid.Column="3"
+                                                     WidthRequest="8" HeightRequest="8"
+                                                     VerticalOptions="Center"
+                                                     Fill="{DynamicResource Accent}">
+                                                <Ellipse.IsVisible>
+                                                    <MultiBinding Converter="{StaticResource AccountIsSelectedConverter}">
+                                                        <Binding Path="AccountId"/>
+                                                        <Binding Source="{RelativeSource AncestorType={x:Type vm:HomeViewModel}}" Path="SelectedAccountId"/>
+                                                    </MultiBinding>
+                                                </Ellipse.IsVisible>
+                                            </Ellipse>
                                         </Grid>
                                     </DataTemplate>
                                 </BindableLayout.ItemTemplate>

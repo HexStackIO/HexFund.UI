@@ -240,6 +240,12 @@ public partial class TransactionsViewModel : BaseViewModel
     // The list is shared across Add, Edit, and Amend dialogs.
     [ObservableProperty] private List<string> availableCategories = new() { "Uncategorized" };
 
+    // ── Inline add-category (shared across all three dialogs) ─────────────────
+    [ObservableProperty] private bool showNewCategoryInput;
+    [ObservableProperty] private string newCategoryName = string.Empty;
+    [ObservableProperty] private string newCategoryError = string.Empty;
+    [ObservableProperty] private bool isSavingCategory;
+
     private bool _categoriesLoaded;
 
     private bool _isInitialized;
@@ -592,6 +598,9 @@ public partial class TransactionsViewModel : BaseViewModel
         DateRangeError = string.Empty;
         ErrorMessage = string.Empty;
         ActiveTooltip = string.Empty;
+        ShowNewCategoryInput = false;
+        NewCategoryName = string.Empty;
+        NewCategoryError = string.Empty;
 
         ShowAddTransactionDialog = true;
     }
@@ -646,10 +655,8 @@ public partial class TransactionsViewModel : BaseViewModel
 
             if (created != null)
             {
-                var insertIndex = FindInsertionIndex(Transactions, created.StartDate);
-                var createdCard = new TransactionCardViewModel(created, this, new List<Transaction>());
-                Transactions.Insert(insertIndex, createdCard);
-
+                // Full reload rather than optimistic insert so that predecessor
+                // filtering is always applied — avoids pseudo-duplicate display.
                 _accountStateService.NotifyTransactionsChanged();
                 ShowAddTransactionDialog = false;
 
@@ -1157,6 +1164,16 @@ public partial class TransactionsViewModel : BaseViewModel
 
         var amount = decimal.Parse(AmendAmount.Trim());
 
+        // ── Snap effective date to the next natural occurrence ────────────────
+        // If the user picks a date that doesn't land on a natural occurrence of
+        // the transaction's frequency pattern (e.g. picking a Friday for a
+        // weekly-Thursday series), the server creates a spurious single occurrence
+        // on that off-pattern date before resuming the normal schedule. To prevent
+        // that pseudo-duplicate we advance the effective date to the next date that
+        // IS on the natural schedule on or after the chosen date.
+        var snappedDate = NextOccurrenceOnOrAfter(
+            AmendEffectiveDate, TransactionToAmend.StartDate, TransactionToAmend.Frequency);
+
         IsLoading = true;
         ErrorMessage = string.Empty;
 
@@ -1164,7 +1181,7 @@ public partial class TransactionsViewModel : BaseViewModel
         {
             var request = new AmendTransactionRequest
             {
-                EffectiveDate = AmendEffectiveDate,
+                EffectiveDate = snappedDate,
                 Amount = AmendIsIncome ? amount : -amount,
                 Description = string.IsNullOrWhiteSpace(AmendDescription) ? null : AmendDescription.Trim(),
                 Category = AmendCategory == "Uncategorized" || string.IsNullOrWhiteSpace(AmendCategory) ? null : AmendCategory.Trim(),
@@ -1183,7 +1200,7 @@ public partial class TransactionsViewModel : BaseViewModel
 
                 await Application.Current!.MainPage!.DisplayAlert(
                     "Success",
-                    $"'{successor.Description}' updated from {request.EffectiveDate:MMM dd, yyyy} onward.",
+                    $"'{successor.Description}' updated from {snappedDate:MMM dd, yyyy} onward.",
                     "OK");
             }
             else
@@ -1199,6 +1216,63 @@ public partial class TransactionsViewModel : BaseViewModel
         {
             IsLoading = false;
         }
+    }
+
+    // ── Inline add-category commands (shared by Add / Edit / Amend dialogs) ──
+
+    [RelayCommand]
+    private void ShowAddCategory()
+    {
+        NewCategoryName  = string.Empty;
+        NewCategoryError = string.Empty;
+        ShowNewCategoryInput = true;
+    }
+
+    [RelayCommand]
+    private void CancelAddCategory()
+    {
+        ShowNewCategoryInput = false;
+        NewCategoryName  = string.Empty;
+        NewCategoryError = string.Empty;
+    }
+
+    [RelayCommand]
+    private async Task SaveNewCategoryAsync()
+    {
+        var trimmed = NewCategoryName.Trim();
+        if (string.IsNullOrWhiteSpace(trimmed))
+        { NewCategoryError = "Category name cannot be empty."; return; }
+        if (trimmed.Length > 50)
+        { NewCategoryError = "Category name must be 50 characters or fewer."; return; }
+        if (AvailableCategories.Contains(trimmed, StringComparer.OrdinalIgnoreCase))
+        { NewCategoryError = "That category already exists."; return; }
+
+        NewCategoryError = string.Empty;
+        IsSavingCategory = true;
+
+        try
+        {
+            var created = await _apiService.CreateCategoryAsync(new CreateCategoryRequest { Name = trimmed });
+            if (created == null)
+            { NewCategoryError = "Failed to create category. Please try again."; return; }
+
+            // Reload from server and select the new item
+            var cats = await _apiService.GetCategoriesAsync(forceRefresh: true);
+            var names = new List<string> { "Uncategorized" };
+            names.AddRange(cats.Select(c => c.Name));
+            AvailableCategories = names;
+            _categoriesLoaded = true;
+
+            // Set whichever dialog is currently open to the new category
+            if (ShowAddTransactionDialog)      NewCategory   = trimmed;
+            else if (ShowEditTransactionDialog) EditCategory  = trimmed;
+            else if (ShowAmendDialog)           AmendCategory = trimmed;
+        }
+        catch (Exception ex) { NewCategoryError = $"Error: {ex.Message}"; return; }
+        finally { IsSavingCategory = false; }
+
+        ShowNewCategoryInput = false;
+        NewCategoryName = string.Empty;
     }
 
     // ── Navigation ────────────────────────────────────────────────────────────
@@ -1219,5 +1293,115 @@ public partial class TransactionsViewModel : BaseViewModel
     {
         try { await Shell.Current.GoToAsync("add"); }
         catch { }
+    }
+
+    // ── Occurrence snapping ───────────────────────────────────────────────────
+
+    /// <summary>
+    /// Returns the first date on or after <paramref name="from"/> that falls
+    /// on a natural occurrence of <paramref name="frequency"/> anchored to
+    /// <paramref name="anchor"/> (the transaction's original StartDate).
+    ///
+    /// This prevents pseudo-duplicate occurrences when the user picks an
+    /// amendment effective date that is between two natural occurrences — e.g.
+    /// choosing a Friday for a weekly-Thursday series. Without snapping the
+    /// server would generate a one-off occurrence on the Friday itself before
+    /// resuming the Thursday pattern, resulting in two entries visible in the
+    /// same week.
+    ///
+    /// For Once / Daily / frequencies with no alignment requirement the
+    /// chosen date is returned as-is.
+    /// </summary>
+    private static DateTime NextOccurrenceOnOrAfter(
+        DateTime from, DateTime anchor, FrequencyType frequency)
+    {
+        switch (frequency)
+        {
+            case FrequencyType.Once:
+            case FrequencyType.Daily:
+                // No day-of-week alignment needed.
+                return from;
+
+            case FrequencyType.Weekly:
+            {
+                // Advance to the same day-of-week as the anchor.
+                int targetDow = (int)anchor.DayOfWeek;
+                int currentDow = (int)from.DayOfWeek;
+                int daysAhead = (targetDow - currentDow + 7) % 7;
+                return from.AddDays(daysAhead);
+            }
+
+            case FrequencyType.BiWeekly:
+            {
+                // Same day-of-week as anchor, and on a week that is an even
+                // number of weeks from the anchor.
+                int targetDow = (int)anchor.DayOfWeek;
+                int currentDow = (int)from.DayOfWeek;
+                int daysToTargetDow = (targetDow - currentDow + 7) % 7;
+                var candidate = from.AddDays(daysToTargetDow);
+                // Check parity: weeks since anchor
+                int weekDiff = (int)((candidate - anchor.Date).TotalDays / 7);
+                if (weekDiff % 2 != 0)
+                    candidate = candidate.AddDays(7); // skip to the next bi-weekly slot
+                return candidate;
+            }
+
+            case FrequencyType.FirstThirdFriday:
+            {
+                // Must land on a Friday that is the 1st or 3rd Friday of its month.
+                var candidate = from;
+                // Advance to next Friday on or after 'from'
+                while (candidate.DayOfWeek != DayOfWeek.Friday)
+                    candidate = candidate.AddDays(1);
+                // Then walk forward Fridays until we hit a 1st or 3rd Friday
+                while (true)
+                {
+                    int fridayOfMonth = ((candidate.Day - 1) / 7) + 1; // 1-based ordinal
+                    if (fridayOfMonth == 1 || fridayOfMonth == 3) return candidate;
+                    candidate = candidate.AddDays(7);
+                }
+            }
+
+            case FrequencyType.Monthly:
+            {
+                // Must land on the same day-of-month as the anchor (clamped to
+                // the last day of the month when necessary).
+                int targetDay = anchor.Day;
+                var candidate = new DateTime(from.Year, from.Month,
+                    Math.Min(targetDay, DateTime.DaysInMonth(from.Year, from.Month)));
+                if (candidate < from)
+                {
+                    // Already passed this month — advance to next month
+                    var next = from.AddMonths(1);
+                    candidate = new DateTime(next.Year, next.Month,
+                        Math.Min(targetDay, DateTime.DaysInMonth(next.Year, next.Month)));
+                }
+                return candidate;
+            }
+
+            case FrequencyType.BiMonthly:
+            {
+                // Same day-of-month as anchor, every two months.
+                int targetDay = anchor.Day;
+                // Find the next bi-monthly slot on or after 'from'
+                var candidate = new DateTime(from.Year, from.Month,
+                    Math.Min(targetDay, DateTime.DaysInMonth(from.Year, from.Month)));
+                if (candidate < from) candidate = candidate.AddMonths(1);
+
+                // Walk forward until we land on an even offset from the anchor month
+                while (true)
+                {
+                    int monthDiff = ((candidate.Year - anchor.Year) * 12)
+                                    + (candidate.Month - anchor.Month);
+                    if (monthDiff % 2 == 0 && candidate >= from) return candidate;
+                    candidate = candidate.AddMonths(1);
+                    candidate = new DateTime(candidate.Year, candidate.Month,
+                        Math.Min(targetDay, DateTime.DaysInMonth(candidate.Year, candidate.Month)));
+                }
+            }
+
+            default:
+                return from;
+        }
     }
 }

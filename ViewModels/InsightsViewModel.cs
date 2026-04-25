@@ -95,6 +95,14 @@ public partial class InsightsViewModel : BaseViewModel
     // ── No-account state ──────────────────────────────────────────────────────
     [ObservableProperty] private bool hasAccount;
 
+    // ── Month navigation ──────────────────────────────────────────────────────
+    /// <summary>The first day of the month currently being displayed.</summary>
+    [ObservableProperty] private DateTime displayMonth = new(DateTime.Today.Year, DateTime.Today.Month, 1);
+
+    // No upper bound — users can browse future months (balances will simply
+    // show zero / projected data from whatever the server returns).
+    public bool CanGoForward => true;
+
     // ── Section 1: Category donut ─────────────────────────────────────────────
     [ObservableProperty] private ObservableCollection<CategorySlice> categorySlices = new();
     [ObservableProperty] private bool hasCategoryData;
@@ -151,6 +159,22 @@ public partial class InsightsViewModel : BaseViewModel
     private void OnAccountChanged() =>
         MainThread.BeginInvokeOnMainThread(async () => await LoadAsync());
 
+    // ── Month navigation commands ─────────────────────────────────────────────
+
+    [RelayCommand]
+    private async Task PreviousMonthAsync()
+    {
+        DisplayMonth = DisplayMonth.AddMonths(-1);
+        await LoadAsync();
+    }
+
+    [RelayCommand]
+    private async Task NextMonthAsync()
+    {
+        DisplayMonth = DisplayMonth.AddMonths(1);
+        await LoadAsync();
+    }
+
     // ── Data loading ──────────────────────────────────────────────────────────
 
     [RelayCommand]
@@ -168,18 +192,18 @@ public partial class InsightsViewModel : BaseViewModel
 
         try
         {
+            var thisMonth = DisplayMonth;
             var now       = DateTime.Today;
-            var thisMonth = new DateTime(now.Year, now.Month, 1);
 
             // ── Fetch this month and last month overviews in parallel ──────
             var thisTask = _apiService.GetMonthlyOverviewAsync(
-                account.AccountId, now.Year, now.Month, forceRefresh: false);
+                account.AccountId, thisMonth.Year, thisMonth.Month, forceRefresh: false);
 
             var lastMonthDate = thisMonth.AddMonths(-1);
             var lastTask = _apiService.GetMonthlyOverviewAsync(
                 account.AccountId, lastMonthDate.Year, lastMonthDate.Month, forceRefresh: false);
 
-            // ── Fetch 6 months for the trend (current + 5 prior) ─────────
+            // ── Fetch 6 months for the trend (selected month + 5 prior) ──────
             var trendTasks = Enumerable.Range(0, 6)
                 .Select(i =>
                 {
