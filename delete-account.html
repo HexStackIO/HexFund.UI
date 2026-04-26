@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Delete Account — HexFund by HexStack.IO</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:        #0b0e14;
+      --surface:   #12161f;
+      --border:    #1e2535;
+      --accent:    #4f8ef7;
+      --accent-dim:#1d3561;
+      --danger:    #e05c5c;
+      --danger-dim:#3a1a1a;
+      --text:      #e8eaf0;
+      --muted:     #7a8099;
+      --hex:       #4f8ef7;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Instrument Sans', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Background hex grid ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(79,142,247,0.12) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .hex-grid {
+      position: fixed;
+      inset: 0;
+      opacity: 0.04;
+      pointer-events: none;
+      z-index: 0;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='100'%3E%3Cpath d='M28 66L0 50V18L28 2l28 16v32L28 66zm0-6l22-12.7V22.7L28 10 6 22.7v24.6L28 60z' fill='%234f8ef7'/%3E%3C/svg%3E");
+    }
+
+    /* ── Layout ── */
+    .wrapper {
+      position: relative;
+      z-index: 1;
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 80px 24px 120px;
+    }
+
+    /* ── Header ── */
+    .logo-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 72px;
+      animation: fadeUp 0.6s ease both;
+    }
+
+    .logo-hex {
+      width: 38px;
+      height: 38px;
+    }
+
+    .logo-name {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.4rem;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+
+    .logo-name span {
+      color: var(--accent);
+    }
+
+    .logo-by {
+      margin-left: auto;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    /* ── Hero ── */
+    .hero {
+      margin-bottom: 56px;
+      animation: fadeUp 0.6s 0.1s ease both;
+    }
+
+    .hero-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--danger);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .hero-label::before {
+      content: '';
+      display: inline-block;
+      width: 20px;
+      height: 1px;
+      background: var(--danger);
+    }
+
+    h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(2.2rem, 5vw, 3.2rem);
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      color: var(--text);
+      margin-bottom: 20px;
+    }
+
+    h1 em {
+      font-style: italic;
+      color: var(--muted);
+    }
+
+    .hero-sub {
+      font-size: 1rem;
+      color: var(--muted);
+      line-height: 1.7;
+      max-width: 520px;
+    }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      margin-bottom: 20px;
+      animation: fadeUp 0.6s ease both;
+    }
+
+    .card:nth-child(1) { animation-delay: 0.2s; }
+    .card:nth-child(2) { animation-delay: 0.3s; }
+    .card:nth-child(3) { animation-delay: 0.4s; }
+
+    .card-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 14px;
+    }
+
+    .card h2 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.25rem;
+      font-weight: 400;
+      margin-bottom: 18px;
+      letter-spacing: -0.02em;
+    }
+
+    /* ── Steps ── */
+    .steps {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .steps li {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+
+    .step-num {
+      flex-shrink: 0;
+      width: 26px;
+      height: 26px;
+      border-radius: 6px;
+      background: var(--accent-dim);
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.7rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .step-text {
+      font-size: 0.925rem;
+      color: var(--text);
+      line-height: 1.6;
+      padding-top: 3px;
+    }
+
+    .step-text strong {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    /* ── Warning card ── */
+    .card-warning {
+      background: var(--danger-dim);
+      border-color: rgba(224, 92, 92, 0.3);
+    }
+
+    .card-warning .card-label {
+      color: var(--danger);
+    }
+
+    .card-warning h2 {
+      color: var(--text);
+    }
+
+    .warning-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .warning-list li {
+      font-size: 0.9rem;
+      color: var(--muted);
+      line-height: 1.6;
+      padding-left: 18px;
+      position: relative;
+    }
+
+    .warning-list li::before {
+      content: '—';
+      position: absolute;
+      left: 0;
+      color: var(--danger);
+    }
+
+    /* ── Timeline badge ── */
+    .timeline-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--accent-dim);
+      border: 1px solid var(--accent);
+      border-radius: 100px;
+      padding: 6px 14px;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--accent);
+      margin-bottom: 18px;
+    }
+
+    .timeline-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: pulse 2s ease infinite;
+    }
+
+    /* ── Fallback section ── */
+    .fallback {
+      margin-top: 48px;
+      padding-top: 40px;
+      border-top: 1px solid var(--border);
+      animation: fadeUp 0.6s 0.5s ease both;
+      opacity: 0;
+      animation-fill-mode: forwards;
+    }
+
+    .fallback-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .fallback p {
+      font-size: 0.9rem;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .fallback a {
+      color: var(--accent);
+      text-decoration: none;
+      border-bottom: 1px solid var(--accent-dim);
+      transition: border-color 0.2s;
+    }
+
+    .fallback a:hover {
+      border-color: var(--accent);
+    }
+
+    /* ── Footer ── */
+    footer {
+      margin-top: 80px;
+      padding-top: 32px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      animation: fadeUp 0.6s 0.6s ease both;
+      opacity: 0;
+      animation-fill-mode: forwards;
+    }
+
+    footer p {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--muted);
+    }
+
+    footer a {
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    footer a:hover { color: var(--text); }
+
+    /* ── Animations ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.3; }
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 480px) {
+      .wrapper { padding: 48px 16px 80px; }
+      .card { padding: 24px; }
+      .logo-by { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="hex-grid"></div>
+
+  <div class="wrapper">
+
+    <!-- Logo -->
+    <div class="logo-bar">
+      <svg class="logo-hex" viewBox="0 0 38 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M19 2L36 11.5V31.5L19 41L2 31.5V11.5L19 2Z" stroke="#4f8ef7" stroke-width="1.5" fill="rgba(79,142,247,0.08)"/>
+        <path d="M19 10L28 15.5V26.5L19 32L10 26.5V15.5L19 10Z" fill="#4f8ef7" opacity="0.5"/>
+      </svg>
+      <span class="logo-name">Hex<span>Fund</span></span>
+      <span class="logo-by">by HexStack.IO</span>
+    </div>
+
+    <!-- Hero -->
+    <div class="hero">
+      <div class="hero-label">Account Management</div>
+      <h1>Delete your<br /><em>account &amp; data</em></h1>
+      <p class="hero-sub">
+        You have the right to permanently remove your HexFund account and all associated financial data from our systems. This page explains how.
+      </p>
+    </div>
+
+    <!-- Step-by-step card -->
+    <div class="card">
+      <div class="card-label">In-App Process</div>
+      <h2>How to delete your account</h2>
+      <ol class="steps">
+        <li>
+          <span class="step-num">01</span>
+          <span class="step-text">Open the <strong>HexFund</strong> app on your device and sign in.</span>
+        </li>
+        <li>
+          <span class="step-num">02</span>
+          <span class="step-text">Tap your <strong>profile avatar</strong> in the top-right corner to open your account menu.</span>
+        </li>
+        <li>
+          <span class="step-num">03</span>
+          <span class="step-text">Navigate to <strong>Settings → Account</strong>.</span>
+        </li>
+        <li>
+          <span class="step-num">04</span>
+          <span class="step-text">Scroll to the bottom and tap <strong>Delete Account</strong>.</span>
+        </li>
+        <li>
+          <span class="step-num">05</span>
+          <span class="step-text">Review the confirmation screen and tap <strong>Confirm Deletion</strong> to proceed. This action cannot be undone.</span>
+        </li>
+      </ol>
+    </div>
+
+    <!-- Timeline card -->
+    <div class="card">
+      <div class="card-label">Deletion Timeline</div>
+      <h2>What happens to your data</h2>
+      <div class="timeline-badge">
+        <span class="timeline-dot"></span>
+        Permanently deleted within 30 days
+      </div>
+      <ul class="warning-list">
+        <li>All transaction records and financial entries you have created</li>
+        <li>Your account profile and personal preferences</li>
+        <li>Any categories, budgets, or custom configurations</li>
+        <li>Your authentication link to Microsoft Entra ID</li>
+        <li>All locally cached data on your device</li>
+      </ul>
+    </div>
+
+    <!-- Warning card -->
+    <div class="card card-warning">
+      <div class="card-label">Important Notice</div>
+      <h2>Before you delete</h2>
+      <ul class="warning-list">
+        <li>Deletion is <strong style="color:#e8eaf0">permanent and irreversible</strong> — your data cannot be recovered after the 30-day window closes.</li>
+        <li>HexFund does not connect to bank accounts, so no external accounts are affected.</li>
+        <li>Deleting your HexFund account does not delete your Microsoft account.</li>
+        <li>You may re-register at any time, but your previous data will not be restored.</li>
+      </ul>
+    </div>
+
+    <!-- Fallback -->
+    <div class="fallback">
+      <div class="fallback-label">Can't access the app?</div>
+      <p>
+        If you are unable to access HexFund to complete the deletion yourself, you may submit a request by emailing
+        <a href="mailto:privacy@hexstack.io">privacy@hexstack.io</a> from the address associated with your account.
+        Include your full name and registered email address. We will process your request within 30 days.
+      </p>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+      <p>© 2026 HexStack.IO — All rights reserved.</p>
+      <p>
+        <a href="https://hexstack.io/privacy">Privacy Policy</a>
+        &nbsp;·&nbsp;
+        <a href="https://hexstack.io/terms">Terms of Service</a>
+      </p>
+    </footer>
+
+  </div>
+</body>
+</html>
