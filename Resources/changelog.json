@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.0.3",
+    "date": "2026-04-26",
+    "changes": [
+      "Added: Request Account Deletion Function",
+      "Added: Swipe Controls on Calendar Page",
+      "Added: New Navigation Paths",
+      "Updated: UI Improvements and Fixes",
+      "Updated: Minor Bug Fixes around Transactions",
+      "Updated: Improved Category Management"
+    ]
+  },
+  {
     "version": "1.0.0",
     "date": "2026-04-23",
     "changes": [
