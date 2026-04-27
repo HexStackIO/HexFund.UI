@@ -27,8 +27,9 @@ public static class AppConstants
     //   3. Prepend a new entry to Resources/changelog.json.
     //   4. Commit — no pipeline transforms needed.
     //
-    public const string AppVersion  = "4";
-    public const int    BuildNumber = 4;
+    public const string AppVersion  = "5";
+    public const int    BuildNumber = 5;
+
 
     // ── Changelog ─────────────────────────────────────────────────────────────
     public const string ChangelogResourcePath = "changelog.json";

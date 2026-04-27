@@ -498,20 +498,6 @@
 
         </RefreshView>
 
-        <!-- ── FAB ──────────────────────────────────────────────────────── -->
-        <Border Grid.Row="1" BackgroundColor="{DynamicResource Accent}"
-                StrokeShape="Ellipse" StrokeThickness="0"
-                WidthRequest="60" HeightRequest="60"
-                HorizontalOptions="End" VerticalOptions="End" Margin="0,0,20,20">
-            <Border.Shadow><Shadow Brush="Black" Opacity="0.3" Radius="8" Offset="0,4"/></Border.Shadow>
-            <Border.GestureRecognizers>
-                <TapGestureRecognizer Command="{Binding NavigateToAddEntryCommand}"/>
-            </Border.GestureRecognizers>
-            <Image Source="plus.png"
-                   WidthRequest="24" HeightRequest="24"
-                   HorizontalOptions="Center" VerticalOptions="Center"/>
-        </Border>
-
         <!-- ════════════════════════════════════════════════════════════════
              EDIT TRANSACTION DIALOG
              ════════════════════════════════════════════════════════════════ -->
