@@ -30,6 +30,7 @@ public static class AppConstants
     public const string AppVersion  = "5";
     public const int    BuildNumber = 5;
 
+
     // ── Changelog ─────────────────────────────────────────────────────────────
     public const string ChangelogResourcePath = "changelog.json";
 
