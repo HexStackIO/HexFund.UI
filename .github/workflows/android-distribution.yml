@@ -166,21 +166,33 @@ jobs:
           echo "AAB_PATH=$AAB" >> "$GITHUB_OUTPUT"
           echo "Found AAB: $AAB"
 
-      # ── 11. Upload artifact (audit trail) ────
+      # ── 11. Rename AAB ───────────────────────
+      - name: Rename AAB
+        id: rename_aab
+        run: |
+          AAB="${{ steps.find_aab.outputs.AAB_PATH }}"
+          DIR=$(dirname "$AAB")
+          NEW_NAME="HexFund-Alpha-Release-${{ steps.version.outputs.VERSION_NAME }}.aab"
+          NEW_PATH="$DIR/$NEW_NAME"
+          mv "$AAB" "$NEW_PATH"
+          echo "AAB_PATH=$NEW_PATH" >> "$GITHUB_OUTPUT"
+          echo "Renamed to: $NEW_NAME"
+
+      # ── 12. Upload artifact (audit trail) ────
       - name: Upload AAB artifact
         uses: actions/upload-artifact@v4
         with:
-          name: HexFund-v${{ steps.version.outputs.VERSION_NAME }}-(${{ github.run_number }}).aab
-          path: ${{ steps.find_aab.outputs.AAB_PATH }}
+          name: HexFund-Alpha-Release-${{ steps.version.outputs.VERSION_NAME }}
+          path: ${{ steps.rename_aab.outputs.AAB_PATH }}
           retention-days: 14
 
-      # ── 12. Deploy to Google Play ────────────
-      - name: Deploy to Google Play (Internal Testing)
+      # ── 13. Deploy to Google Play ────────────
+      - name: Deploy to Google Play (Closed Testing)
         uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJsonPlainText: ${{ secrets.SERVICE_ACCOUNT_JSON }}
           packageName: com.hexstackio.hexfund
-          releaseFiles: ${{ steps.find_aab.outputs.AAB_PATH }}
-          tracks: internal
+          releaseFiles: ${{ steps.rename_aab.outputs.AAB_PATH }}
+          tracks: alpha
           status: completed
-          whatsNewDirectory: whatsnew   # optional — see note below
+          whatsNewDirectory: whatsnew
