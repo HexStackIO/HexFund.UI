@@ -1,19 +1,51 @@
-name: Android Build
+name: Android Build & Deploy
 
 on:
   push:
     branches: [ master ]
   workflow_dispatch:
 
+# ─────────────────────────────────────────────
+# VERSION STRATEGY
+#   VersionName : Major.Minor  (e.g. 1.5)
+#   VersionCode : always equal to Minor       (e.g. 5)
+#   Minor       : github.run_number - 8
+#                 run 14 → minor 5  (current: 1.5)
+#                 run 15 → minor 6  (next:    1.6)
+#   To bump Major: update VERSION_MAJOR below
+#                  and reset MINOR_OFFSET so
+#                  run_number + offset = desired minor
+# ─────────────────────────────────────────────
+env:
+  VERSION_MAJOR: 1
+  MINOR_OFFSET: -9        # keeps run 14 → minor 5
+
 jobs:
-  build:
-    name: Build AAB
+  build-and-deploy:
+    name: Build, Sign & Deploy AAB
     runs-on: ubuntu-latest
 
     steps:
+      # ── 1. Source ────────────────────────────
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # ── 2. Compute version numbers ───────────
+      - name: Compute version
+        id: version
+        run: |
+          MINOR=$(( ${{ github.run_number }} + ${{ env.MINOR_OFFSET }} ))
+          VERSION_CODE=$MINOR
+          VERSION_NAME="${{ env.VERSION_MAJOR }}.$MINOR"
+          echo "MINOR=$MINOR"             >> "$GITHUB_OUTPUT"
+          echo "VERSION_CODE=$VERSION_CODE" >> "$GITHUB_OUTPUT"
+          echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_OUTPUT"
+          echo "──────────────────────────────────"
+          echo "  VersionName : $VERSION_NAME"
+          echo "  VersionCode : $VERSION_CODE"
+          echo "──────────────────────────────────"
+
+      # ── 3. Runtimes ──────────────────────────
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
@@ -25,6 +57,7 @@ jobs:
         with:
           dotnet-version: '9.0.x'
 
+      # ── 4. Caches ────────────────────────────
       - name: Cache NuGet packages
         uses: actions/cache@v4
         with:
@@ -50,6 +83,7 @@ jobs:
         if: steps.cache-workloads.outputs.cache-hit != 'true'
         run: dotnet workload install maui-android android --skip-sign-check
 
+      # ── 5. Inject secrets & version ──────────
       - name: Create AuthSecrets
         run: |
           cat > Config/AuthSecrets.cs << 'EOF'
@@ -62,13 +96,35 @@ jobs:
           }
           EOF
 
+      - name: Patch version in .csproj
+        run: |
+          sed -i \
+            -e 's|<ApplicationVersion>[^<]*</ApplicationVersion>|<ApplicationVersion>${{ steps.version.outputs.VERSION_CODE }}</ApplicationVersion>|' \
+            -e 's|<ApplicationDisplayVersion>[^<]*</ApplicationDisplayVersion>|<ApplicationDisplayVersion>${{ steps.version.outputs.VERSION_NAME }}</ApplicationDisplayVersion>|' \
+            HexFund.UI.csproj
+          echo "── Patched .csproj ─────────────────────"
+          grep -E 'ApplicationVersion|ApplicationDisplayVersion' HexFund.UI.csproj
+
+      - name: Patch version in AppConstants
+        run: |
+          # Handles:  public const string AppVersion = "x.x";
+          #       or: AppVersion = "x.x"
+          find . -name "AppConstants.cs" | xargs sed -i \
+            's|\(AppVersion\s*=\s*\)"[^"]*"|\1"${{ steps.version.outputs.VERSION_NAME }}"|g'
+          echo "── Patched AppConstants ────────────────"
+          grep -r "AppVersion" . --include="*.cs" || true
+
+      # ── 6. Restore ───────────────────────────
       - name: Restore NuGet packages
         run: dotnet restore HexFund.UI.csproj -p:TargetFrameworks=net9.0-android
 
+      # ── 7. Decode keystore ───────────────────
       - name: Decode keystore
         run: |
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > "${{ github.workspace }}/hexfund.keystore"
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode \
+            > "${{ github.workspace }}/hexfund.keystore"
 
+      # ── 8. Build ─────────────────────────────
       - name: Build AAB
         run: |
           dotnet publish HexFund.UI.csproj \
@@ -76,8 +132,11 @@ jobs:
             -c Release \
             -p:TargetFrameworks=net9.0-android \
             -p:AndroidPackageFormat=aab \
+            -p:ApplicationVersion=${{ steps.version.outputs.VERSION_CODE }} \
+            -p:ApplicationDisplayVersion=${{ steps.version.outputs.VERSION_NAME }} \
             -o "${{ github.workspace }}/output"
 
+      # ── 9. Sign ──────────────────────────────
       - name: Sign AAB
         run: |
           AAB=$(find "${{ github.workspace }}/output" -name "*.aab" | head -1)
@@ -88,18 +147,18 @@ jobs:
             -digestalg SHA-256 \
             -keystore "${{ github.workspace }}/hexfund.keystore" \
             -storepass "${{ secrets.KEYSTORE_PASSWORD }}" \
-            -keypass "${{ secrets.KEY_PASSWORD }}" \
+            -keypass  "${{ secrets.KEY_PASSWORD }}" \
             "$AAB" \
             "${{ secrets.KEY_ALIAS }}"
-          echo "Verifying signature..."
-          $JAVA_HOME/bin/jarsigner -verify "$AAB" && echo "AAB signed successfully"
-              
-      - name: Verify AAB is signed
+          $JAVA_HOME/bin/jarsigner -verify "$AAB" \
+            && echo "✔ AAB signed successfully"
+
+      - name: Verify AAB signature
         run: |
           AAB=$(find "${{ github.workspace }}/output" -name "*.aab" | head -1)
-          echo "Checking: $AAB"
           $JAVA_HOME/bin/jarsigner -verify -verbose -certs "$AAB" | head -20
 
+      # ── 10. Locate AAB ───────────────────────
       - name: Locate AAB
         id: find_aab
         run: |
@@ -107,9 +166,21 @@ jobs:
           echo "AAB_PATH=$AAB" >> "$GITHUB_OUTPUT"
           echo "Found AAB: $AAB"
 
+      # ── 11. Upload artifact (audit trail) ────
       - name: Upload AAB artifact
         uses: actions/upload-artifact@v4
         with:
-          name: HexFund-${{ github.run_number }}.aab
+          name: HexFund-v${{ steps.version.outputs.VERSION_NAME }}-(${{ github.run_number }}).aab
           path: ${{ steps.find_aab.outputs.AAB_PATH }}
           retention-days: 14
+
+      # ── 12. Deploy to Google Play ────────────
+      - name: Deploy to Google Play (Internal Testing)
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.SERVICE_ACCOUNT_JSON }}
+          packageName: com.hexstackio.hexfund
+          releaseFiles: ${{ steps.find_aab.outputs.AAB_PATH }}
+          track: internal
+          status: completed
+          whatsNewDirectory: whatsnew   # optional — see note below
