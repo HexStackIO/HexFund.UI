@@ -7,16 +7,21 @@ public partial class AppShell : Shell
 {
     private readonly IAuthService _authService;
     private readonly ISettingsService _settingsService;
+    private readonly IAccountStateService _accountStateService;
 
-    public AppShell(IAuthService authService, ISettingsService settingsService)
+    public AppShell(
+        IAuthService authService,
+        ISettingsService settingsService,
+        IAccountStateService accountStateService)
     {
         InitializeComponent();
         _authService = authService;
         _settingsService = settingsService;
+        _accountStateService = accountStateService;
 
         Routing.RegisterRoute("accounts", typeof(AccountsPage));
         Routing.RegisterRoute("settings", typeof(SettingsPage));
-        Routing.RegisterRoute("add",      typeof(AddEntryPage));
+        Routing.RegisterRoute("add", typeof(AddEntryPage));
 
         ApplyThemeToShell();
         _settingsService.SettingsChanged += () =>
@@ -24,6 +29,53 @@ public partial class AppShell : Shell
 
         _authService.AuthStateChanged += OnAuthStateChanged;
         UpdateTabBarForAuthState(_authService.IsAuthenticated);
+
+        Navigating += OnShellNavigating;
+    }
+
+    // ── Hex FAB action — called by App.xaml.cs overlay button ────────────────
+
+    public async Task ExecuteHexFabAsync()
+    {
+        if (_accountStateService.SelectedAccount == null)
+        {
+            if (IsPageOpen<Views.AccountsPage>()) return;
+            await GoToAsync("accounts");
+        }
+        else
+        {
+            if (IsPageOpen<Views.AddEntryPage>()) return;
+            await GoToAsync("add");
+        }
+    }
+
+    // ── Tab switch — close the add page if it's open ──────────────────────────
+
+    // Called by the Shell Navigating event so switching tabs dismisses any
+    // open add page rather than leaving it suspended in the background.
+    private void OnShellNavigating(object? sender, ShellNavigatingEventArgs e)
+    {
+        var target = e.Target.Location.OriginalString;
+        bool isTabSwitch = target.StartsWith("//", StringComparison.Ordinal);
+
+        if (!isTabSwitch) return;
+
+        // Close any floating modal pages when the user switches tabs
+        if (!IsPageOpen<Views.AddEntryPage>() &&
+            !IsPageOpen<Views.AccountsPage>()) return;
+
+        e.Cancel();
+        MainThread.BeginInvokeOnMainThread(async () =>
+        {
+            await GoToAsync("..");
+            await GoToAsync(e.Target.Location.OriginalString);
+        });
+    }
+
+    private static bool IsPageOpen<T>() where T : Page
+    {
+        var stack = Shell.Current?.Navigation?.NavigationStack;
+        return stack?.Any(p => p is T) ?? false;
     }
 
     // ── Public navigation API ─────────────────────────────────────────────────
@@ -34,12 +86,12 @@ public partial class AppShell : Shell
         {
             ShellItem? target = tab switch
             {
-                AppTab.Home     => HomeTab,
+                AppTab.Home => HomeTab,
                 AppTab.Calendar => CalendarTab,
-                AppTab.Ledger   => LedgerTab,
+                AppTab.Ledger => LedgerTab,
                 AppTab.Insights => InsightsTab,
-                AppTab.Login    => LoginTab,
-                _               => null
+                AppTab.Login => LoginTab,
+                _ => null
             };
 
             if (target != null)
@@ -51,14 +103,9 @@ public partial class AppShell : Shell
         }
     }
 
-    public async Task NavigateToAccountsAsync() =>
-        await GoToAsync("accounts");
-
-    public async Task NavigateToSettingsAsync() =>
-        await GoToAsync("settings");
-
-    public async Task NavigateToAddEntryAsync() =>
-        await GoToAsync("add");
+    public async Task NavigateToAccountsAsync() => await GoToAsync("accounts");
+    public async Task NavigateToSettingsAsync() => await GoToAsync("settings");
+    public async Task NavigateToAddEntryAsync() => await GoToAsync("add");
 
     // ── Auth state ────────────────────────────────────────────────────────────
 
@@ -92,16 +139,11 @@ public partial class AppShell : Shell
 
     protected override bool OnBackButtonPressed()
     {
-        // Only intercept at the tab root — let normal back-nav proceed when
-        // there is a page on the stack to pop.
         if (Navigation.NavigationStack.Count > 1)
             return base.OnBackButtonPressed();
 
-        // Push the themed exit confirmation as a transparent modal page.
-        // This ensures the dialog inherits all DynamicResource theme tokens
-        // and matches the in-app modal style used elsewhere in the app.
         _ = Navigation.PushModalAsync(new ExitConfirmationPage(), animated: false);
-        return true; // consumed — suppress default OS back behaviour
+        return true;
     }
 
     // ── Theme ─────────────────────────────────────────────────────────────────
@@ -111,8 +153,8 @@ public partial class AppShell : Shell
         var resources = Application.Current?.Resources;
         if (resources == null) return;
 
-        var tabBarBg   = Color.FromArgb("#0A0B0D");
-        var appBarBg   = Color.FromArgb("#141619");
+        var tabBarBg = Color.FromArgb("#0A0B0D");
+        var appBarBg = Color.FromArgb("#141619");
         var titleColor = Color.FromArgb("#EDEEF0");
 
         var selectedColor = Color.FromArgb("#FFE8A3");

@@ -236,67 +236,6 @@
                         </VerticalStackLayout>
                     </Border>
 
-                    <!-- ── Quick actions row ─────────────────────────────── -->
-                    <Grid ColumnDefinitions="*,*,*" ColumnSpacing="10">
-
-                        <!-- Deposit -->
-                        <Border Grid.Column="0"
-                                StrokeShape="RoundRectangle 12"
-                                BackgroundColor="{DynamicResource SurfaceCard}"
-                                Stroke="{DynamicResource StrokeCard}"
-                                StrokeThickness="1"
-                                Padding="0,16">
-                            <Border.GestureRecognizers>
-                                <TapGestureRecognizer Command="{Binding GoToDepositCommand}"/>
-                            </Border.GestureRecognizers>
-                            <VerticalStackLayout Spacing="6" HorizontalOptions="Center">
-                                <Label Text="＋" FontSize="22"
-                                       TextColor="{DynamicResource Accent}"
-                                       HorizontalOptions="Center"/>
-                                <Label Text="New Transaction" FontSize="12" FontAttributes="Bold"
-                                       TextColor="{DynamicResource TextSecondary}"
-                                       HorizontalOptions="Center"/>
-                            </VerticalStackLayout>
-                        </Border>
-
-                        <!-- Accounts -->
-                        <Border Grid.Column="1"
-                                StrokeShape="RoundRectangle 12"
-                                BackgroundColor="{DynamicResource SurfaceCard}"
-                                Stroke="{DynamicResource StrokeCard}"
-                                StrokeThickness="1"
-                                Padding="0,16">
-                            <Border.GestureRecognizers>
-                                <TapGestureRecognizer Command="{Binding GoToAccountsCommand}"/>
-                            </Border.GestureRecognizers>
-                            <VerticalStackLayout Spacing="6" HorizontalOptions="Center">
-                                <Label Text="🏦" FontSize="22" HorizontalOptions="Center"/>
-                                <Label Text="Accounts" FontSize="12" FontAttributes="Bold"
-                                       TextColor="{DynamicResource TextSecondary}"
-                                       HorizontalOptions="Center"/>
-                            </VerticalStackLayout>
-                        </Border>
-
-                        <!-- Calendar -->
-                        <Border Grid.Column="2"
-                                StrokeShape="RoundRectangle 12"
-                                BackgroundColor="{DynamicResource SurfaceCard}"
-                                Stroke="{DynamicResource StrokeCard}"
-                                StrokeThickness="1"
-                                Padding="0,16">
-                            <Border.GestureRecognizers>
-                                <TapGestureRecognizer Command="{Binding GoToCalendarCommand}"/>
-                            </Border.GestureRecognizers>
-                            <VerticalStackLayout Spacing="6" HorizontalOptions="Center">
-                                <Label Text="📅" FontSize="22" HorizontalOptions="Center"/>
-                                <Label Text="Calendar" FontSize="12" FontAttributes="Bold"
-                                       TextColor="{DynamicResource TextSecondary}"
-                                       HorizontalOptions="Center"/>
-                            </VerticalStackLayout>
-                        </Border>
-
-                    </Grid>
-
                     <!-- ── Accounts preview ───────────────────────────────── -->
                     <Border StrokeShape="RoundRectangle 12"
                             BackgroundColor="{DynamicResource SurfaceCard}"
@@ -377,7 +316,7 @@
 
                             <!-- Empty state -->
                             <Label IsVisible="{Binding HasAccounts, Converter={StaticResource InvertedBoolConverter}}"
-                                   Text="No accounts yet — tap Accounts to create one."
+                                   Text="No accounts yet — tap the hex button to get started."
                                    FontSize="13"
                                    TextColor="{DynamicResource TextMuted}"
                                    HorizontalOptions="Center"
