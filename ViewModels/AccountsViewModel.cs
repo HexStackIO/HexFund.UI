@@ -163,6 +163,10 @@ public partial class AccountsViewModel : BaseViewModel
         NewAccountNameError    = UIValidator.ValidateAccountName(NewAccountName)        ?? string.Empty;
         NewAccountBalanceError = UIValidator.ValidateInitialBalance(NewAccountBalance)  ?? string.Empty;
 
+        // Duplicate account name check
+        if (string.IsNullOrEmpty(NewAccountNameError))
+            NewAccountNameError = UIValidator.ValidateAccountNameUnique(NewAccountName, Accounts) ?? string.Empty;
+
         if (!string.IsNullOrEmpty(NewAccountNameError) ||
             !string.IsNullOrEmpty(NewAccountBalanceError))
             return;
@@ -242,6 +246,11 @@ public partial class AccountsViewModel : BaseViewModel
 
         // ── Validate all fields ───────────────────────────────────────────────
         EditAccountNameError = UIValidator.ValidateAccountName(EditAccountName) ?? string.Empty;
+
+        // Duplicate account name check — exclude the account currently being edited
+        if (string.IsNullOrEmpty(EditAccountNameError))
+            EditAccountNameError = UIValidator.ValidateAccountNameUnique(
+                EditAccountName, Accounts, AccountToEdit?.AccountId) ?? string.Empty;
 
         if (!string.IsNullOrEmpty(EditAccountNameError))
             return;
@@ -355,6 +364,13 @@ public partial class AccountsViewModel : BaseViewModel
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
+
+    // Sanitize numeric balance inputs on every keystroke
+    partial void OnNewAccountBalanceChanged(string value)
+    {
+        var sanitized = UIValidator.SanitizeDecimalInput(value, allowNegative: true);
+        if (sanitized != value) NewAccountBalance = sanitized;
+    }
 
     private static Task ShowPageAlertAsync(string title, string message) =>
         Application.Current?.MainPage?.DisplayAlert(title, message, "OK")

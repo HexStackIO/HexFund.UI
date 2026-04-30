@@ -454,6 +454,150 @@
         </ScrollView>
     </RefreshView>
 
+    <!-- ── Onboarding overlay ────────────────────────────────────────────────
+         Shown once to first-time users until dismissed or both steps complete.
+         Sits above all content as a bottom sheet anchored inside the page Grid.
+    ──────────────────────────────────────────────────────────────────────── -->
+    <Grid IsVisible="{Binding ShowOnboarding}"
+          VerticalOptions="End"
+          Margin="0,0,0,90">
+
+        <!-- Scrim — taps outside the card do nothing (card handles all actions) -->
+        <Border BackgroundColor="#99000000"
+                StrokeThickness="0"
+                IsVisible="False"/>
+
+        <Border Margin="16,0"
+                BackgroundColor="{DynamicResource SurfaceCard}"
+                Stroke="{DynamicResource Accent}"
+                StrokeThickness="1.5"
+                StrokeShape="RoundRectangle 20"
+                Padding="24,20">
+            <Border.Shadow>
+                <Shadow Brush="{DynamicResource AccentGlow}"
+                        Opacity="0.5" Radius="24" Offset="0,4"/>
+            </Border.Shadow>
+
+            <VerticalStackLayout Spacing="16">
+
+                <!-- Header row: step indicator + dismiss -->
+                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+                    <Border Grid.Column="0"
+                            BackgroundColor="{DynamicResource Accent}"
+                            StrokeThickness="0"
+                            StrokeShape="RoundRectangle 6"
+                            Padding="8,3"
+                            VerticalOptions="Center">
+                        <Label Text="{Binding OnboardingStep, StringFormat='Step {0} of 2'}"
+                               FontSize="11" FontAttributes="Bold"
+                               TextColor="{DynamicResource SurfacePage}"/>
+                    </Border>
+                    <Label Grid.Column="1"
+                           Text="Getting Started"
+                           FontSize="15" FontAttributes="Bold"
+                           TextColor="{DynamicResource TextPrimary}"
+                           VerticalOptions="Center"/>
+                    <Border Grid.Column="2"
+                            BackgroundColor="Transparent"
+                            Stroke="{DynamicResource StrokeCard}"
+                            StrokeThickness="1"
+                            StrokeShape="RoundRectangle 8"
+                            Padding="8,4"
+                            VerticalOptions="Center">
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding DismissOnboardingCommand}"/>
+                        </Border.GestureRecognizers>
+                        <Label Text="Skip all" FontSize="11"
+                               TextColor="{DynamicResource TextSecondary}"/>
+                    </Border>
+                </Grid>
+
+                <BoxView HeightRequest="1" Color="{DynamicResource SurfaceDivider}"/>
+
+                <!-- Step 1: Create Account -->
+                <VerticalStackLayout Spacing="10"
+                                     IsVisible="{Binding IsOnboardingStep1}">
+                    <Label Text="Create your first account"
+                           FontSize="17" FontAttributes="Bold"
+                           TextColor="{DynamicResource TextPrimary}"/>
+                    <Label Text="An account tracks a real wallet, bank account, or savings pot. Your balance and projections are built around it."
+                           FontSize="13"
+                           TextColor="{DynamicResource TextSecondary}"
+                           LineBreakMode="WordWrap"/>
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10" Margin="0,4,0,0">
+                        <Border Grid.Column="0"
+                                BackgroundColor="{DynamicResource Accent}"
+                                StrokeThickness="0"
+                                StrokeShape="RoundRectangle 12">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding OnboardingGoToAccountsCommand}"/>
+                            </Border.GestureRecognizers>
+                            <Label Text="Create Account →"
+                                   FontSize="14" FontAttributes="Bold"
+                                   TextColor="{DynamicResource SurfacePage}"
+                                   HorizontalOptions="Center"
+                                   Padding="0,12"/>
+                        </Border>
+                        <Border Grid.Column="1"
+                                BackgroundColor="Transparent"
+                                Stroke="{DynamicResource StrokeCard}"
+                                StrokeThickness="1"
+                                StrokeShape="RoundRectangle 12">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding DismissOnboardingCommand}"/>
+                            </Border.GestureRecognizers>
+                            <Label Text="Skip" FontSize="14"
+                                   TextColor="{DynamicResource TextSecondary}"
+                                   HorizontalOptions="Center"
+                                   Padding="20,12"/>
+                        </Border>
+                    </Grid>
+                </VerticalStackLayout>
+
+                <!-- Step 2: Add Transaction -->
+                <VerticalStackLayout Spacing="10"
+                                     IsVisible="{Binding IsOnboardingStep2}">
+                    <Label Text="Add your first transaction"
+                           FontSize="17" FontAttributes="Bold"
+                           TextColor="{DynamicResource TextPrimary}"/>
+                    <Label Text="Tap the hex button or use the shortcut below to record income or an expense. Set a frequency to track recurring payments automatically."
+                           FontSize="13"
+                           TextColor="{DynamicResource TextSecondary}"
+                           LineBreakMode="WordWrap"/>
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10" Margin="0,4,0,0">
+                        <Border Grid.Column="0"
+                                BackgroundColor="{DynamicResource Accent}"
+                                StrokeThickness="0"
+                                StrokeShape="RoundRectangle 12">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding OnboardingGoToAddCommand}"/>
+                            </Border.GestureRecognizers>
+                            <Label Text="Add Transaction →"
+                                   FontSize="14" FontAttributes="Bold"
+                                   TextColor="{DynamicResource SurfacePage}"
+                                   HorizontalOptions="Center"
+                                   Padding="0,12"/>
+                        </Border>
+                        <Border Grid.Column="1"
+                                BackgroundColor="Transparent"
+                                Stroke="{DynamicResource StrokeCard}"
+                                StrokeThickness="1"
+                                StrokeShape="RoundRectangle 12">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding DismissOnboardingCommand}"/>
+                            </Border.GestureRecognizers>
+                            <Label Text="Skip" FontSize="14"
+                                   TextColor="{DynamicResource TextSecondary}"
+                                   HorizontalOptions="Center"
+                                   Padding="20,12"/>
+                        </Border>
+                    </Grid>
+                </VerticalStackLayout>
+
+            </VerticalStackLayout>
+        </Border>
+    </Grid>
+
     </Grid>
 
 </ContentPage>

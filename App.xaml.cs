@@ -11,9 +11,10 @@ public partial class App : Application
     private AppShell? _shell;
     private bool _fabInjected;
 
-    // Native view references for show/hide
+    // Native view references for show/hide and theme image updates
 #if ANDROID
     private global::Android.Widget.FrameLayout? _androidFabFrame;
+    private global::Android.Widget.ImageView?   _androidFabImg;
 #endif
 #if IOS
     private UIKit.UIImageView? _iosFabView;
@@ -34,6 +35,10 @@ public partial class App : Application
         // Only show FAB when authenticated — inject on first login, toggle after
         _authService.AuthStateChanged += () =>
             MainThread.BeginInvokeOnMainThread(OnAuthStateChanged);
+
+        // Swap the FAB image whenever the user switches theme
+        _settingsService.SettingsChanged += () =>
+            MainThread.BeginInvokeOnMainThread(UpdateFabImage);
     }
 
     protected override Window CreateWindow(IActivationState? activationState)
@@ -106,13 +111,7 @@ public partial class App : Application
         };
 
         var hexImg = new global::Android.Widget.ImageView(activity);
-        var resId  = activity.Resources?.GetIdentifier(
-                         "hex_fab", "mipmap", activity.PackageName) ?? 0;
-        if (resId == 0)
-            resId = activity.Resources?.GetIdentifier(
-                        "hex_fab", "drawable", activity.PackageName) ?? 0;
-        if (resId != 0)
-            hexImg.SetImageResource(resId);
+        LoadAndroidFabImage(hexImg, activity);
 
         hexImg.Clickable = true;
         hexImg.Click += async (_, _) =>
@@ -149,6 +148,7 @@ public partial class App : Application
 
         decorView.AddView(frame, rootLp);
         _androidFabFrame = frame;
+        _androidFabImg   = hexImg;
 
         StartAndroidPulse(hexImg);
 
@@ -166,10 +166,13 @@ public partial class App : Application
         nfloat screenW  = uiWindow.Bounds.Width;
         nfloat screenH  = uiWindow.Bounds.Height;
 
+        var fabName = ThemeService.GetThemeFab(_settingsService.Theme)
+                          .Replace(".png", "");   // UIImage.FromBundle doesn't need extension
+
         var hexImg = new UIKit.UIImageView
         {
-            Image = UIKit.UIImage.FromBundle("hex_fab")
-                    ?? UIKit.UIImage.FromBundle("hex_fab.png"),
+            Image = UIKit.UIImage.FromBundle(fabName)
+                    ?? UIKit.UIImage.FromBundle("hex_fab"),
             ContentMode            = UIKit.UIViewContentMode.ScaleAspectFit,
             Frame                  = new CoreGraphics.CGRect(
                 (screenW - sizePt) / 2,
@@ -201,6 +204,65 @@ public partial class App : Application
         StartiOSPulse(hexImg);
 #endif
     }
+
+    // ── FAB theme image swap ──────────────────────────────────────────────────
+
+    /// <summary>
+    /// Swaps the FAB image to match the current theme. Called on inject and
+    /// whenever SettingsChanged fires.
+    /// </summary>
+    private void UpdateFabImage()
+    {
+#if ANDROID
+        var activity = global::Microsoft.Maui.ApplicationModel.Platform.CurrentActivity;
+        if (_androidFabImg != null && activity != null)
+            LoadAndroidFabImage(_androidFabImg, activity);
+#endif
+#if IOS
+        if (_iosFabView != null)
+            LoadiOSFabImage(_iosFabView);
+#endif
+    }
+
+#if ANDROID
+    private void LoadAndroidFabImage(
+        global::Android.Widget.ImageView view,
+        global::Android.App.Activity activity)
+    {
+        var imageName = ThemeService.GetThemeFab(_settingsService.Theme)
+                            .Replace(".png", "");   // GetIdentifier doesn't use extension
+
+        var resId = activity.Resources?.GetIdentifier(
+                        imageName, "mipmap", activity.PackageName) ?? 0;
+        if (resId == 0)
+            resId = activity.Resources?.GetIdentifier(
+                        imageName, "drawable", activity.PackageName) ?? 0;
+
+        // Fall back to the unthemed hex_fab if the themed asset isn't present yet
+        if (resId == 0)
+        {
+            resId = activity.Resources?.GetIdentifier(
+                        "hex_fab", "mipmap", activity.PackageName) ?? 0;
+            if (resId == 0)
+                resId = activity.Resources?.GetIdentifier(
+                            "hex_fab", "drawable", activity.PackageName) ?? 0;
+        }
+
+        if (resId != 0)
+            view.SetImageResource(resId);
+    }
+#endif
+
+#if IOS
+    private void LoadiOSFabImage(UIKit.UIImageView view)
+    {
+        var imageName = ThemeService.GetThemeFab(_settingsService.Theme)
+                            .Replace(".png", "");
+
+        view.Image = UIKit.UIImage.FromBundle(imageName)
+                     ?? UIKit.UIImage.FromBundle("hex_fab");
+    }
+#endif
 
     // ── Animations ────────────────────────────────────────────────────────────
 

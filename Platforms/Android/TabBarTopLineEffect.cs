@@ -144,6 +144,10 @@ public static class TabBarTopLineEffect
         float density = bottomNav.Context?.Resources?.DisplayMetrics?.Density ?? 1f;
         int lineHeightPx = (int)(3 * density);
 
+        // Nudge Calendar (index 1) left and Ledger (index 2) right so the
+        // center FAB hexagon has clear space and doesn't overlap either label.
+        int nudgePx = (int)(10 * density);
+
         for (int i = 0; i < menuView.ChildCount; i++)
         {
             var itemView = menuView.GetChildAt(i);
@@ -173,6 +177,13 @@ public static class TabBarTopLineEffect
                 itemView.Background =
                     new ColorDrawable(global::Android.Graphics.Color.Transparent);
             }
+
+            // Shift Calendar toward the left edge, Ledger toward the right edge
+            itemView.SetPadding(
+                i == 1 ? 0 : (i == 2 ? nudgePx : itemView.PaddingLeft),
+                itemView.PaddingTop,
+                i == 1 ? nudgePx : (i == 2 ? 0 : itemView.PaddingRight),
+                itemView.PaddingBottom);
         }
     }
 

@@ -85,14 +85,14 @@
                                                     </Border.GestureRecognizers>
                                                     <Label Text="✏️ Edit" TextColor="{DynamicResource TextPrimary}" FontSize="12" FontAttributes="Bold"/>
                                                 </Border>
-                                                <Border Background="{DynamicResource SurfaceLo}"
-                                                        Stroke="{DynamicResource Down}"
+                                                    <Border Background="{DynamicResource SurfaceHi}"
+                                                        Stroke="{DynamicResource StrokeHi}"
                                                         StrokeThickness="1"
                                                         StrokeShape="RoundRectangle 8" Padding="10">
-                                                    <Border.GestureRecognizers>
+                                                        <Border.GestureRecognizers>
                                                         <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type vm:AccountsViewModel}}, Path=DeleteAccountCommand}" CommandParameter="{Binding .}"/>
                                                     </Border.GestureRecognizers>
-                                                    <Label Text="🗑️ Delete" TextColor="{DynamicResource Down}" FontSize="12" FontAttributes="Bold"/>
+                                                        <Label Text="🗑️ Remove" TextColor="{DynamicResource TextPrimary}" FontSize="12" FontAttributes="Bold"/>
                                                 </Border>
                                             </HorizontalStackLayout>
                                         </Grid>

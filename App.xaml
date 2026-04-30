@@ -37,6 +37,10 @@
             <converters:FilterActiveBgConverter x:Key="FilterActiveBgConverter"/>
             <converters:FilterActiveTextConverter x:Key="FilterActiveTextConverter"/>
             <converters:AccountIsSelectedConverter x:Key="AccountIsSelectedConverter"/>
+            <converters:StringItemEqualsConverter x:Key="StringItemEqualsConverter"/>
+            <converters:CategoryChipBgConverter x:Key="CategoryChipBgConverter"/>
+            <converters:CategoryChipStrokeConverter x:Key="CategoryChipStrokeConverter"/>
+            <converters:CategoryChipTextConverter x:Key="CategoryChipTextConverter"/>
         </ResourceDictionary>
     </Application.Resources>
 </Application>
