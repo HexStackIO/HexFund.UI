@@ -42,10 +42,10 @@ public partial class HomeViewModel : BaseViewModel
     [ObservableProperty] private bool isMonthNetPositive;
     [ObservableProperty] private bool hasBalanceData;
 
-    public string TotalBalanceDisplay    => TotalBalance.ToString("C");
-    public string MonthNetChangeDisplay  =>
+    public string TotalBalanceDisplay => TotalBalance.ToString("C");
+    public string MonthNetChangeDisplay =>
         $"{(IsMonthNetPositive ? "+" : "")}{MonthNetChange:C}";
-    public string MonthNetChangeArrow    => IsMonthNetPositive ? "↑" : "↓";
+    public string MonthNetChangeArrow => IsMonthNetPositive ? "↑" : "↓";
 
     public Color MonthNetChangeColor =>
         GetSemanticColor(IsMonthNetPositive ? "Up" : "Down",
@@ -58,12 +58,12 @@ public partial class HomeViewModel : BaseViewModel
     // ── Recent activity ───────────────────────────────────────────────────────
     [ObservableProperty] private ObservableCollection<RecentTransaction> recentTransactions = new();
     [ObservableProperty] private bool hasRecentTransactions;
-    [ObservableProperty] private bool isRecentExpanded    = true;
+    [ObservableProperty] private bool isRecentExpanded = true;
 
     // ── Upcoming transactions ─────────────────────────────────────────────────
     [ObservableProperty] private ObservableCollection<RecentTransaction> upcomingTransactions = new();
     [ObservableProperty] private bool hasUpcomingTransactions;
-    [ObservableProperty] private bool isUpcomingExpanded  = true;
+    [ObservableProperty] private bool isUpcomingExpanded = true;
 
     // ── Constructor ───────────────────────────────────────────────────────────
 
@@ -77,7 +77,7 @@ public partial class HomeViewModel : BaseViewModel
         _accountStateService = accountStateService;
 
         _accountStateService.SelectedAccountChanged += OnSelectedAccountChanged;
-        _accountStateService.TransactionsChanged    += OnTransactionsChanged;
+        _accountStateService.TransactionsChanged += OnTransactionsChanged;
     }
 
     // ── Initialisation ────────────────────────────────────────────────────────
@@ -85,8 +85,13 @@ public partial class HomeViewModel : BaseViewModel
     /// <summary>Called from HomePage.OnAppearing.</summary>
     public async Task InitializeAsync()
     {
-        if (!IsLoading && HasBalanceData) return; // already loaded, skip
-        await LoadAsync();
+        // If onboarding was reset, force a fresh load so CheckOnboarding
+        // runs with current data even if HasBalanceData is already true.
+        bool needsOnboardingCheck = !SettingsService.HasCompletedOnboarding;
+
+        if (!IsLoading && HasBalanceData && !needsOnboardingCheck) return;
+
+        await LoadAsync(forceRefresh: needsOnboardingCheck);
     }
 
     private void OnSelectedAccountChanged() =>
@@ -109,7 +114,7 @@ public partial class HomeViewModel : BaseViewModel
     private async Task LoadAsync(bool forceRefresh = false)
     {
         IsLoading = true;
-        HasError  = false;
+        HasError = false;
 
         try
         {
@@ -151,9 +156,9 @@ public partial class HomeViewModel : BaseViewModel
 
             var monthNet = overview?.NetChange ?? 0m;
 
-            MonthNetChange      = monthNet;
-            IsMonthNetPositive  = monthNet >= 0;
-            HasBalanceData      = true;
+            MonthNetChange = monthNet;
+            IsMonthNetPositive = monthNet >= 0;
+            HasBalanceData = true;
 
             OnPropertyChanged(nameof(TotalBalanceDisplay));
             OnPropertyChanged(nameof(MonthNetChangeDisplay));
@@ -167,7 +172,7 @@ public partial class HomeViewModel : BaseViewModel
                 .ToList();
 
             PreviewAccounts = new ObservableCollection<Account>(top3);
-            HasAccounts     = top3.Count > 0;
+            HasAccounts = top3.Count > 0;
 
             // ── Recent + Upcoming (top 5 each, across all active accounts) ──
             // Fetch prev month + this month + next month in parallel per account.
@@ -210,9 +215,9 @@ public partial class HomeViewModel : BaseViewModel
                 .Select(x => new RecentTransaction
                 {
                     Description = x.Occ.Description,
-                    Amount      = x.Occ.Amount,
-                    Date        = x.Occ.OccurrenceDate,
-                    ColorHex    = x.Occ.Color,
+                    Amount = x.Occ.Amount,
+                    Date = x.Occ.OccurrenceDate,
+                    ColorHex = x.Occ.Color,
                     AccountName = x.AccountName,
                 })
                 .ToList();
@@ -225,22 +230,24 @@ public partial class HomeViewModel : BaseViewModel
                 .Select(x => new RecentTransaction
                 {
                     Description = x.Occ.Description,
-                    Amount      = x.Occ.Amount,
-                    Date        = x.Occ.OccurrenceDate,
-                    ColorHex    = x.Occ.Color,
+                    Amount = x.Occ.Amount,
+                    Date = x.Occ.OccurrenceDate,
+                    ColorHex = x.Occ.Color,
                     AccountName = x.AccountName,
                 })
                 .ToList();
 
-            RecentTransactions      = new ObservableCollection<RecentTransaction>(top5Recent);
-            HasRecentTransactions   = top5Recent.Count > 0;
-            UpcomingTransactions    = new ObservableCollection<RecentTransaction>(top5Upcoming);
+            RecentTransactions = new ObservableCollection<RecentTransaction>(top5Recent);
+            HasRecentTransactions = top5Recent.Count > 0;
+            UpcomingTransactions = new ObservableCollection<RecentTransaction>(top5Upcoming);
             HasUpcomingTransactions = top5Upcoming.Count > 0;
+
+            CheckOnboarding(hasAccounts: true, hasTransactions: top5Recent.Count > 0);
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"HomeViewModel.LoadAsync error: {ex.Message}");
-            HasError     = true;
+            HasError = true;
             ErrorMessage = "Unable to load dashboard. Pull to refresh.";
             SetEmptyState();
         }
@@ -252,16 +259,71 @@ public partial class HomeViewModel : BaseViewModel
 
     private void SetEmptyState()
     {
-        PreviewAccounts         = new();
-        RecentTransactions      = new();
-        UpcomingTransactions    = new();
-        HasAccounts             = false;
-        HasRecentTransactions   = false;
+        PreviewAccounts = new();
+        RecentTransactions = new();
+        UpcomingTransactions = new();
+        HasAccounts = false;
+        HasRecentTransactions = false;
         HasUpcomingTransactions = false;
-        HasBalanceData          = false;
+        HasBalanceData = false;
+
+        CheckOnboarding(hasAccounts: false, hasTransactions: false);
     }
 
-    // ── Quick action commands ─────────────────────────────────────────────────
+    // ── Onboarding ────────────────────────────────────────────────────────────
+    [ObservableProperty] private bool showOnboarding;
+    [ObservableProperty] private int onboardingStep;   // 1 = Create Account, 2 = Add Transaction
+
+    public bool IsOnboardingStep1 => OnboardingStep == 1;
+    public bool IsOnboardingStep2 => OnboardingStep == 2;
+
+    private void CheckOnboarding(bool hasAccounts, bool hasTransactions)
+    {
+        if (SettingsService.HasCompletedOnboarding) return;
+
+        if (!hasAccounts)
+        {
+            OnboardingStep = 1;
+            ShowOnboarding = true;
+        }
+        else if (!hasTransactions)
+        {
+            OnboardingStep = 2;
+            ShowOnboarding = true;
+        }
+        else
+        {
+            // Both done — mark complete and never show again
+            CompleteOnboarding();
+        }
+    }
+
+    private void CompleteOnboarding()
+    {
+        ShowOnboarding = false;
+        SettingsService.HasCompletedOnboarding = true;
+    }
+
+    [RelayCommand]
+    private async Task OnboardingGoToAccountsAsync()
+    {
+        // Don't mark complete yet — when the user returns to Home, LoadAsync
+        // will re-run and CheckOnboarding will advance to Step 2 if an account
+        // was created, or stay on Step 1 if they came back without creating one.
+        ShowOnboarding = false;
+        await GoToAccountsAsync();
+    }
+
+    [RelayCommand]
+    private async Task OnboardingGoToAddAsync()
+    {
+        // Same reasoning — let the return trip to Home determine completion.
+        ShowOnboarding = false;
+        await GoToDepositAsync();
+    }
+
+    [RelayCommand]
+    private void DismissOnboarding() => CompleteOnboarding();
 
     /// <summary>Add quick action — opens the AddEntryPage bottom sheet.</summary>
     [RelayCommand]
@@ -280,8 +342,19 @@ public partial class HomeViewModel : BaseViewModel
     }
 
     [RelayCommand]
-    private async Task GoToSettingsAsync() =>
+    private async Task GoToSettingsAsync()
+    {
+        // If Settings is already on the stack (user tapped gear twice, or
+        // tapped Home tab while Settings was open and OnShellNavigating already
+        // dismissed it), pop instead of double-pushing.
+        var stack = Shell.Current?.Navigation?.NavigationStack;
+        if (stack != null && stack.Any(p => p is Views.SettingsPage))
+        {
+            await Shell.Current.GoToAsync("..");
+            return;
+        }
         await Shell.Current.GoToAsync("settings");
+    }
 
     /// <summary>Tap an account row in the Home preview to select that account.</summary>
     [RelayCommand]
@@ -297,13 +370,18 @@ public partial class HomeViewModel : BaseViewModel
     [RelayCommand]
     private async Task RefreshAsync() => await LoadAsync(forceRefresh: true);
 
-    [RelayCommand] private void ToggleRecentSection()   => IsRecentExpanded   = !IsRecentExpanded;
+    [RelayCommand] private void ToggleRecentSection() => IsRecentExpanded = !IsRecentExpanded;
     [RelayCommand] private void ToggleUpcomingSection() => IsUpcomingExpanded = !IsUpcomingExpanded;
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    partial void OnTotalBalanceChanged(decimal value)      => OnPropertyChanged(nameof(TotalBalanceDisplay));
-    partial void OnMonthNetChangeChanged(decimal value)    => OnPropertyChanged(nameof(MonthNetChangeDisplay));
+    partial void OnTotalBalanceChanged(decimal value) => OnPropertyChanged(nameof(TotalBalanceDisplay));
+    partial void OnMonthNetChangeChanged(decimal value) => OnPropertyChanged(nameof(MonthNetChangeDisplay));
+    partial void OnOnboardingStepChanged(int value)
+    {
+        OnPropertyChanged(nameof(IsOnboardingStep1));
+        OnPropertyChanged(nameof(IsOnboardingStep2));
+    }
     partial void OnIsMonthNetPositiveChanged(bool value)
     {
         OnPropertyChanged(nameof(MonthNetChangeDisplay));
@@ -326,17 +404,17 @@ public partial class HomeViewModel : BaseViewModel
 public class RecentTransaction
 {
     public string Description { get; init; } = string.Empty;
-    public decimal Amount      { get; init; }
-    public DateTime Date       { get; init; }
-    public string? ColorHex    { get; init; }
-    public string AccountName  { get; init; } = string.Empty;
+    public decimal Amount { get; init; }
+    public DateTime Date { get; init; }
+    public string? ColorHex { get; init; }
+    public string AccountName { get; init; } = string.Empty;
 
     public string AmountDisplay => $"{(Amount >= 0 ? "+" : "")}{Amount:C}";
-    public string DateDisplay   => Date.ToString("MMM dd");
+    public string DateDisplay => Date.ToString("MMM dd");
 
     public Color AmountColor =>
         Amount >= 0
-            ? GetSemanticColor("Up",   "#3FB97A")
+            ? GetSemanticColor("Up", "#3FB97A")
             : GetSemanticColor("Down", "#E05A6F");
 
     public Color AccentColor =>

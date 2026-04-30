@@ -153,15 +153,44 @@
                         </Border>
                     </Grid>
 
-                    <!-- Picker row — hidden while the new-category input is open -->
-                    <Border IsVisible="{Binding ShowNewCategoryInput, Converter={StaticResource InvertedBoolConverter}}"
-                            Stroke="{DynamicResource StrokeCard}"
-                            StrokeShape="RoundRectangle 12" StrokeThickness="1"
-                            BackgroundColor="{DynamicResource SurfaceLo}">
-                        <Picker ItemsSource="{Binding AvailableCategories}"
-                                SelectedItem="{Binding SelectedCategory}"
-                                Title="Select category" FontSize="15" Margin="12,8"/>
-                    </Border>
+                    <!-- Category chips — hidden while the new-category input is open -->
+                    <ScrollView IsVisible="{Binding ShowNewCategoryInput, Converter={StaticResource InvertedBoolConverter}}"
+                                Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
+                        <HorizontalStackLayout Spacing="8" Padding="2,2"
+                                               BindableLayout.ItemsSource="{Binding AvailableCategories}">
+                            <BindableLayout.ItemTemplate>
+                                <DataTemplate x:DataType="x:String">
+                                    <Border StrokeShape="RoundRectangle 20" StrokeThickness="1" Padding="14,7">
+                                        <Border.BackgroundColor>
+                                            <MultiBinding Converter="{StaticResource CategoryChipBgConverter}">
+                                                <Binding Path="."/>
+                                                <Binding Source="{RelativeSource AncestorType={x:Type vm:AddEntryViewModel}}" Path="SelectedCategory"/>
+                                            </MultiBinding>
+                                        </Border.BackgroundColor>
+                                        <Border.Stroke>
+                                            <MultiBinding Converter="{StaticResource CategoryChipStrokeConverter}">
+                                                <Binding Path="."/>
+                                                <Binding Source="{RelativeSource AncestorType={x:Type vm:AddEntryViewModel}}" Path="SelectedCategory"/>
+                                            </MultiBinding>
+                                        </Border.Stroke>
+                                        <Border.GestureRecognizers>
+                                            <TapGestureRecognizer
+                                                Command="{Binding Source={RelativeSource AncestorType={x:Type vm:AddEntryViewModel}}, Path=SelectCategoryCommand}"
+                                                CommandParameter="{Binding .}"/>
+                                        </Border.GestureRecognizers>
+                                        <Label Text="{Binding .}" FontSize="13" VerticalOptions="Center">
+                                            <Label.TextColor>
+                                                <MultiBinding Converter="{StaticResource CategoryChipTextConverter}">
+                                                    <Binding Path="."/>
+                                                    <Binding Source="{RelativeSource AncestorType={x:Type vm:AddEntryViewModel}}" Path="SelectedCategory"/>
+                                                </MultiBinding>
+                                            </Label.TextColor>
+                                        </Label>
+                                    </Border>
+                                </DataTemplate>
+                            </BindableLayout.ItemTemplate>
+                        </HorizontalStackLayout>
+                    </ScrollView>
 
                     <!-- Inline new-category input -->
                     <Border IsVisible="{Binding ShowNewCategoryInput}"
@@ -224,55 +253,17 @@
                     </Border>
                 </VerticalStackLayout>
 
-                <!-- End Date (optional / auto for Once) -->
-                <VerticalStackLayout Spacing="8">
+                <!-- End Date (optional — hidden when Frequency = Once) -->
+                <VerticalStackLayout Spacing="8"
+                                     IsVisible="{Binding SelectedFrequency,
+                                                 Converter={StaticResource FrequencyNotOnceConverter}}">
                     <HorizontalStackLayout Spacing="10">
                         <CheckBox IsChecked="{Binding HasEndDate}"
-                                  IsEnabled="{Binding SelectedFrequency,
-                                              Converter={StaticResource FrequencyNotOnceConverter}}"
                                   Color="{DynamicResource Accent}"
                                   VerticalOptions="Center"/>
-                        <Label VerticalOptions="Center"
-                               FontSize="14" TextColor="{DynamicResource TextPrimary}">
-                            <Label.Triggers>
-                                <DataTrigger TargetType="Label"
-                                             Binding="{Binding SelectedFrequency}"
-                                             Value="{x:Static models:FrequencyType.Once}">
-                                    <Setter Property="Text" Value="End date (matches start date)"/>
-                                    <Setter Property="TextColor" Value="{DynamicResource TextSecondary}"/>
-                                </DataTrigger>
-                                <DataTrigger TargetType="Label"
-                                             Binding="{Binding SelectedFrequency}"
-                                             Value="{x:Static models:FrequencyType.Daily}">
-                                    <Setter Property="Text" Value="Set end date"/>
-                                </DataTrigger>
-                                <DataTrigger TargetType="Label"
-                                             Binding="{Binding SelectedFrequency}"
-                                             Value="{x:Static models:FrequencyType.Weekly}">
-                                    <Setter Property="Text" Value="Set end date"/>
-                                </DataTrigger>
-                                <DataTrigger TargetType="Label"
-                                             Binding="{Binding SelectedFrequency}"
-                                             Value="{x:Static models:FrequencyType.BiWeekly}">
-                                    <Setter Property="Text" Value="Set end date"/>
-                                </DataTrigger>
-                                <DataTrigger TargetType="Label"
-                                             Binding="{Binding SelectedFrequency}"
-                                             Value="{x:Static models:FrequencyType.Monthly}">
-                                    <Setter Property="Text" Value="Set end date"/>
-                                </DataTrigger>
-                                <DataTrigger TargetType="Label"
-                                             Binding="{Binding SelectedFrequency}"
-                                             Value="{x:Static models:FrequencyType.BiMonthly}">
-                                    <Setter Property="Text" Value="Set end date"/>
-                                </DataTrigger>
-                                <DataTrigger TargetType="Label"
-                                             Binding="{Binding SelectedFrequency}"
-                                             Value="{x:Static models:FrequencyType.FirstThirdFriday}">
-                                    <Setter Property="Text" Value="Set end date"/>
-                                </DataTrigger>
-                            </Label.Triggers>
-                        </Label>
+                        <Label Text="Set end date"
+                               VerticalOptions="Center"
+                               FontSize="14" TextColor="{DynamicResource TextPrimary}"/>
                     </HorizontalStackLayout>
                     <Border IsVisible="{Binding HasEndDate}"
                             Stroke="{DynamicResource StrokeCard}"
@@ -280,44 +271,13 @@
                             BackgroundColor="{DynamicResource SurfaceLo}">
                         <DatePicker Date="{Binding EndDate}"
                                     MinimumDate="{Binding StartDate}"
-                                    Format="MMM dd, yyyy" FontSize="15" Margin="12,10"
-                                    IsEnabled="{Binding SelectedFrequency,
-                                                Converter={StaticResource FrequencyNotOnceConverter}}"/>
+                                    Format="MMM dd, yyyy" FontSize="15" Margin="12,10"/>
                     </Border>
                     <Label Text="{Binding DateRangeError}" FontSize="12"
                            TextColor="{DynamicResource Down}"
                            IsVisible="{Binding DateRangeError, Converter={StaticResource StringNotEmptyConverter}}"/>
                 </VerticalStackLayout>
 
-                <!-- Color picker -->
-                <VerticalStackLayout Spacing="8">
-                    <Label Text="Color" FontSize="13" FontAttributes="Bold"
-                           TextColor="{DynamicResource TextSecondary}"/>
-                    <Border HeightRequest="6" StrokeThickness="0"
-                            BackgroundColor="{Binding ColorPreview}"
-                            StrokeShape="RoundRectangle 3"/>
-                    <ScrollView Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
-                        <HorizontalStackLayout Spacing="8" Padding="2,4">
-                            <Border WidthRequest="36" HeightRequest="36" StrokeShape="Ellipse"
-                                    StrokeThickness="2" BackgroundColor="Transparent"
-                                    Stroke="{Binding SelectedColor, Converter={StaticResource NullOrValueStrokeConverter}, ConverterParameter=''}">
-                                <Border.GestureRecognizers>
-                                    <TapGestureRecognizer Command="{Binding SelectColorCommand}" CommandParameter=""/>
-                                </Border.GestureRecognizers>
-                                <Label Text="✕" FontSize="16" TextColor="{DynamicResource TextPrimary}"
-                                       HorizontalOptions="Center" VerticalOptions="Center"/>
-                            </Border>
-                            <Border WidthRequest="36" HeightRequest="36" StrokeShape="Ellipse" StrokeThickness="2" BackgroundColor="#E53935" Stroke="{Binding SelectedColor, Converter={StaticResource NullOrValueStrokeConverter}, ConverterParameter='#E53935'}"><Border.GestureRecognizers><TapGestureRecognizer Command="{Binding SelectColorCommand}" CommandParameter="#E53935"/></Border.GestureRecognizers></Border>
-                            <Border WidthRequest="36" HeightRequest="36" StrokeShape="Ellipse" StrokeThickness="2" BackgroundColor="#E85D04" Stroke="{Binding SelectedColor, Converter={StaticResource NullOrValueStrokeConverter}, ConverterParameter='#E85D04'}"><Border.GestureRecognizers><TapGestureRecognizer Command="{Binding SelectColorCommand}" CommandParameter="#E85D04"/></Border.GestureRecognizers></Border>
-                            <Border WidthRequest="36" HeightRequest="36" StrokeShape="Ellipse" StrokeThickness="2" BackgroundColor="#F9C74F" Stroke="{Binding SelectedColor, Converter={StaticResource NullOrValueStrokeConverter}, ConverterParameter='#F9C74F'}"><Border.GestureRecognizers><TapGestureRecognizer Command="{Binding SelectColorCommand}" CommandParameter="#F9C74F"/></Border.GestureRecognizers></Border>
-                            <Border WidthRequest="36" HeightRequest="36" StrokeShape="Ellipse" StrokeThickness="2" BackgroundColor="#2D6A4F" Stroke="{Binding SelectedColor, Converter={StaticResource NullOrValueStrokeConverter}, ConverterParameter='#2D6A4F'}"><Border.GestureRecognizers><TapGestureRecognizer Command="{Binding SelectColorCommand}" CommandParameter="#2D6A4F"/></Border.GestureRecognizers></Border>
-                            <Border WidthRequest="36" HeightRequest="36" StrokeShape="Ellipse" StrokeThickness="2" BackgroundColor="#0077B6" Stroke="{Binding SelectedColor, Converter={StaticResource NullOrValueStrokeConverter}, ConverterParameter='#0077B6'}"><Border.GestureRecognizers><TapGestureRecognizer Command="{Binding SelectColorCommand}" CommandParameter="#0077B6"/></Border.GestureRecognizers></Border>
-                            <Border WidthRequest="36" HeightRequest="36" StrokeShape="Ellipse" StrokeThickness="2" BackgroundColor="#512BD4" Stroke="{Binding SelectedColor, Converter={StaticResource NullOrValueStrokeConverter}, ConverterParameter='#512BD4'}"><Border.GestureRecognizers><TapGestureRecognizer Command="{Binding SelectColorCommand}" CommandParameter="#512BD4"/></Border.GestureRecognizers></Border>
-                            <Border WidthRequest="36" HeightRequest="36" StrokeShape="Ellipse" StrokeThickness="2" BackgroundColor="#C77DFF" Stroke="{Binding SelectedColor, Converter={StaticResource NullOrValueStrokeConverter}, ConverterParameter='#C77DFF'}"><Border.GestureRecognizers><TapGestureRecognizer Command="{Binding SelectColorCommand}" CommandParameter="#C77DFF"/></Border.GestureRecognizers></Border>
-                            <Border WidthRequest="36" HeightRequest="36" StrokeShape="Ellipse" StrokeThickness="2" BackgroundColor="#455A64" Stroke="{Binding SelectedColor, Converter={StaticResource NullOrValueStrokeConverter}, ConverterParameter='#455A64'}"><Border.GestureRecognizers><TapGestureRecognizer Command="{Binding SelectColorCommand}" CommandParameter="#455A64"/></Border.GestureRecognizers></Border>
-                        </HorizontalStackLayout>
-                    </ScrollView>
-                </VerticalStackLayout>
 
                 <!-- API error -->
                 <Border IsVisible="{Binding HasError}"

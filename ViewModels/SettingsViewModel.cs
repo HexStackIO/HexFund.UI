@@ -526,6 +526,20 @@ public partial class SettingsViewModel : BaseViewModel
     }
 
     [RelayCommand]
+    private async Task ResetOnboardingAsync()
+    {
+        var mainPage = Application.Current?.MainPage;
+        if (mainPage == null) return;
+
+        SettingsService.HasCompletedOnboarding = false;
+
+        await mainPage.DisplayAlert(
+            "Tutorial Reset",
+            "The getting started guide will appear next time you visit the Home tab.",
+            "OK");
+    }
+
+    [RelayCommand]
     private async Task ClearCacheAsync()
     {
         var mainPage = Application.Current?.MainPage;

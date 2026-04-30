@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using HexFund.UI.Models;
 
 namespace HexFund.UI.Validation;
@@ -19,6 +20,9 @@ public static class UIValidator
     public const int CategoryMaxLength         = 25;
     public const int AmendDescriptionMaxLength = 40;
 
+    // Shared example hint used in all numeric error messages for consistency
+    private const string NumericHint = "e.g. 100.00";
+
     // ── Account ───────────────────────────────────────────────────────────────
 
     public static string? ValidateAccountName(string? value)
@@ -31,10 +35,33 @@ public static class UIValidator
         if (trimmed.Length > AccountNameMaxLength)
             return $"Account name cannot exceed {AccountNameMaxLength} characters.";
 
-        if (ContainsHtml(trimmed))
-            return "Account name cannot contain HTML or special markup.";
+        if (ContainsUnsafeContent(trimmed))
+            return "Account name contains invalid characters.";
 
         return null;
+    }
+
+    /// <summary>
+    /// Checks a proposed account name against the existing account list.
+    /// Case-insensitive. Pass the current account's ID when editing to allow
+    /// keeping the same name unchanged.
+    /// </summary>
+    public static string? ValidateAccountNameUnique(
+        string? value,
+        IEnumerable<Models.Account> existingAccounts,
+        Guid? currentAccountId = null)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return null; // structural check handled elsewhere
+
+        var trimmed = value.Trim();
+
+        var duplicate = existingAccounts.FirstOrDefault(a =>
+            string.Equals(a.AccountName.Trim(), trimmed, StringComparison.OrdinalIgnoreCase) &&
+            a.AccountId != currentAccountId);
+
+        return duplicate != null
+            ? $"An account named \"{duplicate.AccountName}\" already exists."
+            : null;
     }
 
     public static string? ValidateInitialBalance(string? value)
@@ -43,7 +70,7 @@ public static class UIValidator
             return "Starting balance is required.";
 
         if (!decimal.TryParse(value.Trim(), out var amount))
-            return "Please enter a valid number (e.g. 1000.00).";
+            return $"Please enter a valid number ({NumericHint}).";
 
         if (amount < -1_000_000_000 || amount > 1_000_000_000)
             return "Balance must be between -1,000,000,000 and 1,000,000,000.";
@@ -63,8 +90,8 @@ public static class UIValidator
         if (trimmed.Length > DescriptionMaxLength)
             return $"Description cannot exceed {DescriptionMaxLength} characters.";
 
-        if (ContainsHtml(trimmed))
-            return "Description cannot contain HTML or special markup.";
+        if (ContainsUnsafeContent(trimmed))
+            return "Description contains invalid characters.";
 
         return null;
     }
@@ -75,7 +102,7 @@ public static class UIValidator
             return "Amount is required.";
 
         if (!decimal.TryParse(value.Trim(), out var amount))
-            return "Please enter a valid number (e.g. 100.00).";
+            return $"Please enter a valid number ({NumericHint}).";
 
         if (amount <= 0)
             return "Amount must be greater than zero.";
@@ -96,8 +123,8 @@ public static class UIValidator
         if (trimmed.Length > CategoryMaxLength)
             return $"Category cannot exceed {CategoryMaxLength} characters.";
 
-        if (ContainsHtml(trimmed))
-            return "Category cannot contain HTML or special markup.";
+        if (ContainsUnsafeContent(trimmed))
+            return "Category contains invalid characters.";
 
         return null;
     }
@@ -150,12 +177,11 @@ public static class UIValidator
         if (trimmed.Length > AmendDescriptionMaxLength)
             return $"Description cannot exceed {AmendDescriptionMaxLength} characters.";
 
-        if (ContainsHtml(trimmed))
-            return "Description cannot contain HTML or special markup.";
+        if (ContainsUnsafeContent(trimmed))
+            return "Description contains invalid characters.";
 
         return null;
     }
-
 
     // ── Profile ───────────────────────────────────────────────────────────────
 
@@ -169,8 +195,8 @@ public static class UIValidator
         if (trimmed.Length > 100)
             return $"{fieldLabel} cannot exceed 100 characters.";
 
-        if (ContainsHtml(trimmed))
-            return $"{fieldLabel} cannot contain HTML or special markup.";
+        if (ContainsUnsafeContent(trimmed))
+            return $"{fieldLabel} contains invalid characters.";
 
         return null;
     }
@@ -187,18 +213,96 @@ public static class UIValidator
         if (trimmed.Length > CategoryMaxLength)
             return $"Category name cannot exceed {CategoryMaxLength} characters.";
 
-        if (ContainsHtml(trimmed))
-            return "Category name cannot contain HTML or special markup.";
+        if (ContainsUnsafeContent(trimmed))
+            return "Category name contains invalid characters.";
 
         return null;
+    }
+
+    // ── Numeric input sanitization ────────────────────────────────────────────
+
+    /// <summary>
+    /// Strips any character that is not a digit, a leading minus sign, or a single
+    /// decimal point. Also enforces a maximum of 2 decimal places.
+    /// Safe to call on every keystroke from an Entry.TextChanged handler.
+    /// </summary>
+    public static string SanitizeDecimalInput(string? raw, bool allowNegative = false)
+    {
+        if (string.IsNullOrEmpty(raw)) return string.Empty;
+
+        var sb = new System.Text.StringBuilder(raw.Length);
+        bool hasDot     = false;
+        int  decimals   = 0;
+        bool leadingPos = true;
+
+        foreach (var ch in raw)
+        {
+            if (allowNegative && ch == '-' && sb.Length == 0)
+            {
+                sb.Append(ch);
+                leadingPos = false;
+                continue;
+            }
+
+            if (ch == '.' && !hasDot)
+            {
+                hasDot    = true;
+                leadingPos = false;
+                sb.Append(ch);
+                continue;
+            }
+
+            if (char.IsDigit(ch))
+            {
+                if (hasDot)
+                {
+                    if (decimals < 2)
+                    {
+                        sb.Append(ch);
+                        decimals++;
+                    }
+                    // silently drop extra decimal places
+                }
+                else
+                {
+                    sb.Append(ch);
+                    leadingPos = false;
+                }
+            }
+            // all other characters (symbols, letters, SQL punctuation) are dropped
+        }
+
+        return sb.ToString();
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────
 
     /// <summary>
-    /// Quick check for HTML tag patterns. Not a full sanitizer — the API handles
-    /// thorough sanitization. This is here to give instant feedback on obvious mistakes.
+    /// Detects HTML markup, script injection patterns, and common SQL injection
+    /// sequences. This is a defense-in-depth layer — the API remains the
+    /// authoritative guard.
     /// </summary>
-    private static bool ContainsHtml(string input) =>
-        input.Contains('<') || input.Contains('>');
+    private static bool ContainsUnsafeContent(string input)
+    {
+        // HTML / script tags
+        if (input.Contains('<') || input.Contains('>'))
+            return true;
+
+        // SQL comment sequences
+        if (input.Contains("--") || input.Contains("/*") || input.Contains("*/"))
+            return true;
+
+        // SQL statement keywords preceded by a separator (space, semicolon, parenthesis)
+        // Pattern: matches "; DROP", "' OR", "1=1", etc.
+        if (Regex.IsMatch(input,
+            @"[;'""`]\s*(DROP|DELETE|INSERT|UPDATE|SELECT|UNION|EXEC|EXECUTE|ALTER|CREATE|TRUNCATE)\b",
+            RegexOptions.IgnoreCase))
+            return true;
+
+        // Bare semicolons (no legitimate use in any of our text fields)
+        if (input.Contains(';'))
+            return true;
+
+        return false;
+    }
 }

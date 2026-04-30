@@ -30,14 +30,16 @@ public interface ISettingsService
 {
     CalendarViewMode CalendarView { get; set; }
     ColorTheme Theme { get; set; }
+    bool HasCompletedOnboarding { get; set; }
 
     event Action SettingsChanged;
 }
 
 public class SettingsService : ISettingsService
 {
-    private const string KeyCalendarView = "calendar_view_mode";
-    private const string KeyColorTheme   = "color_theme";
+    private const string KeyCalendarView        = "calendar_view_mode";
+    private const string KeyColorTheme          = "color_theme";
+    private const string KeyOnboardingComplete  = "onboarding_complete";
 
     public event Action? SettingsChanged;
 
@@ -60,5 +62,11 @@ public class SettingsService : ISettingsService
             Preferences.Default.Set(KeyColorTheme, (int)value);
             SettingsChanged?.Invoke();
         }
+    }
+
+    public bool HasCompletedOnboarding
+    {
+        get => Preferences.Default.Get(KeyOnboardingComplete, false);
+        set => Preferences.Default.Set(KeyOnboardingComplete, value);
     }
 }

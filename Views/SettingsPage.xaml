@@ -228,6 +228,11 @@
                                 BackgroundColor="{DynamicResource SurfaceLo}"
                                 TextColor="{DynamicResource TextPrimary}"
                                 CornerRadius="8" Padding="0,12"/>
+                        <Button Text="↩  Reset Tutorial"
+                                Command="{Binding ResetOnboardingCommand}"
+                                BackgroundColor="{DynamicResource SurfaceLo}"
+                                TextColor="{DynamicResource TextPrimary}"
+                                CornerRadius="8" Padding="0,12"/>
                         <Button Text="Logout"
                                 Command="{Binding LogoutCommand}"
                                 IsVisible="{Binding CanLogout}"

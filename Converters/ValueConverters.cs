@@ -589,3 +589,95 @@ public class AccountIsSelectedConverter : IMultiValueConverter
     public object[] ConvertBack(object value, Type[] targetTypes, object? parameter, CultureInfo culture)
         => throw new NotImplementedException();
 }
+
+/// <summary>
+/// MultiValueConverter for category chip selection.
+/// values[0] = the chip's own string (item), values[1] = SelectedCategory.
+/// Returns true (selected) when they are equal — used to highlight the active chip.
+/// </summary>
+public class StringItemEqualsConverter : IMultiValueConverter
+{
+    public object Convert(object[] values, Type targetType, object? parameter, CultureInfo culture)
+        => values.Length >= 2 &&
+           values[0] is string item &&
+           values[1] is string selected &&
+           string.Equals(item, selected, StringComparison.OrdinalIgnoreCase);
+
+    public object[] ConvertBack(object value, Type[] targetTypes, object? parameter, CultureInfo culture)
+        => throw new NotImplementedException();
+}
+
+/// <summary>
+/// MultiValueConverter for category chip background.
+/// values[0] = chip string, values[1] = SelectedCategory.
+/// Returns Accent color when selected, SurfaceLo when not.
+/// </summary>
+public class CategoryChipBgConverter : IMultiValueConverter
+{
+    public object Convert(object[] values, Type targetType, object? parameter, CultureInfo culture)
+    {
+        bool isSelected = values.Length >= 2 &&
+                          values[0] is string item &&
+                          values[1] is string selected &&
+                          string.Equals(item, selected, StringComparison.OrdinalIgnoreCase);
+
+        var resources = Application.Current?.Resources;
+        if (resources == null) return Colors.Transparent;
+
+        string key = isSelected ? "Accent" : "SurfaceLo";
+        return resources.TryGetValue(key, out var v) && v is Color c ? c : Colors.Transparent;
+    }
+
+    public object[] ConvertBack(object value, Type[] targetTypes, object? parameter, CultureInfo culture)
+        => throw new NotImplementedException();
+}
+
+/// <summary>
+/// MultiValueConverter for category chip stroke color.
+/// Returns Accent when selected, StrokeCard when not.
+/// </summary>
+public class CategoryChipStrokeConverter : IMultiValueConverter
+{
+    public object Convert(object[] values, Type targetType, object? parameter, CultureInfo culture)
+    {
+        bool isSelected = values.Length >= 2 &&
+                          values[0] is string item &&
+                          values[1] is string selected &&
+                          string.Equals(item, selected, StringComparison.OrdinalIgnoreCase);
+
+        var resources = Application.Current?.Resources;
+        if (resources == null) return Colors.Transparent;
+
+        string key = isSelected ? "Accent" : "StrokeCard";
+        return resources.TryGetValue(key, out var v) && v is Color c
+            ? new SolidColorBrush(c)
+            : new SolidColorBrush(Colors.Transparent);
+    }
+
+    public object[] ConvertBack(object value, Type[] targetTypes, object? parameter, CultureInfo culture)
+        => throw new NotImplementedException();
+}
+
+/// <summary>
+/// MultiValueConverter for category chip text color.
+/// Returns SurfacePage (dark) when selected for contrast, TextPrimary when not.
+/// </summary>
+public class CategoryChipTextConverter : IMultiValueConverter
+{
+    public object Convert(object[] values, Type targetType, object? parameter, CultureInfo culture)
+    {
+        bool isSelected = values.Length >= 2 &&
+                          values[0] is string item &&
+                          values[1] is string selected &&
+                          string.Equals(item, selected, StringComparison.OrdinalIgnoreCase);
+
+        var resources = Application.Current?.Resources;
+        if (resources == null) return Colors.White;
+
+        string key = isSelected ? "SurfacePage" : "TextPrimary";
+        return resources.TryGetValue(key, out var v) && v is Color c ? c : Colors.White;
+    }
+
+    public object[] ConvertBack(object value, Type[] targetTypes, object? parameter, CultureInfo culture)
+        => throw new NotImplementedException();
+}

@@ -201,4 +201,21 @@ public static class ThemeService
         ColorTheme.Platinum  => "hex_bg_platinum.png",
         _                    => "hex_bg_gold.png",
     };
+
+    /// <summary>
+    /// Per-theme FAB hexagon image — resolves to e.g. "hex_fab_gold.png".
+    /// The stroke color matches the theme Accent; the fill stays dark.
+    /// </summary>
+    public static string GetThemeFab(ColorTheme theme) => theme switch
+    {
+        ColorTheme.Gold      => "hex_fab_gold.png",
+        ColorTheme.Sapphire  => "hex_fab_sapphire.png",
+        ColorTheme.Emerald   => "hex_fab_emerald.png",
+        ColorTheme.Bronze    => "hex_fab_bronze.png",
+        ColorTheme.Obsidian  => "hex_fab_obsidian.png",
+        ColorTheme.Ruby      => "hex_fab_ruby.png",
+        ColorTheme.Amethyst  => "hex_fab_amethyst.png",
+        ColorTheme.Platinum  => "hex_fab_platinum.png",
+        _                    => "hex_fab_gold.png",
+    };
 }

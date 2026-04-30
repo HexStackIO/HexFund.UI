@@ -189,6 +189,25 @@ public partial class TransactionsViewModel : BaseViewModel
     partial void OnNewColorChanged(string? value) => OnPropertyChanged(nameof(NewColorPreview));
     partial void OnEditColorChanged(string? value) => OnPropertyChanged(nameof(EditColorPreview));
     partial void OnAmendColorChanged(string? value) => OnPropertyChanged(nameof(AmendColorPreview));
+
+    // Sanitize numeric inputs on every keystroke
+    partial void OnEditAmountChanged(string value)
+    {
+        var sanitized = UIValidator.SanitizeDecimalInput(value, allowNegative: false);
+        if (sanitized != value) EditAmount = sanitized;
+    }
+
+    partial void OnPendingFilterAmountMinChanged(string value)
+    {
+        var sanitized = UIValidator.SanitizeDecimalInput(value, allowNegative: false);
+        if (sanitized != value) PendingFilterAmountMin = sanitized;
+    }
+
+    partial void OnPendingFilterAmountMaxChanged(string value)
+    {
+        var sanitized = UIValidator.SanitizeDecimalInput(value, allowNegative: false);
+        if (sanitized != value) PendingFilterAmountMax = sanitized;
+    }
     partial void OnActiveSortFieldChanged(TransactionSortField value)
     {
         OnPropertyChanged(nameof(SortLabel));
@@ -861,6 +880,12 @@ public partial class TransactionsViewModel : BaseViewModel
     [RelayCommand]
     private void SelectAmendColor(string parameter)
         => AmendColor = string.IsNullOrEmpty(parameter) ? null : parameter;
+
+    [RelayCommand]
+    private void SelectEditCategory(string category) => EditCategory = category;
+
+    [RelayCommand]
+    private void SelectAmendCategory(string category) => AmendCategory = category;
 
     // ── Delete ────────────────────────────────────────────────────────────────
 

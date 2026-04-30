@@ -49,10 +49,10 @@ public partial class AppShell : Shell
         }
     }
 
-    // ── Tab switch — close the add page if it's open ──────────────────────────
+    // ── Tab switch — close modal pages when the user switches tabs ───────────
 
-    // Called by the Shell Navigating event so switching tabs dismisses any
-    // open add page rather than leaving it suspended in the background.
+    // Handles the cross-tab case where AddEntry, Accounts, or Settings is
+    // pushed as a route on top of a tab — pop before switching.
     private void OnShellNavigating(object? sender, ShellNavigatingEventArgs e)
     {
         var target = e.Target.Location.OriginalString;
@@ -60,9 +60,9 @@ public partial class AppShell : Shell
 
         if (!isTabSwitch) return;
 
-        // Close any floating modal pages when the user switches tabs
         if (!IsPageOpen<Views.AddEntryPage>() &&
-            !IsPageOpen<Views.AccountsPage>()) return;
+            !IsPageOpen<Views.AccountsPage>()  &&
+            !IsPageOpen<Views.SettingsPage>()) return;
 
         e.Cancel();
         MainThread.BeginInvokeOnMainThread(async () =>
@@ -86,12 +86,12 @@ public partial class AppShell : Shell
         {
             ShellItem? target = tab switch
             {
-                AppTab.Home => HomeTab,
+                AppTab.Home     => HomeTab,
                 AppTab.Calendar => CalendarTab,
-                AppTab.Ledger => LedgerTab,
+                AppTab.Ledger   => LedgerTab,
                 AppTab.Insights => InsightsTab,
-                AppTab.Login => LoginTab,
-                _ => null
+                AppTab.Login    => LoginTab,
+                _               => null
             };
 
             if (target != null)
@@ -114,6 +114,27 @@ public partial class AppShell : Shell
             UpdateTabBarForAuthState(_authService.IsAuthenticated));
 
     private void UpdateTabBarForAuthState(bool isAuthenticated)
+    {
+        // Pop any pushed routes (Settings, Accounts, AddEntry) before switching
+        // tab bars. If a route is on the stack when CurrentItem changes, Shell
+        // tries to resolve it against the new tab bar and throws because the
+        // route doesn't exist in that context (e.g. "settings" is not a route
+        // in AuthTabBar).
+        if (Navigation.NavigationStack.Count > 1)
+        {
+            // Fire-and-forget the pop, then switch tab bars once it completes
+            MainThread.BeginInvokeOnMainThread(async () =>
+            {
+                await GoToAsync("..");
+                ApplyTabBarState(isAuthenticated);
+            });
+            return;
+        }
+
+        ApplyTabBarState(isAuthenticated);
+    }
+
+    private void ApplyTabBarState(bool isAuthenticated)
     {
         if (isAuthenticated)
         {

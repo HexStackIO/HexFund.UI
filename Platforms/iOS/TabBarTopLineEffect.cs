@@ -26,6 +26,7 @@ public static class TabBarTopLineEffect
         {
             var tbc = FindTabBarController(GetRootViewController());
             if (tbc == null) return;
+            ApplyTabNudges(tbc.TabBar);
             DrawTopLine(tbc.TabBar);
             tbc.ViewControllerSelected -= OnViewControllerSelected;
             tbc.ViewControllerSelected += OnViewControllerSelected;
@@ -74,6 +75,27 @@ public static class TabBarTopLineEffect
     }
 
     // ── Drawing logic ─────────────────────────────────────────────────────────
+
+    // Horizontal nudge in points — Calendar shifts left, Ledger shifts right
+    private const float NudgePt = 10f;
+
+    /// <summary>
+    /// Shifts Calendar (index 1) left and Ledger (index 2) right so the
+    /// center FAB hexagon has clear space. Called once on Reattach.
+    /// </summary>
+    private static void ApplyTabNudges(UITabBar tabBar)
+    {
+        var items = tabBar.Items;
+        if (items == null || items.Length < 3) return;
+
+        // Calendar (1): shift content left
+        items[1].ImageInsets = new UIEdgeInsets(0, -NudgePt, 0, NudgePt);
+        items[1].TitlePositionAdjustment = new UIOffset(-NudgePt, 0);
+
+        // Ledger (2): shift content right
+        items[2].ImageInsets = new UIEdgeInsets(0, NudgePt, 0, -NudgePt);
+        items[2].TitlePositionAdjustment = new UIOffset(NudgePt, 0);
+    }
 
     private static void DrawTopLine(UITabBar tabBar)
     {

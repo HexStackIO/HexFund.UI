@@ -203,6 +203,9 @@ public partial class AddEntryViewModel : BaseViewModel
         OnPropertyChanged(nameof(ColorPreview));
     }
 
+    [RelayCommand]
+    private void SelectCategory(string category) => SelectedCategory = category;
+
     // ── Add-category inline commands ──────────────────────────────────────────
 
     [RelayCommand]
@@ -352,6 +355,12 @@ public partial class AddEntryViewModel : BaseViewModel
         await Shell.Current.GoToAsync("..");
 
     // ── Partial hooks ─────────────────────────────────────────────────────────
+
+    partial void OnAmountChanged(string value)
+    {
+        var sanitized = UIValidator.SanitizeDecimalInput(value, allowNegative: false);
+        if (sanitized != value) Amount = sanitized; // triggers another change, but terminates immediately
+    }
 
     partial void OnIsIncomeChanged(bool value)
     {
