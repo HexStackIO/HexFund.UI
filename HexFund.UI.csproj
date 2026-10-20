@@ -73,6 +73,13 @@
 		<PackageReference Include="System.Text.Json" Version="9.0.0" />
 	</ItemGroup>
 
+	<!-- The test project lives in this folder tree and must not be compiled into the app. -->
+	<ItemGroup>
+		<Compile Remove="tests\**" />
+		<EmbeddedResource Remove="tests\**" />
+		<None Remove="tests\**" />
+	</ItemGroup>
+
 	<ItemGroup>
 		<MauiXaml Update="Views\SettingsPage.xaml">
 			<Generator>MSBuild:Compile</Generator>

@@ -19,7 +19,9 @@ public static class RetryAfterParser
             return delay;
         }
 
-        if (DateTimeOffset.TryParse(value, CultureInfo.InvariantCulture,
+        // Only the standard HTTP-date format (RFC 1123) is accepted, so stray text such as "1.5"
+        // is not mistaken for a calendar date.
+        if (DateTimeOffset.TryParseExact(value, "r", CultureInfo.InvariantCulture,
                 DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var date))
         {
             var delta = date - now;

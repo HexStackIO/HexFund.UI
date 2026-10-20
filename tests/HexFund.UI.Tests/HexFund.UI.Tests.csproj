@@ -1,0 +1,33 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <RootNamespace>HexFund.UI.Tests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <!-- The app targets MAUI, so the tests link the framework-free source files instead of
+       referencing the app project. Every linked file must stay free of MAUI types. -->
+  <ItemGroup>
+    <Compile Include="..\..\Services\Http\*.cs" Link="Linked\Http\%(Filename)%(Extension)" />
+    <Compile Include="..\..\Services\FeedbackOutcome.cs" Link="Linked\FeedbackOutcome.cs" />
+    <Compile Include="..\..\Models\Feedback.cs" Link="Linked\Feedback.cs" />
+    <Compile Include="..\..\Models\FeedbackDiagnosticsFormat.cs" Link="Linked\FeedbackDiagnosticsFormat.cs" />
+    <Compile Include="..\..\Models\FrequencyType.cs" Link="Linked\FrequencyType.cs" />
+    <Compile Include="..\..\Models\Account.cs" Link="Linked\Account.cs" />
+    <Compile Include="..\..\Validation\UIValidator.cs" Link="Linked\UIValidator.cs" />
+  </ItemGroup>
+
+</Project>
