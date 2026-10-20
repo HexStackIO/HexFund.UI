@@ -97,6 +97,7 @@ public static class MauiProgram
         builder.Services.AddSingleton<IAuthService,         AuthService>();
         builder.Services.AddSingleton<IAccountStateService, AccountStateService>();
         builder.Services.AddSingleton<ISettingsService,     SettingsService>();
+        builder.Services.AddSingleton<IDiagnosticsService, DiagnosticsService>();
 
         builder.Services.AddTransient<LoginViewModel>();
         builder.Services.AddTransient<HomeViewModel>();
