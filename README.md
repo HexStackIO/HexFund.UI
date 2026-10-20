@@ -46,7 +46,7 @@ dotnet restore
 # 3. Set the API base URL (see Configuration)
 
 # 4. Run on Android emulator
-dotnet run -f net9.0-android
+dotnet run -f net9.0-android36.0
 
 # 5. Run on iOS simulator
 dotnet run -f net9.0-ios
@@ -80,15 +80,15 @@ Update `ApiBaseUrl` to point to your running instance of the FinancePlanner API.
 
 ```bash
 # Android
-dotnet build -f net9.0-android
-dotnet run -f net9.0-android
+dotnet build -f net9.0-android36.0
+dotnet run -f net9.0-android36.0
 
 # iOS (requires macOS + Xcode)
 dotnet build -f net9.0-ios
 dotnet run -f net9.0-ios
 
 # Release build (trimming + AOT enabled)
-dotnet publish -f net9.0-android -c Release
+dotnet publish -f net9.0-android36.0 -c Release
 dotnet publish -f net9.0-ios -c Release
 ```
 

@@ -52,10 +52,10 @@ jobs:
           java-version: '17'
           distribution: 'microsoft'
 
-      - name: Set up .NET 9
+      - name: Set up .NET 10 SDK (provides the Android API 36 workload; app still targets net9.0)
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.0.x'
+          dotnet-version: '10.0.x'
 
       # ── 4. Caches ────────────────────────────
       - name: Cache NuGet packages
@@ -75,7 +75,7 @@ jobs:
             ${{ env.DOTNET_ROOT }}/sdk-manifests
             ${{ env.DOTNET_ROOT }}/metadata
             ${{ env.DOTNET_ROOT }}/library-packs
-          key: dotnet-workloads-${{ runner.os }}-${{ hashFiles('**/global.json') }}-maui-android-v1
+          key: dotnet-workloads-${{ runner.os }}-${{ hashFiles('**/global.json') }}-maui-android-api36-v2
           restore-keys: |
             dotnet-workloads-${{ runner.os }}-
 
@@ -116,7 +116,7 @@ jobs:
 
       # ── 6. Restore ───────────────────────────
       - name: Restore NuGet packages
-        run: dotnet restore HexFund.UI.csproj -p:TargetFrameworks=net9.0-android
+        run: dotnet restore HexFund.UI.csproj -p:TargetFrameworks=net9.0-android36.0
 
       # ── 7. Decode keystore ───────────────────
       - name: Decode keystore
@@ -128,9 +128,9 @@ jobs:
       - name: Build AAB
         run: |
           dotnet publish HexFund.UI.csproj \
-            -f net9.0-android \
+            -f net9.0-android36.0 \
             -c Release \
-            -p:TargetFrameworks=net9.0-android \
+            -p:TargetFrameworks=net9.0-android36.0 \
             -p:AndroidPackageFormat=aab \
             -p:ApplicationVersion=${{ steps.version.outputs.VERSION_CODE }} \
             -p:ApplicationDisplayVersion=${{ steps.version.outputs.VERSION_NAME }} \
