@@ -6,12 +6,10 @@
              BackgroundColor="#80000000">
 
     <!--
-        Transparent modal page — the #80000000 background creates the
-        dim-overlay effect while the inner Border card is fully themed.
-        Matches the Edit/Amend dialog visual language exactly.
+        The translucent background dims the page behind the themed card, matching the edit and
+        amend dialogs.
     -->
     <Grid>
-        <!-- Backdrop tap dismisses -->
         <Grid.GestureRecognizers>
             <TapGestureRecognizer Tapped="OnBackdropTapped"/>
         </Grid.GestureRecognizers>
@@ -23,7 +21,10 @@
                 StrokeThickness="0"
                 Padding="28,24"
                 WidthRequest="300">
-            <!-- Swallow taps so they don't reach the backdrop dismiss -->
+            <!--
+                An empty tap recognizer stops taps on the card from reaching the backdrop, which
+                dismisses the page.
+            -->
             <Border.GestureRecognizers>
                 <TapGestureRecognizer/>
             </Border.GestureRecognizers>

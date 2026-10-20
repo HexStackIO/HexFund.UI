@@ -2,16 +2,21 @@ using Microsoft.Extensions.Caching.Memory;
 
 namespace HexFund.UI.Services;
 
+/// <summary>In-memory cache for API responses, with helpers to invalidate calendar data.</summary>
 public interface ICacheService
 {
     T? Get<T>(string key) where T : class;
     void Set<T>(string key, T value, TimeSpan duration) where T : class;
     void Remove(string key);
     void Clear();
+    /// <summary>Removes every cached calendar entry for the account.</summary>
     void InvalidateCalendarData(Guid accountId);
+
+    /// <summary>Records that a month was cached so <see cref="InvalidateCalendarData"/> can find it.</summary>
     void RegisterCachedMonth(Guid accountId, int year, int month);
 }
 
+/// <summary>Memory-cache implementation. Nothing is persisted, so the cache is empty after a restart.</summary>
 public class CacheService : ICacheService
 {
     private readonly IMemoryCache _cache;
@@ -63,7 +68,7 @@ public class CacheService : ICacheService
             {
                 _cache.Remove(MonthlyOverviewKey(accountId, year, month));
                 _cache.Remove(TransactionsForMonthKey(accountId, year, month));
-                // Also clear all per-date keys for that month
+                // Per-date entries are keyed by day, so clear every day of the month.
                 var daysInMonth = DateTime.DaysInMonth(year, month);
                 for (int day = 1; day <= daysInMonth; day++)
                     _cache.Remove(TransactionsForDateKey(accountId, new DateTime(year, month, day)));

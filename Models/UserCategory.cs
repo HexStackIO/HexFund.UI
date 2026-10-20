@@ -1,7 +1,7 @@
 namespace HexFund.UI.Models;
 
 /// <summary>
-/// Client-side representation of a user-defined transaction category.
+/// A user-defined transaction category.
 /// </summary>
 public class UserCategory
 {

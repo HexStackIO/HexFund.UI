@@ -14,7 +14,6 @@
 
         <Grid RowDefinitions="Auto,*,Auto">
 
-        <!-- ── Header ────────────────────────────────────────────────────── -->
         <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto"
               Padding="20,16,20,12"
               BackgroundColor="{DynamicResource SurfaceCard}">
@@ -47,11 +46,9 @@
         </Grid>
         <BoxView Grid.Row="0" HeightRequest="1" Color="{DynamicResource SurfaceDivider}" VerticalOptions="End"/>
 
-        <!-- ── Form ──────────────────────────────────────────────────────── -->
         <ScrollView Grid.Row="1">
             <VerticalStackLayout Padding="20,16" Spacing="16">
 
-                <!-- No account warning -->
                 <Border IsVisible="{Binding HasAccount, Converter={StaticResource InvertedBoolConverter}}"
                         BackgroundColor="{DynamicResource SurfaceCard}"
                         Stroke="{DynamicResource Warn}" StrokeThickness="1"
@@ -61,7 +58,6 @@
                            LineBreakMode="WordWrap" HorizontalTextAlignment="Center"/>
                 </Border>
 
-                <!-- Income / Expense toggle -->
                 <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
                     <Border Grid.Column="0" StrokeShape="RoundRectangle 12"
                             BackgroundColor="#0F3018" Stroke="{DynamicResource Up}"
@@ -95,7 +91,6 @@
                     </Border>
                 </Grid>
 
-                <!-- Amount -->
                 <VerticalStackLayout Spacing="6">
                     <Label Text="Amount" FontSize="13" FontAttributes="Bold"
                            TextColor="{DynamicResource TextSecondary}"/>
@@ -118,7 +113,6 @@
                            IsVisible="{Binding AmountError, Converter={StaticResource StringNotEmptyConverter}}"/>
                 </VerticalStackLayout>
 
-                <!-- Description -->
                 <VerticalStackLayout Spacing="6">
                     <Label Text="Description" FontSize="13" FontAttributes="Bold"
                            TextColor="{DynamicResource TextSecondary}"/>
@@ -134,7 +128,6 @@
                            IsVisible="{Binding DescriptionError, Converter={StaticResource StringNotEmptyConverter}}"/>
                 </VerticalStackLayout>
 
-                <!-- Category -->
                 <VerticalStackLayout Spacing="6">
                     <Grid ColumnDefinitions="*,Auto">
                         <Label Grid.Column="0" Text="Category" FontSize="13" FontAttributes="Bold"
@@ -153,7 +146,6 @@
                         </Border>
                     </Grid>
 
-                    <!-- Category chips — hidden while the new-category input is open -->
                     <ScrollView IsVisible="{Binding ShowNewCategoryInput, Converter={StaticResource InvertedBoolConverter}}"
                                 Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
                         <HorizontalStackLayout Spacing="8" Padding="2,2"
@@ -192,7 +184,6 @@
                         </HorizontalStackLayout>
                     </ScrollView>
 
-                    <!-- Inline new-category input -->
                     <Border IsVisible="{Binding ShowNewCategoryInput}"
                             Stroke="{DynamicResource Accent}"
                             StrokeShape="RoundRectangle 12" StrokeThickness="1"
@@ -228,7 +219,6 @@
                            IsVisible="{Binding CategoryError, Converter={StaticResource StringNotEmptyConverter}}"/>
                 </VerticalStackLayout>
 
-                <!-- Frequency -->
                 <VerticalStackLayout Spacing="6">
                     <Label Text="Frequency" FontSize="13" FontAttributes="Bold"
                            TextColor="{DynamicResource TextSecondary}"/>
@@ -241,7 +231,6 @@
                     </Border>
                 </VerticalStackLayout>
 
-                <!-- Start Date -->
                 <VerticalStackLayout Spacing="6">
                     <Label Text="Start Date" FontSize="13" FontAttributes="Bold"
                            TextColor="{DynamicResource TextSecondary}"/>
@@ -253,7 +242,7 @@
                     </Border>
                 </VerticalStackLayout>
 
-                <!-- End Date (optional — hidden when Frequency = Once) -->
+                <!-- Hidden for one-time entries, which end the day they start. -->
                 <VerticalStackLayout Spacing="8"
                                      IsVisible="{Binding SelectedFrequency,
                                                  Converter={StaticResource FrequencyNotOnceConverter}}">
@@ -279,7 +268,6 @@
                 </VerticalStackLayout>
 
 
-                <!-- API error -->
                 <Border IsVisible="{Binding HasError}"
                         BackgroundColor="{DynamicResource SurfaceCard}"
                         Stroke="{DynamicResource Down}" StrokeThickness="1"
@@ -291,7 +279,6 @@
             </VerticalStackLayout>
         </ScrollView>
 
-        <!-- ── Footer ────────────────────────────────────────────────────── -->
         <Grid Grid.Row="2" ColumnDefinitions="*,*" ColumnSpacing="12"
               Padding="20,12,20,32" BackgroundColor="{DynamicResource SurfacePage}">
             <BoxView Grid.ColumnSpan="2" HeightRequest="1"
@@ -322,7 +309,6 @@
             </Border>
         </Grid>
 
-        <!-- ── Account Picker Overlay ────────────────────────────────────── -->
         <Grid Grid.RowSpan="3" IsVisible="{Binding ShowAccountPicker}"
               BackgroundColor="#80000000">
             <Grid.GestureRecognizers>

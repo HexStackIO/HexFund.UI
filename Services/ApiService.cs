@@ -7,6 +7,10 @@ using HexFund.UI.Models;
 
 namespace HexFund.UI.Services;
 
+/// <summary>
+/// Typed client for the HexFund API. Methods return null, false or an empty list when a request
+/// fails, so callers must treat those values as "failed or empty".
+/// </summary>
 public interface IApiService
 {
     // Auth
@@ -47,6 +51,10 @@ public interface IApiService
     void InvalidateCalendarCache(Guid accountId);
 }
 
+/// <summary>
+/// Default <see cref="IApiService"/>. Reads go through <see cref="ICacheService"/>; writes
+/// invalidate the cache entries they affect. Failures are logged to the debug output only.
+/// </summary>
 public class ApiService : IApiService
 {
     private readonly HttpClient _httpClient;
@@ -72,8 +80,6 @@ public class ApiService : IApiService
     public void InvalidateCalendarCache(Guid accountId) =>
         _cacheService.InvalidateCalendarData(accountId);
 
-    // ── Auth ──────────────────────────────────────────────────────────────────
-
     public async Task<AuthResponse?> LoginAsync(LoginRequest request)
     {
         try
@@ -98,9 +104,8 @@ public class ApiService : IApiService
     }
 
     /// <summary>
-    /// Permanently deletes the authenticated user's account and all associated
-    /// data from the server. The caller is responsible for also revoking the
-    /// local MSAL token cache after this returns true.
+    /// Permanently deletes the signed-in user and all of their data on the server. The caller
+    /// must also clear the local MSAL token cache after this returns true.
     /// </summary>
     public async Task<bool> DeleteUserAsync()
     {
@@ -141,8 +146,8 @@ public class ApiService : IApiService
     }
 
     /// <summary>
-    /// Sends updated first/last name to the API. On success, updates the
-    /// local cache key so the caller can refresh AuthService.CurrentUser.
+    /// Sends the updated first and last name. The caller refreshes AuthService.CurrentUser from
+    /// the returned user.
     /// </summary>
     public async Task<User?> UpdateProfileAsync(UpdateProfileRequest request)
     {
@@ -154,8 +159,6 @@ public class ApiService : IApiService
         }
         catch (Exception ex) { Debug.WriteLine($"Update profile error: {ex.Message}"); return null; }
     }
-
-    // ── Accounts ──────────────────────────────────────────────────────────────
 
     public async Task<List<Account>> GetAccountsAsync(bool forceRefresh = false)
     {
@@ -239,8 +242,8 @@ public class ApiService : IApiService
         catch (Exception ex) { Debug.WriteLine($"Delete account error: {ex.Message}"); return false; }
     }
 
-    // ── Transactions ──────────────────────────────────────────────────────────
-
+    // Requests with includeHistory bypass the cache in both directions, so the cached list only
+    // ever holds current transactions.
     public async Task<List<Transaction>> GetTransactionsAsync(
         Guid accountId, bool forceRefresh = false, bool includeHistory = false)
     {
@@ -327,8 +330,6 @@ public class ApiService : IApiService
         catch (Exception ex) { Debug.WriteLine($"Amend transaction error: {ex.Message}"); return null; }
     }
 
-    // ── Categories ────────────────────────────────────────────────────────────
-
     private const string CategoriesCacheKey = "user_categories";
 
     public async Task<List<UserCategory>> GetCategoriesAsync(bool forceRefresh = false)
@@ -356,7 +357,7 @@ public class ApiService : IApiService
         {
             var response = await _httpClient.PostAsJsonAsync("categories", request, _jsonOptions);
             if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
-                return null; // duplicate name — caller handles the message
+                return null; // Duplicate name: the caller shows the message.
             response.EnsureSuccessStatusCode();
             var category = await response.Content.ReadFromJsonAsync<UserCategory>(_jsonOptions);
             _cacheService.Remove(CategoriesCacheKey);
@@ -376,8 +377,6 @@ public class ApiService : IApiService
         }
         catch (Exception ex) { Debug.WriteLine($"Delete category error: {ex.Message}"); return false; }
     }
-
-    // ── Calendar ──────────────────────────────────────────────────────────────
 
     public async Task<EnhancedMonthlyOverview?> GetMonthlyOverviewAsync(
         Guid accountId, int year, int month, bool forceRefresh = false)
@@ -441,6 +440,7 @@ public class ApiService : IApiService
                 $"accounts/{accountId}/transactions-for-month?year={year}&month={month}");
             response.EnsureSuccessStatusCode();
 
+            // The API keys the dictionary by "yyyy-MM-dd" strings; convert them to dates.
             var stringKeyedDict = await response.Content
                 .ReadFromJsonAsync<Dictionary<string, List<TransactionOccurrence>>>(_jsonOptions);
 

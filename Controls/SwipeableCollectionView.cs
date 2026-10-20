@@ -1,11 +1,9 @@
 namespace HexFund.UI.Controls;
 
 /// <summary>
-/// A CollectionView subclass that exposes left/right swipe events that work
-/// even when the native RecyclerView/UICollectionView would normally consume
-/// the touch. Platform-specific handlers override OnInterceptTouchEvent (Android)
-/// or add a UISwipeGestureRecognizer with requiresExclusiveTouchType=false (iOS)
-/// so horizontal flicks are never swallowed by the scroll container.
+/// A CollectionView that raises left and right swipe events even though the native scroll
+/// container would normally consume those touches. The platform handlers intercept touches on
+/// Android and add a swipe gesture recognizer on iOS.
 /// </summary>
 public class SwipeableCollectionView : CollectionView
 {
@@ -15,7 +13,7 @@ public class SwipeableCollectionView : CollectionView
     /// <summary>Raised when the user swipes right across the collection.</summary>
     public event EventHandler? SwipedRight;
 
-    // Called by platform handlers — keeps handler code clean.
+    // Called by the platform handlers.
     internal void RaiseSwipedLeft()  => SwipedLeft?.Invoke(this, EventArgs.Empty);
     internal void RaiseSwipedRight() => SwipedRight?.Invoke(this, EventArgs.Empty);
 }

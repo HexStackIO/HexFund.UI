@@ -5,7 +5,7 @@ using HexFund.UI.Services;
 namespace HexFund.UI.Converters;
 
 /// <summary>
-/// Converts a string to a boolean (true if not empty)
+/// Converts a string to a boolean: true when the string is not empty.
 /// </summary>
 public class StringNotEmptyConverter : IValueConverter
 {
@@ -17,7 +17,7 @@ public class StringNotEmptyConverter : IValueConverter
 }
 
 /// <summary>
-/// Inverts a boolean value
+/// Inverts a boolean value.
 /// </summary>
 public class InvertedBoolConverter : IValueConverter
 {
@@ -29,7 +29,7 @@ public class InvertedBoolConverter : IValueConverter
 }
 
 /// <summary>
-/// Converts inverted boolean to opacity (true = 0.5, false = 1.0)
+/// Converts an inverted boolean to an opacity: true gives 0.5 and false gives 1.0.
 /// </summary>
 public class InvertedBoolToOpacityConverter : IValueConverter
 {
@@ -45,7 +45,7 @@ public class InvertedBoolToOpacityConverter : IValueConverter
 }
 
 /// <summary>
-/// Converts boolean to string based on parameter (format: "TrueValue|FalseValue")
+/// Converts a boolean to a string. The parameter has the form "TrueValue|FalseValue".
 /// </summary>
 public class BoolToStringConverter : IValueConverter
 {
@@ -66,7 +66,8 @@ public class BoolToStringConverter : IValueConverter
 }
 
 /// <summary>
-/// Converts boolean to Color based on parameter (format: "TrueColor|FalseColor")
+/// Converts a boolean to a color. The parameter has the form "TrueColor|FalseColor" and accepts
+/// green, red, blue and primary.
 /// </summary>
 public class BoolToColorConverter : IValueConverter
 {
@@ -92,7 +93,7 @@ public class BoolToColorConverter : IValueConverter
             "green"   => Colors.Green,
             "red"     => Colors.Red,
             "blue"    => Colors.Blue,
-            "primary" => Color.FromArgb("#D4AF37"),  // updated to Gold accent
+            "primary" => Color.FromArgb("#D4AF37"),  // The Gold accent, regardless of theme.
             _         => Colors.Gray
         };
     }
@@ -102,7 +103,7 @@ public class BoolToColorConverter : IValueConverter
 }
 
 /// <summary>
-/// Converts boolean to text ("Active" or "Inactive")
+/// Converts a boolean to "Active" or "Inactive".
 /// </summary>
 public class BoolToTextConverter : IValueConverter
 {
@@ -118,7 +119,7 @@ public class BoolToTextConverter : IValueConverter
 }
 
 /// <summary>
-/// Compares two Guids and returns true if they match (for showing selected account indicator)
+/// Returns true when the bound value equals the parameter, to show the selected-account indicator.
 /// </summary>
 public class AccountSelectedConverter : IMultiValueConverter
 {
@@ -138,9 +139,8 @@ public class AccountSelectedConverter : IMultiValueConverter
 }
 
 /// <summary>
-/// Converts account ID comparison to border color for visual selection indicator.
-/// Resolves vault stroke tokens from the resource dictionary so colours adapt
-/// to the active theme rather than using hardcoded values.
+/// Returns the border color for an account row: the accent when the row is the selected account
+/// and the card stroke otherwise. Both come from the resource dictionary, so they follow the theme.
 /// </summary>
 public class AccountIdToColorConverter : IValueConverter
 {
@@ -150,19 +150,17 @@ public class AccountIdToColorConverter : IValueConverter
         {
             if (selectedId == currentId)
             {
-                // Use the live Accent token — adapts to whichever theme is active.
                 if (Application.Current?.Resources.TryGetValue("Accent", out var accent) == true
                     && accent is Color accentColor)
                     return accentColor;
-                return Color.FromArgb("#D4AF37"); // Gold fallback
+                return Color.FromArgb("#D4AF37"); // Fallback before a theme is applied.
             }
         }
 
-        // Vault stroke for non-selected accounts
         if (Application.Current?.Resources.TryGetValue("StrokeCard", out var stroke) == true
             && stroke is Color strokeColor)
             return strokeColor;
-        return Color.FromArgb("#26292F"); // VaultStroke fallback
+        return Color.FromArgb("#26292F"); // Fallback before a theme is applied.
     }
 
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
@@ -170,7 +168,7 @@ public class AccountIdToColorConverter : IValueConverter
 }
 
 /// <summary>
-/// Converts decimal to bool (true if greater than zero)
+/// Converts a decimal to a boolean: true when the value is greater than zero.
 /// </summary>
 public class DecimalGreaterThanZeroConverter : IValueConverter
 {
@@ -186,7 +184,7 @@ public class DecimalGreaterThanZeroConverter : IValueConverter
 }
 
 /// <summary>
-/// Converts int to bool (true if greater than zero)
+/// Converts an integer to a boolean: true when the value is greater than zero.
 /// </summary>
 public class IntToBoolConverter : IValueConverter
 {
@@ -202,9 +200,8 @@ public class IntToBoolConverter : IValueConverter
 }
 
 /// <summary>
-/// Returns the background highlight for a selected calendar day.
-/// Resolves against the AccentGlow semantic token so the tint matches
-/// whichever gem/metal theme is active.
+/// Returns the background highlight for the selected calendar day, taken from the AccentGlow
+/// token so it follows the active theme.
 /// </summary>
 public class DateToBackgroundConverter : IValueConverter
 {
@@ -219,18 +216,16 @@ public class DateToBackgroundConverter : IValueConverter
         if (!selectedDate.HasValue || date.Date != selectedDate.Value.Date)
             return Colors.Transparent;
 
-        // AccentGlow is a semi-transparent accent tint — ideal for selection
-        // highlights on the dark vault surface.
         if (Application.Current?.Resources.TryGetValue("AccentGlow", out var v) == true
             && v is Color glow)
             return glow;
 
-        // Fall back to SurfaceSubtle if AccentGlow isn't injected yet
+        // AccentGlow is missing before the first theme is applied.
         if (Application.Current?.Resources.TryGetValue("SurfaceSubtle", out var s) == true
             && s is Color subtle)
             return subtle;
 
-        return Color.FromArgb("#1C1F23"); // VaultSurfaceHi safe fallback
+        return Color.FromArgb("#1C1F23");
     }
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
@@ -238,8 +233,8 @@ public class DateToBackgroundConverter : IValueConverter
 }
 
 /// <summary>
-/// Returns Up (green) or Down (red) vault semantic colour for a transaction amount.
-/// Resolves the live "Up" / "Down" tokens so the exact shade is always correct.
+/// Returns the Up color for an amount of zero or more and the Down color for a negative amount,
+/// taken from the theme resources.
 /// </summary>
 public class AmountToColorConverter : IValueConverter
 {
@@ -250,10 +245,10 @@ public class AmountToColorConverter : IValueConverter
             var key = amount >= 0 ? "Up" : "Down";
             if (Application.Current?.Resources.TryGetValue(key, out var c) == true && c is Color color)
                 return color;
-            // Static fallbacks matching vault semantic colours
+            // Fallbacks used before a theme is applied.
             return amount >= 0 ? Color.FromArgb("#3FB97A") : Color.FromArgb("#E05A6F");
         }
-        return Color.FromArgb("#8B8F98"); // VaultTextDim for unknown/zero
+        return Color.FromArgb("#8B8F98"); // Not a decimal.
     }
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
@@ -280,12 +275,8 @@ public class TransactionCountToTextConverter : IValueConverter
 }
 
 /// <summary>
-/// Converts IsActive bool to the toggle button background color.
-/// Always vault-dark; the light-theme branch is removed because all
-/// HexFund themes are dark-substrate and OS AppTheme is forced to Dark.
-///
-/// true  (active)   → red-tinted bg  — prompts the user to disable
-/// false (inactive) → green-tinted bg — prompts the user to enable
+/// Returns the background of the activate/deactivate button: red-tinted for an active
+/// transaction (the button deactivates it) and green-tinted for an inactive one.
 /// </summary>
 public class BoolToToggleBgConverter : IValueConverter
 {
@@ -303,16 +294,12 @@ public class BoolToToggleBgConverter : IValueConverter
 }
 
 /// <summary>
-/// Converts IsActive bool to the toggle button foreground/text color.
-/// Uses vault semantic Down/Up colours so they remain consistent if the
-/// vault palette is ever adjusted.
-///
-/// true  → Down-tinted text  ("Deactivate")
-/// false → Up-tinted text    ("Activate")
+/// Returns the text color of the activate/deactivate button: light red for an active transaction
+/// and light green for an inactive one.
 /// </summary>
 public class BoolToToggleTextConverter : IValueConverter
 {
-    // Lighter variants suitable for the dark tinted backgrounds above.
+    // Lighter than the backgrounds so the text stays readable on them.
     private static readonly Color RedText   = Color.FromArgb("#EF9A9A");
     private static readonly Color GreenText = Color.FromArgb("#A5D6A7");
 
@@ -327,13 +314,10 @@ public class BoolToToggleTextConverter : IValueConverter
 }
 
 /// <summary>
-/// Swatch selection outline for transaction color picker.
-/// value     = currently selected hex string (or null for "default")
-/// parameter = this swatch's hex string (empty string = "default" swatch)
-///
-/// Returns vault StrokeHi (#383C45) when selected, Transparent otherwise.
-/// Using StrokeHi rather than a dark color gives a visible but tasteful
-/// outline against the dark vault surface.
+/// Returns the outline of a color swatch in the transaction color picker: the StrokeHi color
+/// when the swatch is selected and transparent otherwise. The value is the selected hex string
+/// (null for the default swatch) and the parameter is the swatch's own hex string (empty for the
+/// default swatch).
 /// </summary>
 public class NullOrValueStrokeConverter : IValueConverter
 {
@@ -344,7 +328,7 @@ public class NullOrValueStrokeConverter : IValueConverter
         if (Application.Current?.Resources.TryGetValue("StrokeHi", out var v) == true
             && v is Color c)
             return c;
-        return Color.FromArgb("#383C45"); // VaultStrokeHi fallback
+        return Color.FromArgb("#383C45"); // Fallback before a theme is applied.
     }
 
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
@@ -364,13 +348,9 @@ public class NullOrValueStrokeConverter : IValueConverter
 }
 
 /// <summary>
-/// Returns the swatch outline color for a theme circle in the theme picker modal.
-/// value     = current SelectedTheme (ColorTheme enum or int)
-/// parameter = this swatch's theme index as string (e.g. "0", "1")
-///
-/// Returns AccentInk of the SELECTED theme when this swatch is the active theme,
-/// Transparent otherwise. AccentInk is always a light tint — it reads clearly
-/// against any swatch colour on the dark vault background.
+/// Returns the outline of a swatch in the theme picker: the AccentInk color when the swatch is the
+/// selected theme and transparent otherwise. The value is the selected theme (enum or int) and
+/// the parameter is the swatch's theme index as a string.
 /// </summary>
 public class ThemeSwatchStrokeConverter : IValueConverter
 {
@@ -385,14 +365,12 @@ public class ThemeSwatchStrokeConverter : IValueConverter
         if (selected != swatchIndex)
             return Colors.Transparent;
 
-        // Resolve the AccentInk of the currently active theme from the live
-        // resource dictionary — this gives a light tinted ring that is always
-        // visible on both dark swatch circles and the vault modal background.
+        // AccentInk is a light tint, so the ring is visible on dark swatches and on the dialog.
         if (Application.Current?.Resources.TryGetValue("AccentInk", out var v) == true
             && v is Color ink)
             return ink;
 
-        // Hard fallback: white is universally visible on any dark swatch
+        // White is visible on any dark swatch.
         return Colors.White;
     }
 
@@ -401,8 +379,8 @@ public class ThemeSwatchStrokeConverter : IValueConverter
 }
 
 /// <summary>
-/// Converts bool to double for Opacity binding.
-/// Parameter format: "TrueValue|FalseValue" (e.g., "1|0")
+/// Converts a boolean to a double for an Opacity binding. The parameter has the form
+/// "TrueValue|FalseValue", for example "1|0".
 /// </summary>
 public class BoolToDoubleConverter : IValueConverter
 {
@@ -428,11 +406,9 @@ public class BoolToDoubleConverter : IValueConverter
 }
 
 /// <summary>
-/// Returns true when the active sort field matches the chip's field index.
-/// Used to drive chip highlight and direction arrow visibility.
-///
-/// value     = ActiveSortField (TransactionSortField enum, binds as int)
-/// parameter = the chip's field index as a string e.g. "0", "1", "2", "3"
+/// Returns true when the active sort field matches the chip's field index, which drives the chip
+/// highlight and the direction arrow. The value is the active TransactionSortField and the
+/// parameter is the chip's field index as a string.
 /// </summary>
 public class SortFieldActiveConverter : IValueConverter
 {
@@ -447,13 +423,9 @@ public class SortFieldActiveConverter : IValueConverter
 }
 
 /// <summary>
-/// Multi-value converter for sort chip text and arrow color.
-/// values[0] = ActiveSortField (enum/int)
-/// values[1] = ThemePrimaryColor (Color)
-/// parameter = this chip's field index as string ("0"–"3")
-///
-/// Returns AccentInk when this chip is active (text on filled accent bg),
-/// ThemePrimaryColor (accent) when inactive.
+/// Returns the text and arrow color of a sort chip: AccentInk when the chip is active (it sits on
+/// a filled accent background) and the accent otherwise. The values are the active sort field and
+/// the theme primary color, and the parameter is the chip's field index as a string.
 /// </summary>
 public class SortChipTextColorConverter : IMultiValueConverter
 {
@@ -468,7 +440,6 @@ public class SortChipTextColorConverter : IMultiValueConverter
         if (fieldInt != chipIndex)
             return primary;
 
-        // Active chip: use AccentInk so text is legible on the filled accent bg
         if (Application.Current?.Resources.TryGetValue("AccentInk", out var v) == true
             && v is Color ink)
             return ink;
@@ -481,12 +452,8 @@ public class SortChipTextColorConverter : IMultiValueConverter
 }
 
 /// <summary>
-/// Multi-value converter for sort chip background color.
-/// values[0] = ActiveSortField (enum/int)
-/// values[1] = ThemePrimaryColor (Color)
-/// parameter = this chip's field index as string ("0"–"3")
-///
-/// Returns ThemePrimaryColor (filled) when active, Transparent when inactive.
+/// Returns the background of a sort chip: the theme primary color when active and transparent
+/// otherwise. The values and parameter are the same as for the chip text converter.
 /// </summary>
 public class SortChipBackgroundConverter : IMultiValueConverter
 {
@@ -506,9 +473,8 @@ public class SortChipBackgroundConverter : IMultiValueConverter
 }
 
 /// <summary>
-/// Returns true when the bound string value equals the converter parameter.
-/// Used to show/hide tooltips:
-///   IsVisible="{Binding ActiveTooltip, Converter={StaticResource StringEqualsConverter}, ConverterParameter='description'}"
+/// Returns true when the bound string equals the converter parameter. Tooltips use it to decide
+/// whether they are visible, by comparing ActiveTooltip with the tooltip's key.
 /// </summary>
 public class StringEqualsConverter : IValueConverter
 {
@@ -520,8 +486,8 @@ public class StringEqualsConverter : IValueConverter
 }
 
 /// <summary>
-/// Returns false when the bound FrequencyType is Once, true for all other values.
-/// Used to disable the end-date checkbox and picker when Once is selected.
+/// Returns false when the bound FrequencyType is Once and true otherwise, which disables the
+/// end-date controls for one-time transactions.
 /// </summary>
 public class FrequencyNotOnceConverter : IValueConverter
 {
@@ -533,9 +499,8 @@ public class FrequencyNotOnceConverter : IValueConverter
 }
 
 /// <summary>
-/// Bool → BackgroundColor for the Ledger filter button.
-/// Active  (true)  → Accent fill so the button stands out.
-/// Inactive (false) → SurfaceHi (neutral).
+/// Returns the background of the filter button: the accent when filters are active and SurfaceHi
+/// otherwise.
 /// </summary>
 public class FilterActiveBgConverter : IValueConverter
 {
@@ -552,9 +517,8 @@ public class FilterActiveBgConverter : IValueConverter
 }
 
 /// <summary>
-/// Bool → TextColor for the Ledger filter button label/icon.
-/// Active → SurfacePage (light text on accent fill).
-/// Inactive → TextSecondary.
+/// Returns the text color of the filter button: SurfacePage on the accent fill when filters are
+/// active and TextSecondary otherwise.
 /// </summary>
 public class FilterActiveTextConverter : IValueConverter
 {
@@ -571,9 +535,8 @@ public class FilterActiveTextConverter : IValueConverter
 }
 
 /// <summary>
-/// MultiValueConverter: (Guid accountId, Guid? selectedAccountId) → bool.
-/// Returns true when the two GUIDs match — used to show the active-account
-/// indicator dot on the Home page account list.
+/// Takes an account ID and the selected account ID and returns true when they match, which shows
+/// the active-account dot in the Home page account list.
 /// </summary>
 public class AccountIsSelectedConverter : IMultiValueConverter
 {
@@ -591,9 +554,8 @@ public class AccountIsSelectedConverter : IMultiValueConverter
 }
 
 /// <summary>
-/// MultiValueConverter for category chip selection.
-/// values[0] = the chip's own string (item), values[1] = SelectedCategory.
-/// Returns true (selected) when they are equal — used to highlight the active chip.
+/// Takes a category chip's text and the selected category and returns true when they are equal,
+/// which highlights the active chip.
 /// </summary>
 public class StringItemEqualsConverter : IMultiValueConverter
 {
@@ -608,9 +570,8 @@ public class StringItemEqualsConverter : IMultiValueConverter
 }
 
 /// <summary>
-/// MultiValueConverter for category chip background.
-/// values[0] = chip string, values[1] = SelectedCategory.
-/// Returns Accent color when selected, SurfaceLo when not.
+/// Returns the background of a category chip: the accent when selected and SurfaceLo otherwise.
+/// The values are the chip's text and the selected category.
 /// </summary>
 public class CategoryChipBgConverter : IMultiValueConverter
 {
@@ -633,8 +594,7 @@ public class CategoryChipBgConverter : IMultiValueConverter
 }
 
 /// <summary>
-/// MultiValueConverter for category chip stroke color.
-/// Returns Accent when selected, StrokeCard when not.
+/// Returns the stroke of a category chip: the accent when selected and StrokeCard otherwise.
 /// </summary>
 public class CategoryChipStrokeConverter : IMultiValueConverter
 {
@@ -659,8 +619,8 @@ public class CategoryChipStrokeConverter : IMultiValueConverter
 }
 
 /// <summary>
-/// MultiValueConverter for category chip text color.
-/// Returns SurfacePage (dark) when selected for contrast, TextPrimary when not.
+/// Returns the text color of a category chip: SurfacePage for contrast on the accent when
+/// selected and TextPrimary otherwise.
 /// </summary>
 public class CategoryChipTextConverter : IMultiValueConverter
 {

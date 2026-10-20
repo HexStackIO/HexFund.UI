@@ -7,36 +7,29 @@ using System.Collections.ObjectModel;
 namespace HexFund.UI.ViewModels;
 
 /// <summary>
-/// HomeViewModel — Sprint 03 full build.
-///
-/// Sections:
-///   BalanceHero  — total balance across all accounts + month-over-month net change
-///   QuickActions — Deposit (→ Ledger Add dialog), Accounts, Calendar
-///   AccountsPreview — top 3 active accounts by balance
-///   RecentActivity  — top 5 most-recent TransactionOccurrences across all accounts
-///
-/// Data strategy: all calls use cached paths (forceRefresh=false) so navigating
-/// Home repeatedly doesn't hammer the API. The SelectedAccountChanged event
-/// triggers a refresh when the user switches accounts.
+/// Drives the dashboard: the selected account's balance and month net change, the top three
+/// active accounts by balance, and the five most recent and five upcoming occurrences across all
+/// active accounts. Also owns the first-run onboarding prompts.
 /// </summary>
+/// <remarks>
+/// Loads use cached API responses unless a refresh is requested. A change of the selected account
+/// or any transaction mutation reloads the dashboard.
+/// </remarks>
 public partial class HomeViewModel : BaseViewModel
 {
     private readonly IApiService _apiService;
     private readonly IAccountStateService _accountStateService;
 
-    // ── Loading / error state ─────────────────────────────────────────────────
     [ObservableProperty] private bool isLoading = true;
     [ObservableProperty] private bool hasError;
     [ObservableProperty] private string? errorMessage;
 
-    // ── Selected account display ──────────────────────────────────────────────
     public string SelectedAccountName =>
         _accountStateService.SelectedAccount?.AccountName ?? "No Account";
 
     public Guid? SelectedAccountId =>
         _accountStateService.SelectedAccount?.AccountId;
 
-    // ── Balance hero ──────────────────────────────────────────────────────────
     [ObservableProperty] private decimal totalBalance;
     [ObservableProperty] private decimal monthNetChange;
     [ObservableProperty] private bool isMonthNetPositive;
@@ -51,21 +44,16 @@ public partial class HomeViewModel : BaseViewModel
         GetSemanticColor(IsMonthNetPositive ? "Up" : "Down",
                          IsMonthNetPositive ? "#3FB97A" : "#E05A6F");
 
-    // ── Accounts preview ──────────────────────────────────────────────────────
     [ObservableProperty] private ObservableCollection<Account> previewAccounts = new();
     [ObservableProperty] private bool hasAccounts;
 
-    // ── Recent activity ───────────────────────────────────────────────────────
     [ObservableProperty] private ObservableCollection<RecentTransaction> recentTransactions = new();
     [ObservableProperty] private bool hasRecentTransactions;
     [ObservableProperty] private bool isRecentExpanded = true;
 
-    // ── Upcoming transactions ─────────────────────────────────────────────────
     [ObservableProperty] private ObservableCollection<RecentTransaction> upcomingTransactions = new();
     [ObservableProperty] private bool hasUpcomingTransactions;
     [ObservableProperty] private bool isUpcomingExpanded = true;
-
-    // ── Constructor ───────────────────────────────────────────────────────────
 
     public HomeViewModel(
         IApiService apiService,
@@ -80,13 +68,10 @@ public partial class HomeViewModel : BaseViewModel
         _accountStateService.TransactionsChanged += OnTransactionsChanged;
     }
 
-    // ── Initialisation ────────────────────────────────────────────────────────
-
     /// <summary>Called from HomePage.OnAppearing.</summary>
     public async Task InitializeAsync()
     {
-        // If onboarding was reset, force a fresh load so CheckOnboarding
-        // runs with current data even if HasBalanceData is already true.
+        // Onboarding is re-evaluated on every visit until completed, which needs fresh data.
         bool needsOnboardingCheck = !SettingsService.HasCompletedOnboarding;
 
         if (!IsLoading && HasBalanceData && !needsOnboardingCheck) return;
@@ -102,14 +87,9 @@ public partial class HomeViewModel : BaseViewModel
             await LoadAsync();
         });
 
-    /// <summary>
-    /// Fires when a transaction is created, edited, or deleted anywhere in the app.
-    /// Force-refreshes so the balance hero reflects the updated account balance.
-    /// </summary>
+    // A transaction changed anywhere in the app, so the balance must be reloaded from the server.
     private void OnTransactionsChanged() =>
         MainThread.BeginInvokeOnMainThread(async () => await LoadAsync(forceRefresh: true));
-
-    // ── Data loading ──────────────────────────────────────────────────────────
 
     private async Task LoadAsync(bool forceRefresh = false)
     {
@@ -128,9 +108,7 @@ public partial class HomeViewModel : BaseViewModel
 
             var activeAccounts = accounts.Where(a => a.IsActive).ToList();
 
-            // ── Balance hero ─────────────────────────────────────────────
-            // Use the selected account if one is set; fall back to the first
-            // active account so the hero is never blank after login.
+            // Falls back to the first active account so the balance is never blank after sign-in.
             var selectedAccount = _accountStateService.SelectedAccount
                 ?? activeAccounts.FirstOrDefault();
 
@@ -140,16 +118,14 @@ public partial class HomeViewModel : BaseViewModel
                 return;
             }
 
-            // Refresh the selected account's balance from the fetched list so
-            // we always show the server value, not a stale cached object.
+            // The selected account object may be stale, so read the balance from the fetched list.
             var freshSelected = activeAccounts
                 .FirstOrDefault(a => a.AccountId == selectedAccount.AccountId)
                 ?? selectedAccount;
 
             TotalBalance = freshSelected.CurrentBalance;
 
-            // Month-over-month: scoped to the selected account only, matching
-            // what Calendar and Ledger are displaying.
+            // Scoped to the selected account to match the Calendar and Transactions tabs.
             var now = DateTime.Today;
             var overview = await _apiService.GetMonthlyOverviewAsync(
                 freshSelected.AccountId, now.Year, now.Month, forceRefresh: forceRefresh);
@@ -165,7 +141,6 @@ public partial class HomeViewModel : BaseViewModel
             OnPropertyChanged(nameof(MonthNetChangeArrow));
             OnPropertyChanged(nameof(MonthNetChangeColor));
 
-            // ── Accounts preview (top 3 by current balance) ──────────────
             var top3 = activeAccounts
                 .OrderByDescending(a => a.CurrentBalance)
                 .Take(3)
@@ -174,10 +149,8 @@ public partial class HomeViewModel : BaseViewModel
             PreviewAccounts = new ObservableCollection<Account>(top3);
             HasAccounts = top3.Count > 0;
 
-            // ── Recent + Upcoming (top 5 each, across all active accounts) ──
-            // Fetch prev month + this month + next month in parallel per account.
-            // GetTransactionsForMonthAsync returns Dictionary<DateTime, List<TransactionOccurrence>>
-            // and is server-cached at 2 min, so these calls are cheap.
+            // Previous, current and next month are fetched in parallel for every account. The
+            // responses are cached client-side, so repeat loads are cheap.
             var prevMonthDate = now.AddMonths(-1);
             var nextMonthDate = now.AddMonths(1);
 
@@ -190,7 +163,7 @@ public partial class HomeViewModel : BaseViewModel
 
             var monthResults = await Task.WhenAll(monthTasks);
 
-            // Flatten all occurrences with their account name
+            // Results are ordered account by account, three months each.
             var allOccurrences = new List<(TransactionOccurrence Occ, string AccountName)>();
             for (int i = 0; i < activeAccounts.Count; i++)
             {
@@ -207,7 +180,7 @@ public partial class HomeViewModel : BaseViewModel
                 Flatten(monthResults[i * 3 + 2]);
             }
 
-            // Recent: occurrences on or before today, newest first, top 5
+            // Recent: on or before today, newest first.
             var top5Recent = allOccurrences
                 .Where(x => x.Occ.OccurrenceDate.Date <= now)
                 .OrderByDescending(x => x.Occ.OccurrenceDate)
@@ -222,7 +195,7 @@ public partial class HomeViewModel : BaseViewModel
                 })
                 .ToList();
 
-            // Upcoming: occurrences after today, soonest first, top 5
+            // Upcoming: after today, soonest first.
             var top5Upcoming = allOccurrences
                 .Where(x => x.Occ.OccurrenceDate.Date > now)
                 .OrderBy(x => x.Occ.OccurrenceDate)
@@ -270,9 +243,9 @@ public partial class HomeViewModel : BaseViewModel
         CheckOnboarding(hasAccounts: false, hasTransactions: false);
     }
 
-    // ── Onboarding ────────────────────────────────────────────────────────────
     [ObservableProperty] private bool showOnboarding;
-    [ObservableProperty] private int onboardingStep;   // 1 = Create Account, 2 = Add Transaction
+    // 1 = create an account, 2 = add a transaction.
+    [ObservableProperty] private int onboardingStep;
 
     public bool IsOnboardingStep1 => OnboardingStep == 1;
     public bool IsOnboardingStep2 => OnboardingStep == 2;
@@ -293,7 +266,7 @@ public partial class HomeViewModel : BaseViewModel
         }
         else
         {
-            // Both done — mark complete and never show again
+            // The user has an account and a transaction, so onboarding never shows again.
             CompleteOnboarding();
         }
     }
@@ -307,9 +280,8 @@ public partial class HomeViewModel : BaseViewModel
     [RelayCommand]
     private async Task OnboardingGoToAccountsAsync()
     {
-        // Don't mark complete yet — when the user returns to Home, LoadAsync
-        // will re-run and CheckOnboarding will advance to Step 2 if an account
-        // was created, or stay on Step 1 if they came back without creating one.
+        // Completion is decided when the user returns to Home: the reload advances to step 2 if an
+        // account was created and stays on step 1 otherwise.
         ShowOnboarding = false;
         await GoToAccountsAsync();
     }
@@ -317,7 +289,7 @@ public partial class HomeViewModel : BaseViewModel
     [RelayCommand]
     private async Task OnboardingGoToAddAsync()
     {
-        // Same reasoning — let the return trip to Home determine completion.
+        // As above, the reload on return decides whether onboarding is complete.
         ShowOnboarding = false;
         await GoToDepositAsync();
     }
@@ -325,7 +297,7 @@ public partial class HomeViewModel : BaseViewModel
     [RelayCommand]
     private void DismissOnboarding() => CompleteOnboarding();
 
-    /// <summary>Add quick action — opens the AddEntryPage bottom sheet.</summary>
+    /// <summary>Opens the add-entry page.</summary>
     [RelayCommand]
     private async Task GoToDepositAsync() =>
         await Shell.Current.GoToAsync("add");
@@ -344,9 +316,8 @@ public partial class HomeViewModel : BaseViewModel
     [RelayCommand]
     private async Task GoToSettingsAsync()
     {
-        // If Settings is already on the stack (user tapped gear twice, or
-        // tapped Home tab while Settings was open and OnShellNavigating already
-        // dismissed it), pop instead of double-pushing.
+        // If Settings is already open (a double tap on the gear), pop it instead of pushing a
+        // second copy.
         var stack = Shell.Current?.Navigation?.NavigationStack;
         if (stack != null && stack.Any(p => p is Views.SettingsPage))
         {
@@ -362,8 +333,8 @@ public partial class HomeViewModel : BaseViewModel
     {
         if (account == null) return;
         _accountStateService.SelectedAccount = account;
-        // LoadAsync is triggered by OnSelectedAccountChanged, but we also need
-        // to notify SelectedAccountId so the indicator updates immediately.
+        // The reload comes from OnSelectedAccountChanged; this updates the selection indicator
+        // immediately.
         OnPropertyChanged(nameof(SelectedAccountId));
     }
 
@@ -372,8 +343,6 @@ public partial class HomeViewModel : BaseViewModel
 
     [RelayCommand] private void ToggleRecentSection() => IsRecentExpanded = !IsRecentExpanded;
     [RelayCommand] private void ToggleUpcomingSection() => IsUpcomingExpanded = !IsUpcomingExpanded;
-
-    // ── Helpers ───────────────────────────────────────────────────────────────
 
     partial void OnTotalBalanceChanged(decimal value) => OnPropertyChanged(nameof(TotalBalanceDisplay));
     partial void OnMonthNetChangeChanged(decimal value) => OnPropertyChanged(nameof(MonthNetChangeDisplay));
@@ -398,8 +367,7 @@ public partial class HomeViewModel : BaseViewModel
 }
 
 /// <summary>
-/// Lightweight display model for recent activity rows.
-/// Decouples HomePage from the full TransactionOccurrence model.
+/// A row in the recent or upcoming activity lists on the Home page.
 /// </summary>
 public class RecentTransaction
 {

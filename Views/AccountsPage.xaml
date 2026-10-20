@@ -14,7 +14,6 @@
 
         <Grid RowDefinitions="*,Auto">
 
-        <!-- ── Accounts list ──────────────────────────────────────────────── -->
         <RefreshView Grid.Row="0"
                      Command="{Binding RefreshCommand}"
                      IsRefreshing="{Binding IsRefreshing}">
@@ -112,7 +111,6 @@
             </ScrollView>
         </RefreshView>
 
-        <!-- Add Account button -->
         <Button Grid.Row="1"
                 Text="+ Add Account"
                 Command="{Binding ShowAddAccountCommand}"
@@ -120,9 +118,6 @@
                 TextColor="{DynamicResource SurfacePage}" FontSize="18" FontAttributes="Bold"
                 CornerRadius="10" Padding="0,15" Margin="15"/>
 
-        <!-- ════════════════════════════════════════════════════════════════
-             ADD ACCOUNT DIALOG
-             ════════════════════════════════════════════════════════════════ -->
         <Border Grid.RowSpan="2"
                 IsVisible="{Binding ShowAddAccountDialog}"
                 BackgroundColor="#80000000" Padding="0">
@@ -142,7 +137,6 @@
                     <Label Text="Create New Account" FontSize="20" FontAttributes="Bold"
                            HorizontalOptions="Center" Margin="0,0,0,14"/>
 
-                    <!-- Account Name -->
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -188,7 +182,6 @@
                            IsVisible="{Binding NewAccountNameError, Converter={StaticResource StringNotEmptyConverter}}"
                            Margin="4,2,0,8"/>
 
-                    <!-- Initial Balance -->
                     <Grid Margin="0,4,0,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -233,7 +226,6 @@
                            IsVisible="{Binding NewAccountBalanceError, Converter={StaticResource StringNotEmptyConverter}}"
                            Margin="4,2,0,8"/>
 
-                    <!-- API-level error -->
                     <Label Text="{Binding AddErrorMessage}"
                            TextColor="{DynamicResource Down}" FontSize="13"
                            IsVisible="{Binding AddErrorMessage, Converter={StaticResource StringNotEmptyConverter}}"
@@ -255,9 +247,6 @@
             </Border>
         </Border>
 
-        <!-- ════════════════════════════════════════════════════════════════
-             EDIT ACCOUNT DIALOG
-             ════════════════════════════════════════════════════════════════ -->
         <Border Grid.RowSpan="2"
                 IsVisible="{Binding ShowEditAccountDialog}"
                 BackgroundColor="#80000000" Padding="0">
@@ -277,7 +266,6 @@
                     <Label Text="Edit Account" FontSize="20" FontAttributes="Bold"
                            HorizontalOptions="Center" Margin="0,0,0,14"/>
 
-                    <!-- Account Name -->
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -323,7 +311,6 @@
                            IsVisible="{Binding EditAccountNameError, Converter={StaticResource StringNotEmptyConverter}}"
                            Margin="4,2,0,8"/>
 
-                    <!-- Active toggle -->
                     <HorizontalStackLayout Spacing="10" HorizontalOptions="Center" Margin="0,8,0,0">
                         <Label Text="Active Status:" FontSize="16" VerticalOptions="Center"/>
                         <Switch IsToggled="{Binding EditIsActive}" OnColor="{DynamicResource Accent}"/>
@@ -336,7 +323,6 @@
                         </Label>
                     </HorizontalStackLayout>
 
-                    <!-- API-level error -->
                     <Label Text="{Binding EditErrorMessage}"
                            TextColor="{DynamicResource Down}" FontSize="13"
                            IsVisible="{Binding EditErrorMessage, Converter={StaticResource StringNotEmptyConverter}}"

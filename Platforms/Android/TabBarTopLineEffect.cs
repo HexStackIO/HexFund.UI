@@ -6,26 +6,22 @@ using Microsoft.Maui.LifecycleEvents;
 namespace HexFund.UI.Platforms.Android;
 
 /// <summary>
-/// Draws a 3dp white line at the top of the active bottom-nav tab.
-/// Re-attaches every time AppShell swaps the visible TabBar so both
-/// the pre-login (AuthTabBar) and post-login (MainTabBar) are covered.
+/// Draws a 3dp white line at the top of the active bottom navigation tab and nudges the middle
+/// tabs apart to leave room for the floating button. <see cref="Reattach"/> must run when the
+/// shell swaps the visible tab bar, so both the login and main tab bars are covered.
 /// </summary>
 public static class TabBarTopLineEffect
 {
-    // Track the active RedrawListener so we can remove it before attaching
-    // a new one when Reattach() is called after an auth state change.
-    // Without this the old listener fires against a disposed BottomNavigationView.
+    // The listener must be removed before a new one is attached after an auth state change.
+    // Otherwise the old listener fires against a disposed BottomNavigationView.
     private static RedrawListener? _activeRedrawListener;
-
-    // ── Public API called from AppShell ──────────────────────────────────────
 
     public static void Reattach()
     {
         var activity = global::Microsoft.Maui.ApplicationModel.Platform.CurrentActivity;
         if (activity == null) return;
 
-        // Remove the stale RedrawListener BEFORE the layout pass that would
-        // fire it against the now-disposed BottomNavigationView.
+        // Removed before the layout pass that would fire it against the disposed view.
         if (_activeRedrawListener != null)
         {
             activity.Window?.DecorView.ViewTreeObserver?
@@ -49,7 +45,7 @@ public static class TabBarTopLineEffect
 
             android.OnResume(activity =>
             {
-                // Remove any stale listener on resume too (e.g. after auth redirect)
+                // Also dropped on resume, for example when returning from the sign-in browser.
                 if (_activeRedrawListener != null)
                 {
                     activity.Window?.DecorView.ViewTreeObserver?
@@ -61,8 +57,6 @@ public static class TabBarTopLineEffect
             });
         });
     }
-
-    // ── One-shot layout listener ──────────────────────────────────────────────
 
     private sealed class LayoutListener : Java.Lang.Object,
         ViewTreeObserver.IOnGlobalLayoutListener
@@ -82,8 +76,7 @@ public static class TabBarTopLineEffect
 
             ApplyTopLines(bottomNav);
 
-            // Store reference so Reattach() can cleanly remove this before
-            // the view is disposed.
+            // Stored so Reattach can remove it before the view is disposed.
             var listener = new RedrawListener(_activity, bottomNav);
             _activeRedrawListener = listener;
             _activity.Window?.DecorView.ViewTreeObserver?
@@ -103,8 +96,6 @@ public static class TabBarTopLineEffect
         }
     }
 
-    // ── Persistent redraw listener ────────────────────────────────────────────
-
     private sealed class RedrawListener : Java.Lang.Object,
         ViewTreeObserver.IOnGlobalLayoutListener
     {
@@ -119,7 +110,7 @@ public static class TabBarTopLineEffect
 
         public void OnGlobalLayout()
         {
-            // If the view has been detached/disposed, remove ourselves and bail.
+            // The view is gone, so stop listening.
             if (_bottomNav.Handle == IntPtr.Zero || !_bottomNav.IsAttachedToWindow)
             {
                 _activity.Window?.DecorView.ViewTreeObserver?
@@ -133,8 +124,6 @@ public static class TabBarTopLineEffect
         }
     }
 
-    // ── Drawing logic ─────────────────────────────────────────────────────────
-
     private static void ApplyTopLines(BottomNavigationView bottomNav)
     {
         var menu = bottomNav.Menu;
@@ -144,8 +133,8 @@ public static class TabBarTopLineEffect
         float density = bottomNav.Context?.Resources?.DisplayMetrics?.Density ?? 1f;
         int lineHeightPx = (int)(3 * density);
 
-        // Nudge Calendar (index 1) left and Ledger (index 2) right so the
-        // center FAB hexagon has clear space and doesn't overlap either label.
+        // Calendar (index 1) moves left and Ledger (index 2) moves right so the floating button
+        // does not overlap either label.
         int nudgePx = (int)(10 * density);
 
         for (int i = 0; i < menuView.ChildCount; i++)
@@ -178,7 +167,6 @@ public static class TabBarTopLineEffect
                     new ColorDrawable(global::Android.Graphics.Color.Transparent);
             }
 
-            // Shift Calendar toward the left edge, Ledger toward the right edge
             itemView.SetPadding(
                 i == 1 ? 0 : (i == 2 ? nudgePx : itemView.PaddingLeft),
                 itemView.PaddingTop,

@@ -9,20 +9,21 @@ using System.Text.Json;
 
 namespace HexFund.UI.ViewModels;
 
+/// <summary>
+/// Drives the settings page: profile, theme, calendar view mode, categories, the changelog, sign
+/// out and account deletion.
+/// </summary>
 public partial class SettingsViewModel : BaseViewModel
 {
     private readonly IAuthService _authService;
     private readonly ICacheService _cacheService;
     private readonly IApiService _apiService;
 
-    // ── App info ──────────────────────────────────────────────────────────────
     [ObservableProperty] private string appVersion = AppConstants.AppVersion;
     [ObservableProperty] private string buildNumber = AppConstants.BuildNumber.ToString();
 
-    // ── Auth state ────────────────────────────────────────────────────────────
     [ObservableProperty] private bool canLogout;
 
-    // ── Profile ───────────────────────────────────────────────────────────────
     [ObservableProperty] private string? currentUserEmail;
     [ObservableProperty] private bool isEditingProfile;
     [ObservableProperty] private string editFirstName = string.Empty;
@@ -36,7 +37,6 @@ public partial class SettingsViewModel : BaseViewModel
             ? $"{u.FirstName} {u.LastName}".Trim()
             : string.Empty;
 
-    // ── Calendar view ─────────────────────────────────────────────────────────
     [ObservableProperty] private bool isCalendarGridView;
 
     public string CalendarViewLabel => IsCalendarGridView ? "Grid View" : "List View";
@@ -44,14 +44,10 @@ public partial class SettingsViewModel : BaseViewModel
         ? "Showing month as a grid (tap to switch to list)"
         : "Showing daily cards (tap to switch to grid)";
 
-    // ── Theme ─────────────────────────────────────────────────────────────────
     [ObservableProperty] private ColorTheme selectedTheme;
     [ObservableProperty] private bool showThemeModal;
 
-    /// <summary>
-    /// Display name shown in the Settings row and theme modal header.
-    /// Matches the gem/metal names from the HexFund design system.
-    /// </summary>
+    /// <summary>The name of the current theme, shown in the Settings row and the theme dialog.</summary>
     public string SelectedThemeLabel => SelectedTheme switch
     {
         ColorTheme.Gold      => "Gold",
@@ -65,10 +61,7 @@ public partial class SettingsViewModel : BaseViewModel
         _                    => "Gold"
     };
 
-    /// <summary>
-    /// The raw accent Color for the active theme — used to tint the preview
-    /// swatch in the Settings row. Matches ThemeService accent values exactly.
-    /// </summary>
+    /// <summary>The accent color of the current theme, used for the preview swatch.</summary>
     public Color SelectedThemeColor => SelectedTheme switch
     {
         ColorTheme.Gold      => Color.FromArgb("#D4AF37"),
@@ -99,11 +92,9 @@ public partial class SettingsViewModel : BaseViewModel
         OnPropertyChanged(nameof(CalendarViewDescription));
     }
 
-    // ── Changelog ─────────────────────────────────────────────────────────────
     [ObservableProperty] private bool showChangelogModal;
     [ObservableProperty] private ObservableCollection<PatchNote> patchNotes = new();
 
-    // ── Categories ────────────────────────────────────────────────────────────
     [ObservableProperty] private bool showCategoriesModal;
     [ObservableProperty] private ObservableCollection<UserCategory> categories = new();
     [ObservableProperty] private string newCategoryName = string.Empty;
@@ -113,23 +104,20 @@ public partial class SettingsViewModel : BaseViewModel
 
     public bool HasCategories => Categories.Count > 0;
 
-    // ── Delete account ────────────────────────────────────────────────────────
     [ObservableProperty] private bool showDeleteAccountModal;
     [ObservableProperty] private string deleteConfirmationText = string.Empty;
     [ObservableProperty] private bool isDeletingAccount;
     [ObservableProperty] private string deleteAccountError = string.Empty;
 
     /// <summary>
-    /// The user must type this exact phrase to unlock the final delete button,
-    /// preventing accidental taps on a destructive irreversible action.
+    /// The phrase the user must type to enable the final delete button, which guards against an
+    /// accidental tap on an irreversible action.
     /// </summary>
     public const string DeleteConfirmationPhrase = "DELETE MY ACCOUNT";
 
     public bool CanConfirmDelete =>
         DeleteConfirmationText.Trim().Equals(
             DeleteConfirmationPhrase, StringComparison.Ordinal);
-
-    // ── Constructor ───────────────────────────────────────────────────────────
 
     public SettingsViewModel(
         IAuthService authService,
@@ -152,16 +140,12 @@ public partial class SettingsViewModel : BaseViewModel
         SettingsService.SettingsChanged += OnSettingsServiceChanged;
     }
 
-    // ── Initialisation ────────────────────────────────────────────────────────
-
     /// <summary>Called from SettingsPage.OnAppearing to load categories once.</summary>
     public async Task InitializeAsync()
     {
         if (Categories.Count == 0)
             await LoadCategoriesAsync();
     }
-
-    // ── Auth state change handlers ────────────────────────────────────────────
 
     private void OnSettingsServiceChanged() =>
         MainThread.BeginInvokeOnMainThread(() =>
@@ -184,8 +168,6 @@ public partial class SettingsViewModel : BaseViewModel
 
         OnPropertyChanged(nameof(CurrentUserName));
     }
-
-    // ── Profile editing ───────────────────────────────────────────────────────
 
     [RelayCommand]
     private void StartEditProfile()
@@ -259,8 +241,6 @@ public partial class SettingsViewModel : BaseViewModel
         }
     }
 
-    // ── Theme ─────────────────────────────────────────────────────────────────
-
     [RelayCommand]
     private void OpenThemeModal() => ShowThemeModal = true;
 
@@ -276,16 +256,12 @@ public partial class SettingsViewModel : BaseViewModel
         ShowThemeModal = false;
     }
 
-    // ── Calendar view ─────────────────────────────────────────────────────────
-
     [RelayCommand]
     private void ToggleCalendarView()
     {
         IsCalendarGridView = !IsCalendarGridView;
         SettingsService.CalendarView = IsCalendarGridView ? CalendarViewMode.Grid : CalendarViewMode.List;
     }
-
-    // ── Changelog ─────────────────────────────────────────────────────────────
 
     [RelayCommand]
     private void OpenChangelogModal() => ShowChangelogModal = true;
@@ -295,8 +271,8 @@ public partial class SettingsViewModel : BaseViewModel
 
     private void LoadChangelog()
     {
-        // Fire-and-forget — constructor cannot be async. Any failure is
-        // silent so a missing changelog never crashes the settings page.
+        // Fire and forget because a constructor cannot await. Failures are swallowed so a missing
+        // changelog cannot break the settings page.
         _ = LoadChangelogAsync();
     }
 
@@ -323,8 +299,6 @@ public partial class SettingsViewModel : BaseViewModel
             System.Diagnostics.Debug.WriteLine($"Changelog load error: {ex.Message}");
         }
     }
-
-    // ── Categories ────────────────────────────────────────────────────────────
 
     [RelayCommand]
     private async Task OpenCategoriesModalAsync()
@@ -460,7 +434,7 @@ public partial class SettingsViewModel : BaseViewModel
         var mainPage = Application.Current?.MainPage;
         if (mainPage == null) return;
 
-        // Final explicit confirmation — belt-and-suspenders after the typed phrase.
+        // A last explicit confirmation after the typed phrase.
         var confirmed = await mainPage.DisplayAlert(
             "This cannot be undone",
             "Your account, all financial data, and your sign-in identity will be permanently deleted. There is no recovery.\n\nProceed?",
@@ -484,8 +458,8 @@ public partial class SettingsViewModel : BaseViewModel
                 return;
             }
 
-            // Auth state change fires automatically from DeleteAccountAndDataAsync,
-            // which will route the app back to the login screen.
+            // DeleteAccountAndDataAsync raises AuthStateChanged, which routes the app back to the
+            // login screen.
             ShowDeleteAccountModal = false;
         }
         catch (Exception ex)
@@ -497,8 +471,6 @@ public partial class SettingsViewModel : BaseViewModel
             IsDeletingAccount = false;
         }
     }
-
-    // ── Actions ───────────────────────────────────────────────────────────────
 
     [RelayCommand]
     private async Task LogoutAsync()

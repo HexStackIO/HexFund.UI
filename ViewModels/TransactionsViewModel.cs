@@ -8,6 +8,10 @@ using System.Collections.ObjectModel;
 
 namespace HexFund.UI.ViewModels;
 
+/// <summary>
+/// Drives the transactions (ledger) page: the list with its amendment history, sorting and
+/// filtering, and the edit, amend, activate and delete dialogs.
+/// </summary>
 public partial class TransactionsViewModel : BaseViewModel
 {
     private readonly IApiService _apiService;
@@ -25,7 +29,6 @@ public partial class TransactionsViewModel : BaseViewModel
     [ObservableProperty] private bool isLoading;
     [ObservableProperty] private string errorMessage = string.Empty;
 
-    // ── Add dialog fields ─────────────────────────────────────────────────────
     [ObservableProperty] private bool showAddTransactionDialog;
     [ObservableProperty] private string newDescription = string.Empty;
     [ObservableProperty] private string newAmount = string.Empty;
@@ -37,13 +40,12 @@ public partial class TransactionsViewModel : BaseViewModel
     [ObservableProperty] private bool isIncome = true;
     [ObservableProperty] private string? newColor = null;
 
-    // Per-field error messages for the Add dialog
+    // Field errors for the add dialog.
     [ObservableProperty] private string descriptionError = string.Empty;
     [ObservableProperty] private string amountError = string.Empty;
     [ObservableProperty] private string categoryError = string.Empty;
     [ObservableProperty] private string dateRangeError = string.Empty;
 
-    // ── Edit dialog fields ────────────────────────────────────────────────────
     [ObservableProperty] private bool showEditTransactionDialog;
     [ObservableProperty] private Transaction? transactionToEdit;
     [ObservableProperty] private string editDescription = string.Empty;
@@ -57,13 +59,12 @@ public partial class TransactionsViewModel : BaseViewModel
     [ObservableProperty] private bool editIsActive = true;
     [ObservableProperty] private string? editColor = null;
 
-    // Per-field error messages for the Edit dialog
+    // Field errors for the edit dialog.
     [ObservableProperty] private string editDescriptionError = string.Empty;
     [ObservableProperty] private string editAmountError = string.Empty;
     [ObservableProperty] private string editCategoryError = string.Empty;
     [ObservableProperty] private string editDateRangeError = string.Empty;
 
-    // ── Amend dialog fields ───────────────────────────────────────────────────
     [ObservableProperty] private bool showAmendDialog;
     [ObservableProperty] private Transaction? transactionToAmend;
     [ObservableProperty] private DateTime amendEffectiveDate = DateTime.Today;
@@ -73,17 +74,16 @@ public partial class TransactionsViewModel : BaseViewModel
     [ObservableProperty] private string amendCategory = string.Empty;
     [ObservableProperty] private string? amendColor = null;
 
-    // Per-field error messages for the Amend dialog
+    // Field errors for the amend dialog.
     [ObservableProperty] private string amendEffectiveDateError = string.Empty;
     [ObservableProperty] private string amendAmountError = string.Empty;
     [ObservableProperty] private string amendDescriptionError = string.Empty;
     [ObservableProperty] private string amendCategoryError = string.Empty;
 
-    // ── Filter state ──────────────────────────────────────────────────────────
     [ObservableProperty] private bool showFilterDialog;
     [ObservableProperty] private bool isFilterActive;
 
-    // Active filter values (applied to the displayed list)
+    // Filter values applied to the displayed list.
     [ObservableProperty] private FrequencyType? filterRecurrence;
     [ObservableProperty] private DateTime? filterDateFrom;
     [ObservableProperty] private DateTime? filterDateTo;
@@ -91,7 +91,7 @@ public partial class TransactionsViewModel : BaseViewModel
     [ObservableProperty] private string filterAmountMax = string.Empty;
     [ObservableProperty] private string filterCategory = string.Empty;
 
-    // Pending filter values (edited inside the modal, committed on Apply)
+    // Filter values being edited in the filter dialog, committed on Apply.
     [ObservableProperty] private FrequencyType? pendingFilterRecurrence;
     [ObservableProperty] private DateTime pendingFilterDateFrom = DateTime.Today.AddMonths(-1);
     [ObservableProperty] private DateTime pendingFilterDateTo = DateTime.Today.AddYears(1);
@@ -99,20 +99,16 @@ public partial class TransactionsViewModel : BaseViewModel
     [ObservableProperty] private string pendingFilterAmountMax = string.Empty;
     [ObservableProperty] private string pendingFilterCategory = string.Empty;
 
-    // ── Amendment history ─────────────────────────────────────────────────────
     private List<Transaction> _allTransactionsWithHistory = new();
     private bool _historyLoaded;
     [ObservableProperty] private Transaction? predecessorToEdit;
 
-    // Sort state
     [ObservableProperty] private TransactionSortField activeSortField = TransactionSortField.StartDate;
     [ObservableProperty] private SortDirection sortDirection = SortDirection.Descending;
 
-    // Tooltip state — holds the key of whichever tooltip is currently open, or empty.
-    // One tooltip open at a time across all three dialogs.
+    // The key of the open tooltip, or empty when none is open. Only one tooltip is open at a time
+    // across all three dialogs.
     [ObservableProperty] private string activeTooltip = string.Empty;
-
-    // ── Computed properties ───────────────────────────────────────────────────
 
     public Color NewColorPreview =>
         NewColor != null ? Microsoft.Maui.Graphics.Color.FromArgb(NewColor)
@@ -133,7 +129,7 @@ public partial class TransactionsViewModel : BaseViewModel
     public string AmendIncomeLabel => AmendIsIncome ? "Income" : "Expense";
     public Color AmendIncomeColor => AmendIsIncome ? Colors.Green : Colors.Red;
 
-    // Human-readable label for the active sort shown in the sort button
+    // Label for the sort button.
     public string SortLabel => (ActiveSortField, SortDirection) switch
     {
         (TransactionSortField.Name, SortDirection.Ascending) => "Name A-Z",
@@ -147,16 +143,14 @@ public partial class TransactionsViewModel : BaseViewModel
         _ => "Sort",
     };
 
-    // Direction arrow indicator for the active sort
+    // Arrow shown next to the active sort.
     public string SortDirectionArrow => SortDirection == SortDirection.Ascending ? "↑" : "↓";
 
-    // Top-level error (used for unexpected API errors, not field errors)
+    // ErrorMessage holds unexpected API errors, separate from field errors.
     public bool HasError => !string.IsNullOrEmpty(ErrorMessage);
     public bool IsNotLoading => !IsLoading;
     public bool ShowSkeleton => IsLoadingInitial;
     public bool ShowList => !IsLoadingInitial;
-
-    // ── Property-changed notifications ────────────────────────────────────────
 
     partial void OnIsIncomeChanged(bool value)
     {
@@ -190,7 +184,7 @@ public partial class TransactionsViewModel : BaseViewModel
     partial void OnEditColorChanged(string? value) => OnPropertyChanged(nameof(EditColorPreview));
     partial void OnAmendColorChanged(string? value) => OnPropertyChanged(nameof(AmendColorPreview));
 
-    // Sanitize numeric inputs on every keystroke
+    // Strip invalid characters from numeric inputs on every keystroke.
     partial void OnEditAmountChanged(string value)
     {
         var sanitized = UIValidator.SanitizeDecimalInput(value, allowNegative: false);
@@ -221,8 +215,6 @@ public partial class TransactionsViewModel : BaseViewModel
         OnPropertyChanged(nameof(SortDirectionArrow));
         ApplySort();
     }
-
-    // ── Item 3: Once end-date auto-sync (Edit dialog) ─────────────────────────
 
     partial void OnEditFrequencyChanged(FrequencyType value)
     {
@@ -255,11 +247,10 @@ public partial class TransactionsViewModel : BaseViewModel
         FrequencyType.BiMonthly,
     };
 
-    // User-defined categories loaded once on first open, refreshed on demand.
-    // The list is shared across Add, Edit, and Amend dialogs.
+    // User-defined categories, loaded on first open and refreshed on demand. The list is shared
+    // by the add, edit and amend dialogs.
     [ObservableProperty] private List<string> availableCategories = new() { "Uncategorized" };
 
-    // ── Inline add-category (shared across all three dialogs) ─────────────────
     [ObservableProperty] private bool showNewCategoryInput;
     [ObservableProperty] private string newCategoryName = string.Empty;
     [ObservableProperty] private string newCategoryError = string.Empty;
@@ -289,8 +280,6 @@ public partial class TransactionsViewModel : BaseViewModel
         }
     }
 
-    // ── Account state ─────────────────────────────────────────────────────────
-
     private void OnSelectedAccountChanged()
     {
         MainThread.BeginInvokeOnMainThread(() =>
@@ -307,10 +296,7 @@ public partial class TransactionsViewModel : BaseViewModel
         });
     }
 
-    /// <summary>
-    /// Fires when any VM adds, edits, or deletes a transaction.
-    /// Forces a full reload so the Ledger list stays in sync.
-    /// </summary>
+    // Any view model that changes a transaction triggers a full reload so the list stays in sync.
     private void OnTransactionsChangedExternal() =>
         MainThread.BeginInvokeOnMainThread(() => LoadTransactions(forceRefresh: true));
 
@@ -331,7 +317,7 @@ public partial class TransactionsViewModel : BaseViewModel
 
         _isInitialized = true;
 
-        // Load categories in background on first open
+        // Categories load in the background so the list is not delayed.
         if (!_categoriesLoaded)
             _ = LoadCategoriesAsync();
     }
@@ -353,12 +339,10 @@ public partial class TransactionsViewModel : BaseViewModel
     }
 
     /// <summary>
-    /// Called from Settings after the user adds or deletes a category so the
-    /// transaction dialogs always reflect the latest list without a full reload.
+    /// Refreshes the category list after categories are added or deleted in Settings, so the
+    /// dialogs show the latest list without a full reload.
     /// </summary>
     public void InvalidateCategoryCache() => _categoriesLoaded = false;
-
-    // ── Load ──────────────────────────────────────────────────────────────────
 
     private void LoadTransactions(bool forceRefresh = false)
     {
@@ -394,15 +378,14 @@ public partial class TransactionsViewModel : BaseViewModel
                 _allTransactionsWithHistory = historyTask.Result;
                 _historyLoaded = true;
 
-                // Build the set of IDs that are referenced as predecessors by any
-                // record in the full history list. These are superseded records —
-                // they should only appear inside the accordion, never in the main list.
+                // A transaction that is the predecessor of another has been superseded by an
+                // amendment. It appears only in the successor's history accordion, never in the
+                // main list.
                 var predecessorIds = _allTransactionsWithHistory
                     .Where(t => t.PredecessorTransactionId.HasValue)
                     .Select(t => t.PredecessorTransactionId!.Value)
                     .ToHashSet();
 
-                // Remove superseded records from the active list before display
                 var activeOnly = list.Where(t => !predecessorIds.Contains(t.TransactionId)).ToList();
 
                 var sorted = ApplySortOrder(activeOnly, activeSortField, sortDirection);
@@ -430,12 +413,11 @@ public partial class TransactionsViewModel : BaseViewModel
     }
 
     /// <summary>
-    /// Re-sorts the already-loaded Transactions list in place.
-    /// Called when the user changes sort field or direction without a data reload.
+    /// Re-sorts the loaded list without reloading data, after a change of sort field or direction.
     /// </summary>
     private void ApplySort()
     {
-        // Re-strip superseded records in case history has been updated since last load
+        // History may have been refreshed since the last load, so strip superseded records again.
         var predecessorIds = _allTransactionsWithHistory
             .Where(t => t.PredecessorTransactionId.HasValue)
             .Select(t => t.PredecessorTransactionId!.Value)
@@ -476,12 +458,12 @@ public partial class TransactionsViewModel : BaseViewModel
 
     private void ReconcileList(List<Transaction> incoming)
     {
-        // Preserve accordion expanded state across refreshes
+        // Keeps expanded accordions open across refreshes.
         var expandedIds = Transactions.Where(c => c.IsExpanded)
                                        .Select(c => c.TransactionId)
                                        .ToHashSet();
 
-        // Wrap each transaction in a card VM with its predecessor chain
+        // Each card gets its predecessor chain for the history accordion.
         var cards = incoming.Select(tx =>
         {
             var card = new TransactionCardViewModel(tx, this, BuildPredecessorChain(tx));
@@ -538,8 +520,8 @@ public partial class TransactionsViewModel : BaseViewModel
         a.IsActive == b.IsActive;
 
     /// <summary>
-    /// Explicit sort weight for recurrence types.
-    /// Order: Daily → Weekly → FirstThirdFriday → BiWeekly → Monthly → BiMonthly → Once
+    /// Sort weight for recurrence types, from most to least frequent: daily, weekly, first and
+    /// third Friday, bi-weekly, monthly, bi-monthly, once.
     /// </summary>
     private static int GetRecurrenceSortWeight(FrequencyType freq) => freq switch
     {
@@ -554,8 +536,8 @@ public partial class TransactionsViewModel : BaseViewModel
     };
 
     /// <summary>
-    /// Applies the currently active filter values to an already-sorted list.
-    /// Returns the filtered list, or the original list if no filters are set.
+    /// Applies the active filters to an already sorted list. Returns the list unchanged when no
+    /// filter is set.
     /// </summary>
     private List<Transaction> ApplyActiveFilters(List<Transaction> list)
     {
@@ -588,8 +570,6 @@ public partial class TransactionsViewModel : BaseViewModel
     [RelayCommand]
     private void Refresh() => LoadTransactions(forceRefresh: true);
 
-    // ── Add Transaction ───────────────────────────────────────────────────────
-
     [RelayCommand]
     private void ShowAddTransaction()
     {
@@ -610,7 +590,6 @@ public partial class TransactionsViewModel : BaseViewModel
         IsIncome = true;
         NewColor = null;
 
-        // Clear all field errors and any open tooltip
         DescriptionError = string.Empty;
         AmountError = string.Empty;
         CategoryError = string.Empty;
@@ -637,7 +616,6 @@ public partial class TransactionsViewModel : BaseViewModel
         if (SelectedAccount == null)
         { ErrorMessage = "No account selected."; return; }
 
-        // ── Validate all fields, collecting every error before returning ──────
         DescriptionError = UIValidator.ValidateDescription(NewDescription) ?? string.Empty;
         AmountError = UIValidator.ValidateAmount(NewAmount) ?? string.Empty;
         CategoryError = UIValidator.ValidateCategory(NewCategory) ?? string.Empty;
@@ -650,7 +628,7 @@ public partial class TransactionsViewModel : BaseViewModel
             !string.IsNullOrEmpty(DateRangeError))
             return;
 
-        // Safe to parse — validated above
+        // Validated above, so parsing cannot fail.
         var amount = decimal.Parse(NewAmount.Trim());
 
         IsLoading = true;
@@ -665,7 +643,7 @@ public partial class TransactionsViewModel : BaseViewModel
                 Category = NewCategory == "Uncategorized" || string.IsNullOrWhiteSpace(NewCategory) ? null : NewCategory.Trim(),
                 Frequency = SelectedFrequency,
                 StartDate = StartDate,
-                // Once has a single occurrence — never send EndDate to the server
+                // A one-time transaction has a single occurrence, so it never sends an end date.
                 EndDate = (HasEndDate && SelectedFrequency != FrequencyType.Once) ? EndDate : null,
                 Color = NewColor,
             };
@@ -674,8 +652,8 @@ public partial class TransactionsViewModel : BaseViewModel
 
             if (created != null)
             {
-                // Full reload rather than optimistic insert so that predecessor
-                // filtering is always applied — avoids pseudo-duplicate display.
+                // The change notification triggers a full reload instead of inserting locally, so
+                // the superseded-record filtering always applies.
                 _accountStateService.NotifyTransactionsChanged();
                 ShowAddTransactionDialog = false;
 
@@ -712,8 +690,6 @@ public partial class TransactionsViewModel : BaseViewModel
     [RelayCommand]
     private void ToggleIncomeExpense() => IsIncome = !IsIncome;
 
-    // ── Edit Transaction ──────────────────────────────────────────────────────
-
     [RelayCommand]
     private void ShowEditTransaction(Transaction transaction)
     {
@@ -729,7 +705,6 @@ public partial class TransactionsViewModel : BaseViewModel
         EditIsActive = transaction.IsActive;
         EditColor = transaction.Color;
 
-        // Clear all field errors and any open tooltip
         EditDescriptionError = string.Empty;
         EditAmountError = string.Empty;
         EditCategoryError = string.Empty;
@@ -754,7 +729,6 @@ public partial class TransactionsViewModel : BaseViewModel
         if (TransactionToEdit == null)
         { ErrorMessage = "No transaction selected for editing."; return; }
 
-        // ── Validate all fields ───────────────────────────────────────────────
         EditDescriptionError = UIValidator.ValidateDescription(EditDescription) ?? string.Empty;
         EditAmountError = UIValidator.ValidateAmount(EditAmount) ?? string.Empty;
         EditCategoryError = UIValidator.ValidateCategory(EditCategory) ?? string.Empty;
@@ -781,7 +755,7 @@ public partial class TransactionsViewModel : BaseViewModel
                 Category = EditCategory == "Uncategorized" || string.IsNullOrWhiteSpace(EditCategory) ? null : EditCategory.Trim(),
                 Frequency = EditFrequency,
                 StartDate = EditStartDate,
-                // Once has a single occurrence — never send EndDate to the server
+                // Once has a single occurrence, never send EndDate to the server
                 EndDate = (EditHasEndDate && EditFrequency != FrequencyType.Once) ? EditEndDate : null,
                 IsActive = EditIsActive,
                 Color = EditColor,
@@ -804,7 +778,7 @@ public partial class TransactionsViewModel : BaseViewModel
                 _accountStateService.NotifyTransactionsChanged();
                 ShowEditTransactionDialog = false;
                 TransactionToEdit = null;
-                PredecessorToEdit = null; // clear regardless of predecessor vs active edit
+                PredecessorToEdit = null; // Cleared for both predecessor and active edits.
 
                 await Application.Current!.MainPage!.DisplayAlert(
                     "Success", $"'{updated.Description}' updated successfully.", "OK");
@@ -826,8 +800,6 @@ public partial class TransactionsViewModel : BaseViewModel
 
     [RelayCommand]
     private void ToggleEditIncomeExpense() => EditIsIncome = !EditIsIncome;
-
-    // ── Toggle Active (inline, no dialog) ────────────────────────────────────
 
     [RelayCommand]
     private async Task ToggleActiveAsync(Transaction transaction)
@@ -867,8 +839,6 @@ public partial class TransactionsViewModel : BaseViewModel
         }
     }
 
-    // ── Color pickers ─────────────────────────────────────────────────────────
-
     [RelayCommand]
     private void SelectNewColor(string parameter)
         => NewColor = string.IsNullOrEmpty(parameter) ? null : parameter;
@@ -886,8 +856,6 @@ public partial class TransactionsViewModel : BaseViewModel
 
     [RelayCommand]
     private void SelectAmendCategory(string category) => AmendCategory = category;
-
-    // ── Delete ────────────────────────────────────────────────────────────────
 
     [RelayCommand]
     private async Task DeleteTransactionAsync(Transaction transaction)
@@ -931,12 +899,10 @@ public partial class TransactionsViewModel : BaseViewModel
         }
     }
 
-    // ── Filter ────────────────────────────────────────────────────────────────
-
     [RelayCommand]
     private void OpenFilter()
     {
-        // Copy active filters into the pending working copies
+        // The dialog edits copies, so Cancel leaves the applied filters untouched.
         PendingFilterRecurrence = FilterRecurrence;
         PendingFilterDateFrom = FilterDateFrom ?? DateTime.Today.AddMonths(-1);
         PendingFilterDateTo = FilterDateTo ?? DateTime.Today.AddYears(1);
@@ -957,9 +923,8 @@ public partial class TransactionsViewModel : BaseViewModel
         FilterCategory = PendingFilterCategory;
         IsFilterActive = IsAnyFilterSet();
         ShowFilterDialog = false;
-        // Always reload from the full dataset — if a filter was already active,
-        // the Transactions list is a subset and ApplySort() would re-filter that
-        // subset, causing transactions outside the current view to stay hidden.
+        // Reloads from the full dataset: with a filter active the list is a subset, and
+        // re-filtering that subset would keep transactions outside the view hidden.
         LoadTransactions(forceRefresh: false);
     }
 
@@ -971,8 +936,8 @@ public partial class TransactionsViewModel : BaseViewModel
         FilterCategory = string.Empty;
         IsFilterActive = false;
         ShowFilterDialog = false;
-        // Must reload from the full dataset — ApplySort() only re-sorts whatever
-        // is already in the Transactions list, which is the filtered subset.
+        // Reloads from the full dataset because ApplySort only re-sorts the list, which may be a
+        // filtered subset.
         LoadTransactions(forceRefresh: false);
     }
 
@@ -988,8 +953,7 @@ public partial class TransactionsViewModel : BaseViewModel
         !string.IsNullOrEmpty(FilterCategory);
 
     /// <summary>
-    /// Toggles a named tooltip. Tapping the same key twice hides it.
-    /// Tapping a different key switches to that one.
+    /// Toggles a named tooltip: the same key hides it and a different key switches to it.
     /// </summary>
     [RelayCommand]
     private void ToggleTooltip(string key)
@@ -998,8 +962,8 @@ public partial class TransactionsViewModel : BaseViewModel
     }
 
     /// <summary>
-    /// Called from a sort chip tap. If the same field is tapped again, flip direction.
-    /// If a new field is selected, default to Descending for Date/Amount, Ascending for Name/Recurrence.
+    /// Handles a sort chip tap. The same field flips the direction; a new field starts descending
+    /// for date and amount and ascending for name and recurrence.
     /// </summary>
     [RelayCommand]
     private void SetSort(string parameter)
@@ -1008,22 +972,20 @@ public partial class TransactionsViewModel : BaseViewModel
 
         if (field == ActiveSortField)
         {
-            // Same field tapped — toggle direction
+            // The same field flips the direction.
             SortDirection = SortDirection == SortDirection.Ascending
                 ? SortDirection.Descending
                 : SortDirection.Ascending;
         }
         else
         {
-            // New field — pick a sensible default direction
+            // A new field starts with its natural direction.
             ActiveSortField = field;
             SortDirection = field is TransactionSortField.Name or TransactionSortField.Recurrence
                 ? SortDirection.Ascending
                 : SortDirection.Descending;
         }
     }
-
-    // ── Amendment history accordion ───────────────────────────────────────────
 
     private List<Transaction> BuildPredecessorChain(Transaction tx)
     {
@@ -1133,8 +1095,6 @@ public partial class TransactionsViewModel : BaseViewModel
         finally { IsLoading = false; }
     }
 
-    // ── Amend Transaction ─────────────────────────────────────────────────────
-
     [RelayCommand]
     private void ShowAmendTransaction(Transaction transaction)
     {
@@ -1146,7 +1106,6 @@ public partial class TransactionsViewModel : BaseViewModel
         AmendCategory = "Uncategorized";
         AmendColor = null;
 
-        // Clear all field errors and any open tooltip
         AmendEffectiveDateError = string.Empty;
         AmendAmountError = string.Empty;
         AmendDescriptionError = string.Empty;
@@ -1174,7 +1133,6 @@ public partial class TransactionsViewModel : BaseViewModel
         if (TransactionToAmend == null)
         { ErrorMessage = "No transaction selected."; return; }
 
-        // ── Validate all fields ───────────────────────────────────────────────
         AmendEffectiveDateError = UIValidator.ValidateAmendEffectiveDate(
                                       AmendEffectiveDate, TransactionToAmend.StartDate) ?? string.Empty;
         AmendAmountError = UIValidator.ValidateAmount(AmendAmount) ?? string.Empty;
@@ -1189,13 +1147,9 @@ public partial class TransactionsViewModel : BaseViewModel
 
         var amount = decimal.Parse(AmendAmount.Trim());
 
-        // ── Snap effective date to the next natural occurrence ────────────────
-        // If the user picks a date that doesn't land on a natural occurrence of
-        // the transaction's frequency pattern (e.g. picking a Friday for a
-        // weekly-Thursday series), the server creates a spurious single occurrence
-        // on that off-pattern date before resuming the normal schedule. To prevent
-        // that pseudo-duplicate we advance the effective date to the next date that
-        // IS on the natural schedule on or after the chosen date.
+        // An effective date that is off the transaction's schedule, such as a Friday for a weekly
+        // Thursday series, makes the server create a spurious single occurrence on that date
+        // before resuming the schedule. Snapping to the next scheduled date avoids it.
         var snappedDate = NextOccurrenceOnOrAfter(
             AmendEffectiveDate, TransactionToAmend.StartDate, TransactionToAmend.Frequency);
 
@@ -1243,8 +1197,6 @@ public partial class TransactionsViewModel : BaseViewModel
         }
     }
 
-    // ── Inline add-category commands (shared by Add / Edit / Amend dialogs) ──
-
     [RelayCommand]
     private void ShowAddCategory()
     {
@@ -1281,14 +1233,14 @@ public partial class TransactionsViewModel : BaseViewModel
             if (created == null)
             { NewCategoryError = "Failed to create category. Please try again."; return; }
 
-            // Reload from server and select the new item
+            // Reloads from the server so the list matches what other pages will see.
             var cats = await _apiService.GetCategoriesAsync(forceRefresh: true);
             var names = new List<string> { "Uncategorized" };
             names.AddRange(cats.Select(c => c.Name));
             AvailableCategories = names;
             _categoriesLoaded = true;
 
-            // Set whichever dialog is currently open to the new category
+            // Selects the new category in whichever dialog is open.
             if (ShowAddTransactionDialog)      NewCategory   = trimmed;
             else if (ShowEditTransactionDialog) EditCategory  = trimmed;
             else if (ShowAmendDialog)           AmendCategory = trimmed;
@@ -1300,8 +1252,6 @@ public partial class TransactionsViewModel : BaseViewModel
         NewCategoryName = string.Empty;
     }
 
-    // ── Navigation ────────────────────────────────────────────────────────────
-
     [RelayCommand]
     private async Task NavigateToAccounts()
     {
@@ -1310,8 +1260,7 @@ public partial class TransactionsViewModel : BaseViewModel
     }
 
     /// <summary>
-    /// FAB command — opens the AddEntryPage bottom sheet instead of the
-    /// inline dialog, consistent with the Home page Add quick action.
+    /// Opens the add-entry page from the floating action button, as the Home page does.
     /// </summary>
     [RelayCommand]
     private async Task NavigateToAddEntry()
@@ -1320,22 +1269,11 @@ public partial class TransactionsViewModel : BaseViewModel
         catch { }
     }
 
-    // ── Occurrence snapping ───────────────────────────────────────────────────
-
     /// <summary>
-    /// Returns the first date on or after <paramref name="from"/> that falls
-    /// on a natural occurrence of <paramref name="frequency"/> anchored to
-    /// <paramref name="anchor"/> (the transaction's original StartDate).
-    ///
-    /// This prevents pseudo-duplicate occurrences when the user picks an
-    /// amendment effective date that is between two natural occurrences — e.g.
-    /// choosing a Friday for a weekly-Thursday series. Without snapping the
-    /// server would generate a one-off occurrence on the Friday itself before
-    /// resuming the Thursday pattern, resulting in two entries visible in the
-    /// same week.
-    ///
-    /// For Once / Daily / frequencies with no alignment requirement the
-    /// chosen date is returned as-is.
+    /// Returns the first date on or after <paramref name="from"/> that falls on the schedule of
+    /// <paramref name="frequency"/>, anchored to <paramref name="anchor"/> (the transaction's
+    /// original start date). One-time and daily transactions have no alignment, so
+    /// <paramref name="from"/> is returned unchanged.
     /// </summary>
     private static DateTime NextOccurrenceOnOrAfter(
         DateTime from, DateTime anchor, FrequencyType frequency)
@@ -1344,12 +1282,12 @@ public partial class TransactionsViewModel : BaseViewModel
         {
             case FrequencyType.Once:
             case FrequencyType.Daily:
-                // No day-of-week alignment needed.
+                // Every day is on schedule.
                 return from;
 
             case FrequencyType.Weekly:
             {
-                // Advance to the same day-of-week as the anchor.
+                // Same day of the week as the anchor.
                 int targetDow = (int)anchor.DayOfWeek;
                 int currentDow = (int)from.DayOfWeek;
                 int daysAhead = (targetDow - currentDow + 7) % 7;
@@ -1358,30 +1296,27 @@ public partial class TransactionsViewModel : BaseViewModel
 
             case FrequencyType.BiWeekly:
             {
-                // Same day-of-week as anchor, and on a week that is an even
-                // number of weeks from the anchor.
+                // Same day of the week as the anchor, in a week an even number of weeks away.
                 int targetDow = (int)anchor.DayOfWeek;
                 int currentDow = (int)from.DayOfWeek;
                 int daysToTargetDow = (targetDow - currentDow + 7) % 7;
                 var candidate = from.AddDays(daysToTargetDow);
-                // Check parity: weeks since anchor
+                // An odd number of weeks since the anchor means the off week.
                 int weekDiff = (int)((candidate - anchor.Date).TotalDays / 7);
                 if (weekDiff % 2 != 0)
-                    candidate = candidate.AddDays(7); // skip to the next bi-weekly slot
+                    candidate = candidate.AddDays(7); // Skip to the next on-schedule week.
                 return candidate;
             }
 
             case FrequencyType.FirstThirdFriday:
             {
-                // Must land on a Friday that is the 1st or 3rd Friday of its month.
+                // Must be the 1st or 3rd Friday of its month.
                 var candidate = from;
-                // Advance to next Friday on or after 'from'
                 while (candidate.DayOfWeek != DayOfWeek.Friday)
                     candidate = candidate.AddDays(1);
-                // Then walk forward Fridays until we hit a 1st or 3rd Friday
                 while (true)
                 {
-                    int fridayOfMonth = ((candidate.Day - 1) / 7) + 1; // 1-based ordinal
+                    int fridayOfMonth = ((candidate.Day - 1) / 7) + 1; // Ordinal, starting at 1.
                     if (fridayOfMonth == 1 || fridayOfMonth == 3) return candidate;
                     candidate = candidate.AddDays(7);
                 }
@@ -1389,14 +1324,13 @@ public partial class TransactionsViewModel : BaseViewModel
 
             case FrequencyType.Monthly:
             {
-                // Must land on the same day-of-month as the anchor (clamped to
-                // the last day of the month when necessary).
+                // Same day of the month as the anchor, clamped to the last day of short months.
                 int targetDay = anchor.Day;
                 var candidate = new DateTime(from.Year, from.Month,
                     Math.Min(targetDay, DateTime.DaysInMonth(from.Year, from.Month)));
                 if (candidate < from)
                 {
-                    // Already passed this month — advance to next month
+                    // This month's date has passed, so use next month's.
                     var next = from.AddMonths(1);
                     candidate = new DateTime(next.Year, next.Month,
                         Math.Min(targetDay, DateTime.DaysInMonth(next.Year, next.Month)));
@@ -1406,14 +1340,13 @@ public partial class TransactionsViewModel : BaseViewModel
 
             case FrequencyType.BiMonthly:
             {
-                // Same day-of-month as anchor, every two months.
+                // Same day of the month as the anchor, in months an even number of months away.
                 int targetDay = anchor.Day;
-                // Find the next bi-monthly slot on or after 'from'
                 var candidate = new DateTime(from.Year, from.Month,
                     Math.Min(targetDay, DateTime.DaysInMonth(from.Year, from.Month)));
                 if (candidate < from) candidate = candidate.AddMonths(1);
 
-                // Walk forward until we land on an even offset from the anchor month
+                // Walks forward until the month offset from the anchor is even.
                 while (true)
                 {
                     int monthDiff = ((candidate.Year - anchor.Year) * 12)

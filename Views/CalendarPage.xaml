@@ -15,7 +15,6 @@
 
         <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" Padding="10">
 
-        <!-- ── No Account Banner ─────────────────────────────────────────── -->
         <Border Grid.Row="0"
                 IsVisible="{Binding HasAccount, Converter={StaticResource InvertedBoolConverter}}"
                 BackgroundColor="{DynamicResource SurfaceCard}"
@@ -39,7 +38,6 @@
             </VerticalStackLayout>
         </Border>
 
-        <!-- ── Month Navigation ──────────────────────────────────────────── -->
         <Grid Grid.Row="1"
               ColumnDefinitions="Auto,*,Auto,Auto"
               Margin="0,10,0,5"
@@ -106,7 +104,6 @@
                     Margin="6,0,0,0"/>
         </Grid>
 
-        <!-- ── Month Summary strip ───────────────────────────────────────── -->
         <Border Grid.Row="2"
                 BackgroundColor="{DynamicResource SurfaceHi}"
                 Stroke="{DynamicResource StrokeCard}"
@@ -116,7 +113,6 @@
                 Margin="0,0,0,5"
                 IsVisible="{Binding HasAccount}">
             <Grid RowDefinitions="Auto,Auto" RowSpacing="6">
-                <!-- Row 0: Starting balance (large, prominent) + Ending balance -->
                 <Grid Grid.Row="0" ColumnDefinitions="*,*" ColumnSpacing="8">
                     <VerticalStackLayout Grid.Column="0">
                         <Label Text="Starting" FontSize="10"
@@ -135,7 +131,6 @@
                                HorizontalOptions="End"/>
                     </VerticalStackLayout>
                 </Grid>
-                <!-- Row 1: Income / Expenses / Net change chips -->
                 <Grid Grid.Row="1" ColumnDefinitions="*,*,*" ColumnSpacing="6">
                     <Border Grid.Column="0" BackgroundColor="{DynamicResource SurfaceLo}"
                             StrokeThickness="0" Padding="6,3" StrokeShape="RoundRectangle 6">
@@ -174,12 +169,10 @@
             </Grid>
         </Border>
 
-        <!-- ── Calendar grid ─────────────────────────────────────────────── -->
         <Grid Grid.Row="3"
               RowDefinitions="Auto,*"
               IsVisible="{Binding HasAccount}">
 
-            <!-- Day-of-week headers -->
             <Grid Grid.Row="0"
                   ColumnDefinitions="*,*,*,*,*,*,*"
                   BackgroundColor="{DynamicResource SurfaceHi}"
@@ -200,9 +193,11 @@
                        HorizontalOptions="Center" TextColor="{DynamicResource TextSecondary}"/>
             </Grid>
 
-            <!-- The CollectionView is replaced with SwipeableCollectionView whose
-                 platform handler intercepts horizontal flings at the native level
-                 before RecyclerView/UICollectionView can consume them. -->
+            <!--
+                SwipeableCollectionView replaces CollectionView here. Its platform handler
+                intercepts horizontal flings at the native level, before RecyclerView or
+                UICollectionView can consume them.
+            -->
             <Grid x:Name="CalendarGridWrapper" Grid.Row="1">
                 <controls:SwipeableCollectionView
                                 x:Name="CalendarCollectionView"
@@ -265,7 +260,6 @@
             </Grid>
         </Grid>
 
-        <!-- ── Transaction Detail Panel ───────────────────────────────────── -->
         <Border Grid.Row="4"
                 IsVisible="{Binding IsTransactionDetailVisible}"
                 BackgroundColor="{DynamicResource SurfaceCard}"
@@ -276,13 +270,11 @@
                 Margin="0,10,0,10">
             <VerticalStackLayout Spacing="12">
 
-                <!-- Header -->
                 <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
                     <Label Grid.Column="0"
                            Text="{Binding SelectedDateDisplay}"
                            FontSize="18" FontAttributes="Bold"
                            VerticalOptions="Center"/>
-                    <!-- Add transaction for this day -->
                     <Border Grid.Column="1"
                             WidthRequest="32" HeightRequest="32"
                             StrokeShape="RoundRectangle 8" StrokeThickness="0"
@@ -309,7 +301,6 @@
                     </Border>
                 </Grid>
 
-                <!-- Day summary mini-cards -->
                 <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
                     <Border Grid.Column="0"
                             BackgroundColor="{DynamicResource SurfaceLo}"
@@ -352,7 +343,6 @@
                     </Border>
                 </Grid>
 
-                <!-- End of day balance -->
                 <Border Padding="12" StrokeThickness="1"
                         BackgroundColor="{DynamicResource SurfaceHi}"
                         Stroke="{DynamicResource StrokeHi}"
@@ -406,7 +396,6 @@
             </VerticalStackLayout>
         </Border>
 
-        <!-- ── Month Picker Modal ─────────────────────────────────────────── -->
         <Grid Grid.RowSpan="5"
               IsVisible="{Binding IsMonthPickerVisible}"
               BackgroundColor="#CC000000">
@@ -466,7 +455,6 @@
             </Border>
         </Grid>
 
-        <!-- Loading spinner -->
         <ActivityIndicator Grid.RowSpan="5"
                            IsRunning="{Binding IsLoading}"
                            IsVisible="{Binding IsLoading}"

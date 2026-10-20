@@ -9,18 +9,11 @@
     Shell.NavBarIsVisible="True">
 
     <!--
-        HexFund Shell — Fidelity Sprint
-        ════════════════════════════════════════════════════════════════════
-
-        Tab icons reference the hex_icons/ SVG set from the asset pack.
-        MAUI converts them to PNG at build time; reference without extension.
-
-        Icon tinting: MAUI applies Shell.UnselectedColor / Shell.TabBarUnselectedColor
-        to inactive tab icons automatically. Set these in AppShell.xaml.cs via
-        ApplyThemeToShell() — they read DynamicResource TextMuted and Accent.
+        Tab icons come from the hex_icons SVG set, which MAUI converts to PNG at build time, so
+        they are referenced without an extension. Tab colors are set in AppShell.xaml.cs
+        (ApplyThemeToShell).
     -->
 
-    <!-- ── Authenticated TabBar ────────────────────────────────────────-->
     <TabBar x:Name="MainTabBar">
         <ShellContent
             x:Name="HomeTab"
@@ -44,7 +37,6 @@
             ContentTemplate="{DataTemplate local:InsightsPage}" />
     </TabBar>
 
-    <!-- ── Unauthenticated TabBar ───────────────────────────────────────-->
     <TabBar x:Name="AuthTabBar">
         <ShellContent
             x:Name="LoginTab"

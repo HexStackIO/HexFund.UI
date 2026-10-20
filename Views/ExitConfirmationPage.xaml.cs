@@ -1,10 +1,9 @@
 namespace HexFund.UI.Views;
 
 /// <summary>
-/// Transparent modal page shown when the user presses the system back button
-/// from the root tab shell. Replaces the native Android AlertDialog so the
-/// dialog inherits all DynamicResource theme tokens and matches the in-app
-/// modal style used by the Edit / Amend dialogs.
+/// Transparent modal page shown when the user presses the back button on a root tab. It replaces
+/// the native Android dialog so the confirmation uses the theme tokens and matches the in-app
+/// dialogs.
 /// </summary>
 public partial class ExitConfirmationPage : ContentPage
 {

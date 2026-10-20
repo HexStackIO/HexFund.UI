@@ -5,20 +5,13 @@ on:
     branches: [ master ]
   workflow_dispatch:
 
-# ─────────────────────────────────────────────
-# VERSION STRATEGY
-#   VersionName : Major.Minor  (e.g. 1.5)
-#   VersionCode : always equal to Minor       (e.g. 5)
-#   Minor       : github.run_number - 8
-#                 run 14 → minor 5  (current: 1.5)
-#                 run 15 → minor 6  (next:    1.6)
-#   To bump Major: update VERSION_MAJOR below
-#                  and reset MINOR_OFFSET so
-#                  run_number + offset = desired minor
-# ─────────────────────────────────────────────
+# Version strategy: the version name is VERSION_MAJOR.Minor and the version code equals Minor,
+# where Minor is github.run_number + MINOR_OFFSET. For example run 14 gives minor 5 (version
+# 1.5) and run 15 gives 1.6. To bump the major version, change VERSION_MAJOR and choose
+# MINOR_OFFSET so that run_number + offset is the minor you want.
 env:
   VERSION_MAJOR: 1
-  MINOR_OFFSET: -9        # keeps run 14 → minor 5
+  MINOR_OFFSET: -9
 
 jobs:
   build-and-deploy:
@@ -26,11 +19,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # ── 1. Source ────────────────────────────
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # ── 2. Compute version numbers ───────────
       - name: Compute version
         id: version
         run: |
@@ -45,7 +36,6 @@ jobs:
           echo "  VersionCode : $VERSION_CODE"
           echo "──────────────────────────────────"
 
-      # ── 3. Runtimes ──────────────────────────
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
@@ -57,7 +47,6 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      # ── 4. Caches ────────────────────────────
       - name: Cache NuGet packages
         uses: actions/cache@v4
         with:
@@ -83,7 +72,6 @@ jobs:
         if: steps.cache-workloads.outputs.cache-hit != 'true'
         run: dotnet workload install maui-android android --skip-sign-check
 
-      # ── 5. Inject secrets & version ──────────
       - name: Create AuthSecrets
         run: |
           cat > Config/AuthSecrets.cs << 'EOF'
@@ -107,24 +95,20 @@ jobs:
 
       - name: Patch version in AppConstants
         run: |
-          # Handles:  public const string AppVersion = "x.x";
-          #       or: AppVersion = "x.x"
+          # Matches both `public const string AppVersion = "x.x";` and `AppVersion = "x.x"`.
           find . -name "AppConstants.cs" | xargs sed -i \
             's|\(AppVersion\s*=\s*\)"[^"]*"|\1"${{ steps.version.outputs.VERSION_NAME }}"|g'
           echo "── Patched AppConstants ────────────────"
           grep -r "AppVersion" . --include="*.cs" || true
 
-      # ── 6. Restore ───────────────────────────
       - name: Restore NuGet packages
         run: dotnet restore HexFund.UI.csproj -p:TargetFrameworks=net9.0-android36.0
 
-      # ── 7. Decode keystore ───────────────────
       - name: Decode keystore
         run: |
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode \
             > "${{ github.workspace }}/hexfund.keystore"
 
-      # ── 8. Build ─────────────────────────────
       - name: Build AAB
         run: |
           dotnet publish HexFund.UI.csproj \
@@ -136,7 +120,6 @@ jobs:
             -p:ApplicationDisplayVersion=${{ steps.version.outputs.VERSION_NAME }} \
             -o "${{ github.workspace }}/output"
 
-      # ── 9. Sign ──────────────────────────────
       - name: Sign AAB
         run: |
           AAB=$(find "${{ github.workspace }}/output" -name "*.aab" | head -1)
@@ -158,7 +141,6 @@ jobs:
           AAB=$(find "${{ github.workspace }}/output" -name "*.aab" | head -1)
           $JAVA_HOME/bin/jarsigner -verify -verbose -certs "$AAB" | head -20
 
-      # ── 10. Locate AAB ───────────────────────
       - name: Locate AAB
         id: find_aab
         run: |
@@ -166,7 +148,6 @@ jobs:
           echo "AAB_PATH=$AAB" >> "$GITHUB_OUTPUT"
           echo "Found AAB: $AAB"
 
-      # ── 11. Rename AAB ───────────────────────
       - name: Rename AAB
         id: rename_aab
         run: |
@@ -178,7 +159,6 @@ jobs:
           echo "AAB_PATH=$NEW_PATH" >> "$GITHUB_OUTPUT"
           echo "Renamed to: $NEW_NAME"
 
-      # ── 12. Upload artifact (audit trail) ────
       - name: Upload AAB artifact
         uses: actions/upload-artifact@v4
         with:
@@ -186,7 +166,6 @@ jobs:
           path: ${{ steps.rename_aab.outputs.AAB_PATH }}
           retention-days: 14
 
-      # ── 13. Deploy to Google Play ────────────
       - name: Deploy to Google Play (Closed Testing)
         uses: r0adkll/upload-google-play@v1
         with:

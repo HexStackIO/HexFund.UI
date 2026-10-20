@@ -20,16 +20,13 @@ public partial class TransactionsPage : ContentPage
         _viewModel.InitializeAsync();
     }
 
-    /// <summary>
-    /// Intercept the Android hardware back button so it closes whichever
-    /// dialog overlay is currently open instead of popping/closing the app.
-    /// </summary>
+    // The back button closes the open dialog overlay, if any, instead of leaving the page.
     protected override bool OnBackButtonPressed()
     {
         if (_viewModel.ShowAmendDialog)
         {
             _viewModel.CancelAmendTransactionCommand.Execute(null);
-            return true; // consumed
+            return true; // Handled.
         }
         if (_viewModel.ShowEditTransactionDialog)
         {

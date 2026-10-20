@@ -1,18 +1,17 @@
 namespace HexFund.UI;
 
 /// <summary>
-/// Strongly-typed tab identifiers. Use AppShell.SwitchToTab() instead of
-/// searching for tab titles by string — a renamed tab becomes a compile error,
-/// not a silent navigation failure.
+/// Identifies the tabs in AppShell. Use <c>AppShell.SwitchToTab</c> instead of looking tabs up by
+/// title, so a renamed tab fails at compile time instead of silently breaking navigation.
 /// </summary>
 public enum AppTab
 {
-    // ── Authenticated tabs (MainTabBar) ───────────────────────────────────────
+    // Tabs in MainTabBar, shown when signed in.
     Home,
     Calendar,
     Ledger,
     Insights,
 
-    // ── Auth tabs (AuthTabBar) ────────────────────────────────────────────────
+    // Tab in AuthTabBar, shown when signed out.
     Login,
 }

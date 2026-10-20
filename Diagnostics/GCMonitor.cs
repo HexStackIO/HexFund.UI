@@ -4,6 +4,7 @@ using System.Runtime;
 
 namespace HexFund.UI.Diagnostics;
 
+/// <summary>Debug-only helper that logs garbage collections and memory changes between checks.</summary>
 public static class GCMonitor
 {
     private static long _lastGen0Count;
@@ -83,6 +84,7 @@ public static class GCMonitor
     }
 }
 
+/// <summary>Collection counts and memory change since the previous check.</summary>
 public class GCStats
 {
     public string Context { get; set; } = "";

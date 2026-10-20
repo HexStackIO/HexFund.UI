@@ -3,13 +3,8 @@ namespace HexFund.UI.Services;
 using HexFund.UI.Models;
 
 /// <summary>
-/// Singleton service that maintains shared state about the currently
-/// selected account and signals cross-ViewModel events.
-///
-/// Changes from original:
-///   - Added TransactionsChanged event (replaces AppState.CalendarNeedsRefresh
-///     static flag). TransactionsViewModel raises it after any mutation;
-///     CalendarViewModel subscribes to force a refresh on next appearance.
+/// Holds the currently selected account and signals cross-view-model events. Registered as a
+/// singleton so every page sees the same selection.
 /// </summary>
 public interface IAccountStateService
 {
@@ -19,9 +14,8 @@ public interface IAccountStateService
     event Action? SelectedAccountChanged;
 
     /// <summary>
-    /// Raised by TransactionsViewModel whenever a transaction is created,
-    /// updated, deleted, or amended. CalendarViewModel subscribes so it can
-    /// force a data refresh without a shared static flag.
+    /// Raised whenever a transaction is created, updated, deleted or amended, so views that show
+    /// derived data (such as the calendar) can refresh.
     /// </summary>
     event Action? TransactionsChanged;
 

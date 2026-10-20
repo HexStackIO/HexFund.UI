@@ -7,13 +7,11 @@
              x:DataType="vm:HomeViewModel"
              BackgroundColor="{DynamicResource SurfacePage}">
 
-    <!-- ── Custom header — matches the prototype: logo · wordmark · subtitle · gear ── -->
     <Shell.TitleView>
         <Grid ColumnDefinitions="Auto,*,Auto"
               Padding="4,0"
               ColumnSpacing="10">
 
-            <!-- Hex logo mark -->
             <Border Grid.Column="0"
                     WidthRequest="34" HeightRequest="34"
                     StrokeShape="Ellipse"
@@ -26,7 +24,6 @@
                        VerticalOptions="Center"/>
             </Border>
 
-            <!-- Wordmark + theme subtitle -->
             <VerticalStackLayout Grid.Column="1"
                                  Spacing="0"
                                  VerticalOptions="Center">
@@ -43,7 +40,6 @@
                        LineBreakMode="NoWrap"/>
             </VerticalStackLayout>
 
-            <!-- Settings gear -->
             <Border Grid.Column="2"
                     WidthRequest="32" HeightRequest="32"
                     StrokeShape="RoundRectangle 8"
@@ -63,7 +59,6 @@
         </Grid>
     </Shell.TitleView>
 
-    <!-- Full-bleed vault backdrop sits behind all content -->
     <Grid>
         <Image Source="{Binding CurrentThemeBackdrop}"
                Aspect="AspectFill"
@@ -76,12 +71,8 @@
             <ScrollView>
                 <VerticalStackLayout Padding="16" Spacing="14">
 
-                <!-- ════════════════════════════════════════════════════════
-                     LOADING SKELETON — visible while IsLoading=true
-                     ════════════════════════════════════════════════════════ -->
                 <VerticalStackLayout IsVisible="{Binding IsLoading}" Spacing="14">
 
-                    <!-- Skeleton: BalanceHero -->
                     <Border StrokeShape="RoundRectangle 16"
                             BackgroundColor="{DynamicResource SurfaceHi}"
                             Stroke="{DynamicResource StrokeCard}"
@@ -97,7 +88,6 @@
                         </VerticalStackLayout>
                     </Border>
 
-                    <!-- Skeleton: Quick actions -->
                     <Grid ColumnDefinitions="*,*,*" ColumnSpacing="10">
                         <Border Grid.Column="0" StrokeShape="RoundRectangle 12"
                                 BackgroundColor="{DynamicResource SurfaceCard}"
@@ -113,7 +103,6 @@
                                 MinimumHeightRequest="76"/>
                     </Grid>
 
-                    <!-- Skeleton: Accounts preview -->
                     <Border StrokeShape="RoundRectangle 12"
                             BackgroundColor="{DynamicResource SurfaceCard}"
                             Stroke="{DynamicResource StrokeCard}" StrokeThickness="1"
@@ -137,7 +126,6 @@
                         </VerticalStackLayout>
                     </Border>
 
-                    <!-- Skeleton: Recent activity -->
                     <Border StrokeShape="RoundRectangle 12"
                             BackgroundColor="{DynamicResource SurfaceCard}"
                             Stroke="{DynamicResource StrokeCard}" StrokeThickness="1"
@@ -174,15 +162,10 @@
                     </Border>
 
                 </VerticalStackLayout>
-                <!-- END SKELETON -->
 
-                <!-- ════════════════════════════════════════════════════════
-                     REAL CONTENT — visible when IsLoading=false
-                     ════════════════════════════════════════════════════════ -->
                 <VerticalStackLayout IsVisible="{Binding IsLoading, Converter={StaticResource InvertedBoolConverter}}"
                                      Spacing="14">
 
-                    <!-- ── Error state ───────────────────────────────────── -->
                     <Border IsVisible="{Binding HasError}"
                             BackgroundColor="{DynamicResource SurfaceCard}"
                             Stroke="{DynamicResource Down}"
@@ -196,7 +179,6 @@
                                HorizontalTextAlignment="Center"/>
                     </Border>
 
-                    <!-- ── BalanceHero card ───────────────────────────────── -->
                     <Border StrokeShape="RoundRectangle 16"
                             BackgroundColor="{DynamicResource SurfaceHi}"
                             Stroke="{DynamicResource AccentGlow}"
@@ -236,7 +218,6 @@
                         </VerticalStackLayout>
                     </Border>
 
-                    <!-- ── Accounts preview ───────────────────────────────── -->
                     <Border StrokeShape="RoundRectangle 12"
                             BackgroundColor="{DynamicResource SurfaceCard}"
                             Stroke="{DynamicResource StrokeCard}"
@@ -244,7 +225,6 @@
                             Padding="16">
                         <VerticalStackLayout Spacing="12">
 
-                            <!-- Section header -->
                             <Grid ColumnDefinitions="*,Auto">
                                 <Label Grid.Column="0"
                                        Text="Accounts"
@@ -266,7 +246,6 @@
 
                             <BoxView HeightRequest="1" Color="{DynamicResource SurfaceDivider}"/>
 
-                            <!-- Account rows -->
                             <VerticalStackLayout Spacing="0"
                                                  BindableLayout.ItemsSource="{Binding PreviewAccounts}">
                                 <BindableLayout.ItemTemplate>
@@ -297,7 +276,6 @@
                                                    FontSize="15" FontAttributes="Bold"
                                                    TextColor="{DynamicResource AccentInk}"
                                                    VerticalOptions="Center"/>
-                                            <!-- Active account indicator dot -->
                                             <Ellipse Grid.Column="3"
                                                      WidthRequest="8" HeightRequest="8"
                                                      VerticalOptions="Center"
@@ -314,7 +292,6 @@
                                 </BindableLayout.ItemTemplate>
                             </VerticalStackLayout>
 
-                            <!-- Empty state -->
                             <Label IsVisible="{Binding HasAccounts, Converter={StaticResource InvertedBoolConverter}}"
                                    Text="No accounts yet — tap the hex button to get started."
                                    FontSize="13"
@@ -326,7 +303,6 @@
                         </VerticalStackLayout>
                     </Border>
 
-                    <!-- ── Recent activity (collapsible) ─────────────────── -->
                     <Border StrokeShape="RoundRectangle 12"
                             BackgroundColor="{DynamicResource SurfaceCard}"
                             Stroke="{DynamicResource StrokeCard}"
@@ -385,7 +361,6 @@
                         </VerticalStackLayout>
                     </Border>
 
-                    <!-- ── Upcoming transactions (collapsible) ───────────── -->
                     <Border StrokeShape="RoundRectangle 12"
                             BackgroundColor="{DynamicResource SurfaceCard}"
                             Stroke="{DynamicResource StrokeCard}"
@@ -446,7 +421,6 @@
                     </Border>
 
                 </VerticalStackLayout>
-                <!-- END REAL CONTENT -->
 
                 <BoxView HeightRequest="20" Color="Transparent"/>
 
@@ -454,15 +428,10 @@
         </ScrollView>
     </RefreshView>
 
-    <!-- ── Onboarding overlay ────────────────────────────────────────────────
-         Shown once to first-time users until dismissed or both steps complete.
-         Sits above all content as a bottom sheet anchored inside the page Grid.
-    ──────────────────────────────────────────────────────────────────────── -->
     <Grid IsVisible="{Binding ShowOnboarding}"
           VerticalOptions="End"
           Margin="0,0,0,90">
 
-        <!-- Scrim — taps outside the card do nothing (card handles all actions) -->
         <Border BackgroundColor="#99000000"
                 StrokeThickness="0"
                 IsVisible="False"/>
@@ -480,7 +449,6 @@
 
             <VerticalStackLayout Spacing="16">
 
-                <!-- Header row: step indicator + dismiss -->
                 <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
                     <Border Grid.Column="0"
                             BackgroundColor="{DynamicResource Accent}"
@@ -514,7 +482,6 @@
 
                 <BoxView HeightRequest="1" Color="{DynamicResource SurfaceDivider}"/>
 
-                <!-- Step 1: Create Account -->
                 <VerticalStackLayout Spacing="10"
                                      IsVisible="{Binding IsOnboardingStep1}">
                     <Label Text="Create your first account"
@@ -554,7 +521,6 @@
                     </Grid>
                 </VerticalStackLayout>
 
-                <!-- Step 2: Add Transaction -->
                 <VerticalStackLayout Spacing="10"
                                      IsVisible="{Binding IsOnboardingStep2}">
                     <Label Text="Add your first transaction"

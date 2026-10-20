@@ -5,20 +5,18 @@ using UIKit;
 namespace HexFund.UI.Platforms.iOS;
 
 /// <summary>
-/// Draws a 3pt white line at the top of the active tab.
-/// Re-attaches every time AppShell swaps the visible TabBar so both
-/// the pre-login (AuthTabBar) and post-login (MainTabBar) are covered.
+/// Draws a 3pt white line at the top of the active tab and nudges the middle tabs apart to leave
+/// room for the floating button. <see cref="Reattach"/> must run when the shell swaps the visible
+/// tab bar, so both the login and main tab bars are covered.
 /// </summary>
 public static class TabBarTopLineEffect
 {
     private const string IndicatorTag = "FP_TopLine";
     private const float LineHeight = 3f;
 
-    // ── Public API called from AppShell ───────────────────────────────────────
-
     /// <summary>
-    /// Call this after every CurrentItem change in AppShell so the effect
-    /// re-discovers the new UITabBarController that MAUI creates.
+    /// Call after every CurrentItem change in AppShell, so the effect finds the new
+    /// UITabBarController that MAUI creates.
     /// </summary>
     public static void Reattach()
     {
@@ -51,8 +49,6 @@ public static class TabBarTopLineEffect
             MainThread.BeginInvokeOnMainThread(() => DrawTopLine(tbc.TabBar));
     }
 
-    // ── UIViewController traversal ────────────────────────────────────────────
-
     private static UIViewController? GetRootViewController()
         => UIApplication.SharedApplication
             .ConnectedScenes
@@ -74,25 +70,20 @@ public static class TabBarTopLineEffect
         return null;
     }
 
-    // ── Drawing logic ─────────────────────────────────────────────────────────
-
-    // Horizontal nudge in points — Calendar shifts left, Ledger shifts right
+    // Horizontal nudge in points: Calendar moves left and Ledger moves right.
     private const float NudgePt = 10f;
 
     /// <summary>
-    /// Shifts Calendar (index 1) left and Ledger (index 2) right so the
-    /// center FAB hexagon has clear space. Called once on Reattach.
+    /// Moves Calendar (index 1) left and Ledger (index 2) right so the floating button has room.
     /// </summary>
     private static void ApplyTabNudges(UITabBar tabBar)
     {
         var items = tabBar.Items;
         if (items == null || items.Length < 3) return;
 
-        // Calendar (1): shift content left
         items[1].ImageInsets = new UIEdgeInsets(0, -NudgePt, 0, NudgePt);
         items[1].TitlePositionAdjustment = new UIOffset(-NudgePt, 0);
 
-        // Ledger (2): shift content right
         items[2].ImageInsets = new UIEdgeInsets(0, NudgePt, 0, -NudgePt);
         items[2].TitlePositionAdjustment = new UIOffset(NudgePt, 0);
     }

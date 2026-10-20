@@ -7,27 +7,19 @@ using HexFund.UI.Validation;
 namespace HexFund.UI.ViewModels;
 
 /// <summary>
-/// AddEntryViewModel — Sprint 04 (full fields).
-///
-/// Mirrors the complete CreateTransactionRequest surface:
-///   Income/Expense toggle, Amount, Description, Category, Frequency,
-///   Start Date, optional End Date, and Colour picker.
-///
-/// Self-contained — calls IApiService directly so the sheet works from
-/// any entry point (Home, Ledger, Calendar). On success raises
-/// TransactionsChanged via IAccountStateService so all subscribers refresh.
+/// Drives the add-entry page, which creates a one-time or recurring transaction. The form covers
+/// every field of <see cref="CreateTransactionRequest"/>. It calls the API directly so the page
+/// works from any entry point, and raises TransactionsChanged on success so other pages refresh.
 /// </summary>
 public partial class AddEntryViewModel : BaseViewModel
 {
     private readonly IApiService _apiService;
     private readonly IAccountStateService _accountStateService;
 
-    // ── Account picker ────────────────────────────────────────────────────────
     [ObservableProperty] private List<Account> availableAccounts = new();
     [ObservableProperty] private Account? selectedTransactionAccount;
     [ObservableProperty] private bool showAccountPicker;
 
-    // ── Form fields ───────────────────────────────────────────────────────────
     [ObservableProperty] private bool isIncome = true;
     [ObservableProperty] private string amount = string.Empty;
     [ObservableProperty] private string description = string.Empty;
@@ -39,7 +31,6 @@ public partial class AddEntryViewModel : BaseViewModel
     [ObservableProperty] private bool hasEndDate;
     [ObservableProperty] private string? selectedColor;
 
-    // ── Add Category inline ───────────────────────────────────────────────────
     [ObservableProperty] private bool showNewCategoryInput;
     [ObservableProperty] private string newCategoryName = string.Empty;
     [ObservableProperty] private string newCategoryError = string.Empty;
@@ -56,18 +47,15 @@ public partial class AddEntryViewModel : BaseViewModel
         FrequencyType.BiMonthly,
     };
 
-    // ── Validation errors ─────────────────────────────────────────────────────
     [ObservableProperty] private string amountError      = string.Empty;
     [ObservableProperty] private string descriptionError = string.Empty;
     [ObservableProperty] private string categoryError    = string.Empty;
     [ObservableProperty] private string dateRangeError   = string.Empty;
 
-    // ── State ─────────────────────────────────────────────────────────────────
     [ObservableProperty] private bool isLoading;
     [ObservableProperty] private string errorMessage = string.Empty;
     [ObservableProperty] private bool hasError;
 
-    // ── Computed display ──────────────────────────────────────────────────────
     public string IncomeLabel  => IsIncome ? "Income" : "Expense";
     public Color  IncomeColor  => IsIncome
         ? GetSemanticColor("Up",   "#3FB97A")
@@ -85,8 +73,6 @@ public partial class AddEntryViewModel : BaseViewModel
                                  ?? _accountStateService.SelectedAccount?.AccountName
                                  ?? "No account selected";
 
-    // ── Constructor ───────────────────────────────────────────────────────────
-
     public AddEntryViewModel(
         IApiService apiService,
         IAccountStateService accountStateService,
@@ -96,8 +82,6 @@ public partial class AddEntryViewModel : BaseViewModel
         _apiService = apiService;
         _accountStateService = accountStateService;
     }
-
-    // ── Initialisation ────────────────────────────────────────────────────────
 
     public async Task InitializeAsync()
     {
@@ -155,8 +139,8 @@ public partial class AddEntryViewModel : BaseViewModel
         SelectedCategory  = "Uncategorized";
         SelectedFrequency = FrequencyType.Once;
         StartDate         = DateTime.Today;
-        EndDate           = DateTime.Today;   // Once: end == start
-        HasEndDate        = true;             // Once: end date is always set
+        EndDate           = DateTime.Today;   // A one-time entry ends the day it starts.
+        HasEndDate        = true;
         SelectedColor     = null;
         AmountError       = string.Empty;
         DescriptionError  = string.Empty;
@@ -172,8 +156,6 @@ public partial class AddEntryViewModel : BaseViewModel
         OnPropertyChanged(nameof(IncomeColor));
         OnPropertyChanged(nameof(ColorPreview));
     }
-
-    // ── Commands ──────────────────────────────────────────────────────────────
 
     [RelayCommand]
     private void ToggleType()
@@ -205,8 +187,6 @@ public partial class AddEntryViewModel : BaseViewModel
 
     [RelayCommand]
     private void SelectCategory(string category) => SelectedCategory = category;
-
-    // ── Add-category inline commands ──────────────────────────────────────────
 
     [RelayCommand]
     private void ShowAddCategory()
@@ -254,7 +234,7 @@ public partial class AddEntryViewModel : BaseViewModel
 
             if (created != null)
             {
-                // Reload full list from server to stay in sync
+                // Reloads from the server so the list matches what other pages will see.
                 var cats = await _apiService.GetCategoriesAsync(forceRefresh: true);
                 RebuildCategoryList(cats);
                 SelectedCategory = trimmed;
@@ -278,8 +258,6 @@ public partial class AddEntryViewModel : BaseViewModel
         ShowNewCategoryInput = false;
         NewCategoryName = string.Empty;
     }
-
-    // ── Submit ────────────────────────────────────────────────────────────────
 
     [RelayCommand]
     private async Task SubmitAsync()
@@ -354,12 +332,10 @@ public partial class AddEntryViewModel : BaseViewModel
     private async Task CancelAsync() =>
         await Shell.Current.GoToAsync("..");
 
-    // ── Partial hooks ─────────────────────────────────────────────────────────
-
     partial void OnAmountChanged(string value)
     {
         var sanitized = UIValidator.SanitizeDecimalInput(value, allowNegative: false);
-        if (sanitized != value) Amount = sanitized; // triggers another change, but terminates immediately
+        if (sanitized != value) Amount = sanitized; // Re-enters this method once, then stops.
     }
 
     partial void OnIsIncomeChanged(bool value)

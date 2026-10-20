@@ -17,7 +17,6 @@
         <ScrollView>
             <VerticalStackLayout Padding="16" Spacing="14">
 
-                <!-- ── No account state ──────────────────────────────────── -->
                 <Border IsVisible="{Binding HasAccount, Converter={StaticResource InvertedBoolConverter}}"
                         StrokeShape="RoundRectangle 12"
                         BackgroundColor="{DynamicResource SurfaceCard}"
@@ -34,7 +33,6 @@
                     </VerticalStackLayout>
                 </Border>
 
-                <!-- ── Error state ────────────────────────────────────────── -->
                 <Border IsVisible="{Binding HasError}"
                         StrokeShape="RoundRectangle 12"
                         BackgroundColor="{DynamicResource SurfaceCard}"
@@ -46,12 +44,10 @@
                            HorizontalTextAlignment="Center"/>
                 </Border>
 
-                <!-- All insight sections visible when account is set and not loading -->
                 <VerticalStackLayout
                     Spacing="14"
                     IsVisible="{Binding HasAccount}">
 
-                    <!-- Month navigator -->
                     <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,4">
                         <Button Grid.Column="0"
                                 Text="◀"
@@ -76,10 +72,6 @@
                                 FontSize="14" Padding="0" Margin="0,0,0,0"/>
                     </Grid>
 
-                    <!-- ════════════════════════════════════════════════════
-                         SECTION 1 — Smart Alerts
-                         Shown above the charts so they're seen first.
-                         ════════════════════════════════════════════════════ -->
                     <VerticalStackLayout
                         IsVisible="{Binding HasAlerts}"
                         Spacing="8">
@@ -115,16 +107,12 @@
                         </VerticalStackLayout>
                     </VerticalStackLayout>
 
-                    <!-- ════════════════════════════════════════════════════
-                         SECTION 2 — Category Spending Breakdown
-                         ════════════════════════════════════════════════════ -->
                     <Border StrokeShape="RoundRectangle 12"
                             BackgroundColor="{DynamicResource SurfaceCard}"
                             Stroke="{DynamicResource StrokeCard}" StrokeThickness="1"
                             Padding="16">
                         <VerticalStackLayout Spacing="14">
 
-                            <!-- Header -->
                             <Grid ColumnDefinitions="*,Auto">
                                 <VerticalStackLayout Grid.Column="0" Spacing="2">
                                     <Label Text="Spending by Category"
@@ -149,7 +137,6 @@
 
                             <BoxView HeightRequest="1" Color="{DynamicResource SurfaceDivider}"/>
 
-                            <!-- Empty state -->
                             <VerticalStackLayout
                                 IsVisible="{Binding HasCategoryData, Converter={StaticResource InvertedBoolConverter}}"
                                 Spacing="6" HorizontalOptions="Center" Margin="0,8">
@@ -164,7 +151,6 @@
                                        HorizontalTextAlignment="Center"/>
                             </VerticalStackLayout>
 
-                            <!-- Category bars -->
                             <VerticalStackLayout
                                 IsVisible="{Binding HasCategoryData}"
                                 Spacing="10"
@@ -172,7 +158,6 @@
                                 <BindableLayout.ItemTemplate>
                                     <DataTemplate x:DataType="vm:CategorySlice">
                                         <VerticalStackLayout Spacing="5">
-                                            <!-- Label row -->
                                             <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
                                                 <HorizontalStackLayout Grid.Column="0" Spacing="8">
                                                     <BoxView WidthRequest="10" HeightRequest="10"
@@ -197,7 +182,10 @@
                                                        VerticalOptions="Center"
                                                        MinimumWidthRequest="38"/>
                                             </Grid>
-                                            <!-- Bar track using ProgressBar — Progress binds directly to 0-1 BarWeight -->
+                                            <!--
+                                                Progress binds directly to BarWeight, which is
+                                                already between 0 and 1.
+                                            -->
                                             <ProgressBar Progress="{Binding BarWeight}"
                                                          ProgressColor="{Binding SliceColor}"
                                                          BackgroundColor="{DynamicResource SurfaceLo}"
@@ -210,9 +198,6 @@
                         </VerticalStackLayout>
                     </Border>
 
-                    <!-- ════════════════════════════════════════════════════
-                         SECTION 3 — 6-Month Net Change Trend
-                         ════════════════════════════════════════════════════ -->
                     <Border StrokeShape="RoundRectangle 12"
                             BackgroundColor="{DynamicResource SurfaceCard}"
                             Stroke="{DynamicResource StrokeCard}" StrokeThickness="1"
@@ -224,14 +209,15 @@
 
                             <BoxView HeightRequest="1" Color="{DynamicResource SurfaceDivider}"/>
 
-                            <!-- No trend data -->
                             <Label IsVisible="{Binding HasTrendData, Converter={StaticResource InvertedBoolConverter}}"
                                    Text="No transaction data found for the last 6 months."
                                    FontSize="13" TextColor="{DynamicResource TextMuted}"
                                    HorizontalOptions="Center" Margin="0,8"/>
 
-                            <!-- Bar chart — HorizontalStackLayout+BindableLayout fixes the MAUI bug
-                                 where Grid+BindableLayout ignores Grid.Column assignments -->
+                            <!--
+                                A HorizontalStackLayout with BindableLayout is used because a Grid
+                                with BindableLayout ignores Grid.Column assignments.
+                            -->
                             <VerticalStackLayout IsVisible="{Binding HasTrendData}" Spacing="8">
 
                                 <HorizontalStackLayout Spacing="6" HorizontalOptions="Center"
@@ -239,20 +225,16 @@
                                     <BindableLayout.ItemTemplate>
                                         <DataTemplate x:DataType="vm:MonthBar">
                                             <VerticalStackLayout WidthRequest="44" Spacing="3">
-                                                <!-- Spacer pushes bar to bottom of the 120px chart area -->
                                                 <BoxView Color="Transparent"
                                                          HeightRequest="{Binding SpacerHeightPx}"
                                                          VerticalOptions="Start"/>
-                                                <!-- Bar -->
                                                 <Border StrokeShape="RoundRectangle 4" StrokeThickness="0"
                                                         BackgroundColor="{Binding BarColor}"
                                                         HeightRequest="{Binding BarHeightPx}"
                                                         VerticalOptions="End"/>
-                                                <!-- Month label -->
                                                 <Label Text="{Binding MonthLabel}" FontSize="10"
                                                        TextColor="{DynamicResource TextSecondary}"
                                                        HorizontalOptions="Center"/>
-                                                <!-- Value label -->
                                                 <Label Text="{Binding ValueDisplay}" FontSize="9"
                                                        HorizontalOptions="Center"
                                                        HorizontalTextAlignment="Center"
@@ -263,7 +245,6 @@
                                     </BindableLayout.ItemTemplate>
                                 </HorizontalStackLayout>
 
-                                <!-- Legend -->
                                 <HorizontalStackLayout Spacing="16"
                                                        HorizontalOptions="Center"
                                                        Margin="0,6,0,0">

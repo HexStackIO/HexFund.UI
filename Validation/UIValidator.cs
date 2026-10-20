@@ -4,26 +4,20 @@ using HexFund.UI.Models;
 namespace HexFund.UI.Validation;
 
 /// <summary>
-/// Client-side validation helpers shared across all ViewModels.
-///
-/// These rules mirror the API-side constraints so users get instant,
-/// friendly feedback before a request is ever sent. The API enforces
-/// the same rules independently — this layer is UX, not security.
-///
-/// All methods return a human-readable error string, or null if valid.
+/// Client-side validation shared by the view models. The rules mirror the API constraints so users
+/// get immediate feedback before a request is sent. The API enforces its own rules, so this layer
+/// is a convenience and not a security boundary.
 /// </summary>
+/// <remarks>Every Validate method returns a user-facing error message, or null when valid.</remarks>
 public static class UIValidator
 {
-    // ── Field limits (must match API DTOs) ────────────────────────────────────
     public const int AccountNameMaxLength      = 25;
     public const int DescriptionMaxLength      = 40;
     public const int CategoryMaxLength         = 25;
     public const int AmendDescriptionMaxLength = 40;
 
-    // Shared example hint used in all numeric error messages for consistency
+    // Example shown in every numeric error message.
     private const string NumericHint = "e.g. 100.00";
-
-    // ── Account ───────────────────────────────────────────────────────────────
 
     public static string? ValidateAccountName(string? value)
     {
@@ -42,16 +36,15 @@ public static class UIValidator
     }
 
     /// <summary>
-    /// Checks a proposed account name against the existing account list.
-    /// Case-insensitive. Pass the current account's ID when editing to allow
-    /// keeping the same name unchanged.
+    /// Checks a proposed account name against the existing accounts, ignoring case. When editing,
+    /// pass the edited account's ID so it can keep its own name.
     /// </summary>
     public static string? ValidateAccountNameUnique(
         string? value,
         IEnumerable<Models.Account> existingAccounts,
         Guid? currentAccountId = null)
     {
-        if (string.IsNullOrWhiteSpace(value)) return null; // structural check handled elsewhere
+        if (string.IsNullOrWhiteSpace(value)) return null; // ValidateAccountName reports empty names.
 
         var trimmed = value.Trim();
 
@@ -77,8 +70,6 @@ public static class UIValidator
 
         return null;
     }
-
-    // ── Transaction ───────────────────────────────────────────────────────────
 
     public static string? ValidateDescription(string? value)
     {
@@ -115,7 +106,7 @@ public static class UIValidator
 
     public static string? ValidateCategory(string? value)
     {
-        // Category is optional — only validate if provided
+        // The category is optional.
         if (string.IsNullOrWhiteSpace(value)) return null;
 
         var trimmed = value.Trim();
@@ -134,7 +125,7 @@ public static class UIValidator
     {
         if (endDate.HasValue)
         {
-            // For Once transactions end date equal to start date is correct and expected
+            // A one-time transaction ends the day it starts.
             bool allowEqual = frequency == FrequencyType.Once;
             if (allowEqual ? endDate.Value < startDate : endDate.Value <= startDate)
                 return allowEqual
@@ -154,8 +145,6 @@ public static class UIValidator
         return null;
     }
 
-    // ── Amend ─────────────────────────────────────────────────────────────────
-
     public static string? ValidateAmendEffectiveDate(DateTime effectiveDate, DateTime transactionStartDate)
     {
         if (effectiveDate <= transactionStartDate)
@@ -169,7 +158,7 @@ public static class UIValidator
 
     public static string? ValidateAmendDescription(string? value)
     {
-        // Optional field — only validate if provided
+        // The description is optional when amending.
         if (string.IsNullOrWhiteSpace(value)) return null;
 
         var trimmed = value.Trim();
@@ -182,8 +171,6 @@ public static class UIValidator
 
         return null;
     }
-
-    // ── Profile ───────────────────────────────────────────────────────────────
 
     public static string? ValidateProfileName(string? value, string fieldLabel = "Name")
     {
@@ -201,8 +188,6 @@ public static class UIValidator
         return null;
     }
 
-    // ── Category ──────────────────────────────────────────────────────────────
-
     public static string? ValidateCategoryName(string? value)
     {
         if (string.IsNullOrWhiteSpace(value))
@@ -219,12 +204,10 @@ public static class UIValidator
         return null;
     }
 
-    // ── Numeric input sanitization ────────────────────────────────────────────
-
     /// <summary>
-    /// Strips any character that is not a digit, a leading minus sign, or a single
-    /// decimal point. Also enforces a maximum of 2 decimal places.
-    /// Safe to call on every keystroke from an Entry.TextChanged handler.
+    /// Strips every character that is not a digit, a leading minus sign (when allowed) or a single
+    /// decimal point, and limits the input to two decimal places. Cheap enough to call on every
+    /// keystroke.
     /// </summary>
     public static string SanitizeDecimalInput(string? raw, bool allowNegative = false)
     {
@@ -261,7 +244,7 @@ public static class UIValidator
                         sb.Append(ch);
                         decimals++;
                     }
-                    // silently drop extra decimal places
+                    // Extra decimal places are dropped.
                 }
                 else
                 {
@@ -269,37 +252,33 @@ public static class UIValidator
                     leadingPos = false;
                 }
             }
-            // all other characters (symbols, letters, SQL punctuation) are dropped
+            // Every other character is dropped.
         }
 
         return sb.ToString();
     }
 
-    // ── Private helpers ───────────────────────────────────────────────────────
-
     /// <summary>
-    /// Detects HTML markup, script injection patterns, and common SQL injection
-    /// sequences. This is a defense-in-depth layer — the API remains the
-    /// authoritative guard.
+    /// Detects HTML markup, SQL comment sequences, bare semicolons and common SQL statement
+    /// patterns. This is defense in depth: the API remains the authoritative check.
     /// </summary>
     private static bool ContainsUnsafeContent(string input)
     {
-        // HTML / script tags
+        // HTML and script tags.
         if (input.Contains('<') || input.Contains('>'))
             return true;
 
-        // SQL comment sequences
+        // SQL comment sequences.
         if (input.Contains("--") || input.Contains("/*") || input.Contains("*/"))
             return true;
 
-        // SQL statement keywords preceded by a separator (space, semicolon, parenthesis)
-        // Pattern: matches "; DROP", "' OR", "1=1", etc.
+        // A statement keyword directly after a quote or semicolon, for example "; DROP".
         if (Regex.IsMatch(input,
             @"[;'""`]\s*(DROP|DELETE|INSERT|UPDATE|SELECT|UNION|EXEC|EXECUTE|ALTER|CREATE|TRUNCATE)\b",
             RegexOptions.IgnoreCase))
             return true;
 
-        // Bare semicolons (no legitimate use in any of our text fields)
+        // None of the text fields has a legitimate use for a semicolon.
         if (input.Contains(';'))
             return true;
 

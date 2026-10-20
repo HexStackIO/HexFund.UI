@@ -5,18 +5,14 @@ using HexFund.UI.Models;
 namespace HexFund.UI.ViewModels;
 
 /// <summary>
-/// Thin wrapper around a <see cref="Transaction"/> that adds the per-card
-/// UI state needed for the amendment history accordion.
-///
-/// Keeps the CollectionView ItemsSource strongly typed and avoids any
-/// code-behind tricks — IsExpanded and Predecessors are fully observable.
+/// Wraps a <see cref="Transaction"/> with the per-card state for the amendment history
+/// accordion, so the list can bind to a strongly typed, observable item.
 /// </summary>
 public partial class TransactionCardViewModel : ObservableObject
 {
-    // ── Wrapped transaction (pass-through properties used directly in XAML) ──
     public Transaction Transaction { get; }
 
-    // Convenience pass-throughs so XAML binds directly without .Transaction.X
+    // Pass-throughs so XAML can bind to the properties directly.
     public Guid        TransactionId      => Transaction.TransactionId;
     public string      Description        => Transaction.Description;
     public string      AmountDisplay      => Transaction.AmountDisplay;
@@ -29,14 +25,12 @@ public partial class TransactionCardViewModel : ObservableObject
     public Microsoft.Maui.Graphics.Color AmountColor     => Transaction.AmountColor;
     public Microsoft.Maui.Graphics.Color CardBorderColor => Transaction.CardBorderColor;
 
-    // ── Accordion state ───────────────────────────────────────────────────────
     [ObservableProperty] private bool isExpanded;
     [ObservableProperty] private List<TransactionCardViewModel> predecessors = new();
 
     /// <summary>True when this transaction has at least one predecessor to show.</summary>
     public bool HasHistory => Predecessors.Count > 0;
 
-    // ── Parent VM reference (needed to fire commands) ─────────────────────────
     private readonly TransactionsViewModel _parentVm;
 
     public TransactionCardViewModel(Transaction transaction,
@@ -46,15 +40,13 @@ public partial class TransactionCardViewModel : ObservableObject
         Transaction = transaction;
         _parentVm   = parentVm;
 
-        // Build predecessor card VMs (no further nesting — predecessors don't expand)
+        // Predecessors do not nest further, so they get no history of their own.
         Predecessors = predecessorTransactions
             .Select(p => new TransactionCardViewModel(p, parentVm, new List<Transaction>()))
             .ToList();
 
         OnPropertyChanged(nameof(HasHistory));
     }
-
-    // ── Commands ──────────────────────────────────────────────────────────────
 
     [RelayCommand]
     private void ToggleHistory()

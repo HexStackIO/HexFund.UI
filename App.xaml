@@ -10,7 +10,6 @@
                 <ResourceDictionary Source="Resources/Styles/Styles.xaml" />
             </ResourceDictionary.MergedDictionaries>
             
-            <!-- Value Converters -->
             <converters:StringNotEmptyConverter x:Key="StringNotEmptyConverter" />
             <converters:InvertedBoolConverter x:Key="InvertedBoolConverter" />
             <converters:InvertedBoolToOpacityConverter x:Key="InvertedBoolToOpacityConverter" />

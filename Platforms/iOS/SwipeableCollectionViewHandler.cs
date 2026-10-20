@@ -6,9 +6,8 @@ using UIKit;
 namespace HexFund.UI.Platforms.iOS;
 
 /// <summary>
-/// iOS handler for SwipeableCollectionView.
-/// Adds UISwipeGestureRecognizers directly to the native UICollectionView.
-/// cancelsTouchesInView = false ensures existing tap recognizers still fire.
+/// iOS handler for <see cref="SwipeableCollectionView"/>. It adds swipe gesture recognizers to the
+/// native UICollectionView, with cancelsTouchesInView off so existing tap recognizers still fire.
 /// </summary>
 public class SwipeableCollectionViewHandler : CollectionViewHandler
 {

@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace HexFund.UI.Models;
 
+/// <summary>Monthly summary returned by the API for one account.</summary>
 public class EnhancedMonthlyOverview
 {
     public int Year { get; set; }
@@ -26,6 +27,7 @@ public class EnhancedMonthlyOverview
     public Color NetChangeColor => NetChange >= 0 ? Colors.Green : Colors.Red;
 }
 
+/// <summary>One day of a monthly overview: balances, totals and display helpers.</summary>
 public partial class DailyBalanceSnapshot
 {
     public DateTime Date { get; set; }
@@ -38,7 +40,6 @@ public partial class DailyBalanceSnapshot
     public bool HasNegativeBalance { get; set; }
     public decimal LowestBalance { get; set; }
 
-    // Display helpers
     public string DateDisplay => Date.ToString("MMM dd");
     public string BalanceDisplay => EndOfDayBalance.ToString("C");
     public Color BalanceColor => EndOfDayBalance >= 0 ? Colors.Green : Colors.Red;
@@ -81,12 +82,14 @@ public partial class DailyBalanceSnapshot
 public class CategoryBreakdown
 {
     public string Category { get; set; } = string.Empty;
-    public string Type { get; set; } = string.Empty; // "income" or "expense"
+    /// <summary>Either "income" or "expense".</summary>
+    public string Type { get; set; } = string.Empty;
     public decimal Total { get; set; }
     public int TransactionCount { get; set; }
     public decimal PercentageOfTotal { get; set; }
 }
 
+/// <summary>A small coloured label shown inside a calendar cell for one occurrence.</summary>
 public class CalendarEventChip
 {
     public string Label { get; set; } = string.Empty;
@@ -95,6 +98,10 @@ public class CalendarEventChip
     public bool IsIncome { get; set; }
 }
 
+/// <summary>
+/// One cell of the calendar grid. Cells are reused across month changes, so updates go through
+/// <see cref="UpdateAs"/> to raise change notifications only for values that changed.
+/// </summary>
 public partial class CalendarGridDay : ObservableObject
 {
     private DateTime _date;
@@ -149,9 +156,8 @@ public partial class CalendarGridDay : ObservableObject
             if (_isToday) return Colors.White;
             if (!_isCurrentMonth) return Color.FromArgb("#BBBBBB");
 
-            // Resolve against the semantic token set by ThemeService — no OS
-            // AppTheme dependency. Falls back to a safe mid-grey if called
-            // before the first Apply() (e.g. during unit tests).
+            // Resolved from the semantic tokens set by ThemeService rather than the OS theme.
+            // The fallback applies before the first theme is applied.
             if (Application.Current?.Resources.TryGetValue("TextPrimary", out var v) == true
                 && v is Color textColor)
                 return textColor;
@@ -198,7 +204,7 @@ public partial class CalendarGridDay : ObservableObject
     }
 
     /// <summary>
-    /// Updates all fields atomically. Only fires PropertyChanged for fields whose values actually changed.
+    /// Updates all fields together and raises PropertyChanged only for values that changed.
     /// </summary>
     internal void UpdateAs(
         DateTime date,
@@ -246,8 +252,8 @@ public partial class CalendarGridDay : ObservableObject
     }
 
     /// <summary>
-    /// Forces CellBackground and DayNumberColor to re-notify without changing data.
-    /// Called after a theme change so today's cell repaints with the new Primary color.
+    /// Re-raises notifications for CellBackground and DayNumberColor without changing data, so
+    /// today's cell repaints after a theme change.
     /// </summary>
     internal void NotifyCellBackground()
     {
@@ -255,9 +261,7 @@ public partial class CalendarGridDay : ObservableObject
         OnPropertyChanged(nameof(DayNumberColor));
     }
 
-    /// <summary>
-    /// Resets this cell to blank state (called when no account is selected).
-    /// </summary>
+    /// <summary>Resets the cell to a blank state when no account is selected.</summary>
     internal void Reset(DateTime today) =>
         UpdateAs(DateTime.MinValue, false, false, false, null, null, today);
 }

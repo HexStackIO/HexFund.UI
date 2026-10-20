@@ -2,8 +2,6 @@
 
 	<PropertyGroup>
 		<TargetFrameworks>net9.0-android36.0;net9.0-ios</TargetFrameworks>
-		<!-- Uncomment to also build for Windows -->
-		<!-- <TargetFrameworks>$(TargetFrameworks);net9.0-windows10.0.19041.0</TargetFrameworks> -->
 		<OutputType>Exe</OutputType>
 		<RootNamespace>HexFund.UI</RootNamespace>
 		<UseMaui>true</UseMaui>
@@ -11,75 +9,55 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 
-		<!-- Display name -->
 		<ApplicationTitle>HexFund</ApplicationTitle>
 
-		<!-- App Identifier -->
 		<ApplicationId>com.hexstackio.hexfund</ApplicationId>
 
-		<!-- Versions -->
+		<!-- The release workflow overwrites both version values from the run number. -->
 		<ApplicationDisplayVersion>1.5</ApplicationDisplayVersion>
 		<ApplicationVersion>5</ApplicationVersion>
 
-
-		<!-- Android -->
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">21.0</SupportedOSPlatformVersion>
 		
-		<!-- iOS -->
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">14.2</SupportedOSPlatformVersion>
 		<Platforms>AnyCPU</Platforms>
 	</PropertyGroup>
 
-	<!-- ── Release-only build optimisations ─────────────────────────────────
-	     These are intentionally NOT active in Debug builds:
-	     - Trimming removes unused code but breaks the hot-reload debugger
-	     - AOT compilation is slow and makes Debug cycles painful
-	     ─────────────────────────────────────────────────────────────────── -->
+	<!-- Release only: trimming breaks hot reload and AOT compilation slows debug cycles. -->
 	<PropertyGroup Condition="'$(Configuration)' == 'Release'">
-		<!-- Trim unused assemblies from the binary.
-		     'partial' is the correct value for MAUI — it trims libraries that
-		     are trim-safe but leaves reflection-heavy MAUI internals alone.
-		     'link' (full trim) breaks XAML binding and converters at runtime. -->
+		<!-- Partial trimming removes unused code from trim-safe libraries and leaves the
+		     reflection-heavy MAUI internals alone. Full trimming breaks XAML bindings and
+		     converters at runtime. -->
 		<PublishTrimmed>true</PublishTrimmed>
 		<TrimMode>partial</TrimMode>
 
-		<!-- Android: Ahead-of-time compilation + profiled startup trace.
-		     Profiled AOT compiles the hot path recorded from a real run,
-		     giving faster startup without compiling rarely-used code. -->
+		<!-- Profiled AOT compiles only the startup path recorded from a real run, which speeds up
+		     startup without compiling rarely used code. -->
 		<AndroidEnableProfiledAot Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">true</AndroidEnableProfiledAot>
 
-		<!-- Android: concurrent SGen collector reduces GC pause time. -->
+		<!-- The concurrent collector shortens GC pauses. -->
 		<AndroidEnableSGenConcurrent Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">true</AndroidEnableSGenConcurrent>
 
-		<!-- iOS: enable NativeAOT-style compilation via Mono AOT.
-		     This pre-compiles IL to native ARM code at build time. -->
+		<!-- Mono AOT with LLVM pre-compiles IL to native ARM code at build time. -->
 		<MtouchUseLlvm Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">true</MtouchUseLlvm>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<!-- App Icon — HexFund branded -->
 		<MauiIcon Include="Resources\AppIcon\appicon.svg"
 		          ForegroundFile="Resources\AppIcon\appiconfg.svg"
 		          Color="#0A0B0D" />
 
-		<!-- Splash Screen — HexFund vault dark -->
 		<MauiSplashScreen Include="Resources\Splash\splash.svg"
 		                  Color="#0A0B0D"
 		                  BaseSize="128,128" />
 
-		<!-- Images — root level (backdrops, logo marks, FAB) -->
 		<MauiImage Include="Resources\Images\*" />
-
-		<!-- Images — custom icon set (24×24 stroke SVGs) -->
 		<MauiImage Include="Resources\Images\hex_icons\*.svg" />
-
-		<!-- Images — per-theme backdrops and logos -->
 		<MauiImage Include="Resources\Images\themes\*.svg" />
 
-		<!-- Custom Fonts -->
 		<MauiFont Include="Resources\Fonts\*" />
 
-		<!-- Raw Assets (also remove the "Resources\Raw" prefix) -->
+		<!-- LogicalName drops the "Resources\Raw" prefix from the packaged asset path. -->
 		<MauiAsset Include="Resources\Raw\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
 		<MauiAsset Include="Resources\changelog.json" LogicalName="changelog.json"/>
 	</ItemGroup>
@@ -87,8 +65,6 @@
 	<ItemGroup>
 		<PackageReference Include="Microsoft.Identity.Client.Extensions.Msal" Version="4.82.1" />
 		<PackageReference Include="Microsoft.Maui.Controls" Version="9.0.10" />
-		<!-- Compatibility shim removed — only needed for migrating from
-		     Xamarin.Forms. Removing it reduces binary size and startup time. -->
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Http" Version="9.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.0" />

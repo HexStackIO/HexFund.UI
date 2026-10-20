@@ -12,10 +12,8 @@ public partial class CalendarPage : ContentPage
         _viewModel = viewModel;
         BindingContext = _viewModel;
 
-        // Wire the swipe events raised by the platform-specific handler.
-        // The handler intercepts at the native RecyclerView/UICollectionView
-        // level so these fire even when the user's finger is directly over a
-        // calendar cell — something no MAUI gesture recognizer can achieve.
+        // The platform handler intercepts swipes at the native list level, so they fire even when
+        // the finger starts on a calendar cell, which a MAUI gesture recognizer cannot do.
         CalendarCollectionView.SwipedLeft  += (_, _) => _viewModel.NextMonthCommand.Execute(null);
         CalendarCollectionView.SwipedRight += (_, _) => _viewModel.PreviousMonthCommand.Execute(null);
     }
