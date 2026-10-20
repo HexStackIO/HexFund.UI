@@ -2,6 +2,7 @@ using CommunityToolkit.Maui;
 using HexFund.UI.Config;
 using HexFund.UI.Controls;
 using HexFund.UI.Services;
+using HexFund.UI.Services.Http;
 using HexFund.UI.ViewModels;
 using HexFund.UI.Views;
 using Microsoft.Extensions.Logging;
@@ -49,6 +50,10 @@ public static class MauiProgram
 
         builder.Services.AddMemoryCache();
 
+        builder.Services.AddSingleton<FailureBuffer>();
+        builder.Services.AddTransient(sp =>
+            new RequestTrackingHandler(sp.GetRequiredService<FailureBuffer>(), AppConstants.AppVersion));
+
         var entraConfig = new EntraAuthConfig
         {
             ClientId = AuthSecrets.ClientId,
@@ -71,7 +76,8 @@ public static class MauiProgram
             client.BaseAddress = new Uri(baseUrl);
             client.Timeout = TimeSpan.FromSeconds(AppConstants.HttpTimeoutSecs);
             client.DefaultRequestHeaders.ConnectionClose = false;
-        }).ConfigurePrimaryHttpMessageHandler(() =>
+        }).AddHttpMessageHandler<RequestTrackingHandler>()
+        .ConfigurePrimaryHttpMessageHandler(() =>
         {
             var handler = new HttpClientHandler
             {
