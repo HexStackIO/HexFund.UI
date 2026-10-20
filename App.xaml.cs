@@ -1,4 +1,5 @@
 using HexFund.UI.Services;
+using HexFund.UI.ViewModels;
 
 namespace HexFund.UI;
 
@@ -74,6 +75,8 @@ public partial class App : Application
         else
         {
             SetFabVisible(false);
+            // Preferences are not encrypted, so an unsent feedback draft must not outlive the session.
+            FeedbackDraft.Clear();
         }
     }
 

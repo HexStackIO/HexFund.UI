@@ -26,6 +26,7 @@ public partial class AppShell : Shell
         Routing.RegisterRoute("accounts", typeof(AccountsPage));
         Routing.RegisterRoute("settings", typeof(SettingsPage));
         Routing.RegisterRoute("add", typeof(AddEntryPage));
+        Routing.RegisterRoute("feedback", typeof(FeedbackPage));
 
         ApplyThemeToShell();
         _settingsService.SettingsChanged += () =>
@@ -66,7 +67,8 @@ public partial class AppShell : Shell
 
         if (!IsPageOpen<Views.AddEntryPage>() &&
             !IsPageOpen<Views.AccountsPage>()  &&
-            !IsPageOpen<Views.SettingsPage>()) return;
+            !IsPageOpen<Views.SettingsPage>()  &&
+            !IsPageOpen<Views.FeedbackPage>()) return;
 
         e.Cancel();
         MainThread.BeginInvokeOnMainThread(async () =>

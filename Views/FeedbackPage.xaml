@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:HexFund.UI.ViewModels"
+             x:Class="HexFund.UI.Views.FeedbackPage"
+             x:DataType="vm:FeedbackViewModel"
+             BackgroundColor="{DynamicResource SurfacePage}"
+             Shell.NavBarIsVisible="False">
+    <Grid>
+        <Image Source="{Binding CurrentThemeBackdrop}"
+               Aspect="AspectFill"
+               InputTransparent="True"/>
+
+        <Grid RowDefinitions="Auto,*,Auto">
+
+            <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto"
+                  Padding="20,16,20,12"
+                  BackgroundColor="{DynamicResource SurfaceCard}">
+                <Border Grid.Column="0" WidthRequest="48" HeightRequest="48"
+                        StrokeShape="Ellipse" BackgroundColor="{DynamicResource SurfaceLo}"
+                        StrokeThickness="0"
+                        SemanticProperties.Description="Close"
+                        SemanticProperties.Hint="Closes the feedback form and keeps your draft">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding CancelCommand}"/>
+                    </Border.GestureRecognizers>
+                    <Label Text="✕" FontSize="16" TextColor="{DynamicResource TextSecondary}"
+                           HorizontalOptions="Center" VerticalOptions="Center"/>
+                </Border>
+                <Label Grid.Column="1" Text="Send feedback" FontSize="17" FontAttributes="Bold"
+                       HorizontalOptions="Center" VerticalOptions="Center"
+                       SemanticProperties.HeadingLevel="Level1"/>
+            </Grid>
+            <BoxView Grid.Row="0" HeightRequest="1" Color="{DynamicResource SurfaceDivider}" VerticalOptions="End"/>
+
+            <ScrollView Grid.Row="1">
+                <VerticalStackLayout Padding="20,16" Spacing="16">
+
+                    <VerticalStackLayout Spacing="6">
+                        <Label Text="Type" FontSize="13" FontAttributes="Bold"
+                               TextColor="{DynamicResource TextSecondary}"/>
+                        <HorizontalStackLayout Spacing="8"
+                                               BindableLayout.ItemsSource="{Binding TypeOptions}">
+                            <BindableLayout.ItemTemplate>
+                                <DataTemplate x:DataType="vm:FeedbackTypeOption">
+                                    <Border StrokeShape="RoundRectangle 24" StrokeThickness="1"
+                                            Stroke="{DynamicResource StrokeCard}"
+                                            BackgroundColor="{DynamicResource SurfaceLo}"
+                                            Padding="18,0" MinimumHeightRequest="48"
+                                            SemanticProperties.Description="{Binding Label}">
+                                        <Border.Triggers>
+                                            <DataTrigger TargetType="Border" Binding="{Binding IsSelected}" Value="True">
+                                                <Setter Property="BackgroundColor" Value="{DynamicResource Accent}"/>
+                                                <Setter Property="Stroke" Value="{DynamicResource Accent}"/>
+                                            </DataTrigger>
+                                        </Border.Triggers>
+                                        <Border.GestureRecognizers>
+                                            <TapGestureRecognizer
+                                                Command="{Binding Source={RelativeSource AncestorType={x:Type vm:FeedbackViewModel}}, Path=SelectTypeCommand}"
+                                                CommandParameter="{Binding .}"/>
+                                        </Border.GestureRecognizers>
+                                        <Label Text="{Binding Label}" FontSize="14" FontAttributes="Bold"
+                                               TextColor="{DynamicResource TextPrimary}"
+                                               VerticalOptions="Center">
+                                            <Label.Triggers>
+                                                <DataTrigger TargetType="Label" Binding="{Binding IsSelected}" Value="True">
+                                                    <Setter Property="TextColor" Value="{DynamicResource SurfacePage}"/>
+                                                </DataTrigger>
+                                            </Label.Triggers>
+                                        </Label>
+                                    </Border>
+                                </DataTemplate>
+                            </BindableLayout.ItemTemplate>
+                        </HorizontalStackLayout>
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Spacing="6">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <Label Grid.Column="0" Text="Message" FontSize="13" FontAttributes="Bold"
+                                   TextColor="{DynamicResource TextSecondary}"/>
+                            <Label Grid.Column="1" Text="{Binding CharacterCount}" FontSize="12"
+                                   TextColor="{DynamicResource TextMuted}"
+                                   SemanticProperties.Description="Character count"/>
+                        </Grid>
+                        <Border StrokeShape="RoundRectangle 12" StrokeThickness="1.5"
+                                BackgroundColor="{DynamicResource SurfaceLo}"
+                                Stroke="{DynamicResource StrokeCard}">
+                            <Editor Text="{Binding Body}"
+                                    Placeholder="{Binding BodyPlaceholder}"
+                                    PlaceholderColor="{DynamicResource TextMuted}"
+                                    MaxLength="4000"
+                                    HeightRequest="180"
+                                    FontSize="15" Margin="12,8"
+                                    IsSpellCheckEnabled="True"
+                                    SemanticProperties.Description="Feedback message"
+                                    SemanticProperties.Hint="At least 10 characters"/>
+                        </Border>
+                        <Label Text="{Binding BodyError}" FontSize="12"
+                               TextColor="{DynamicResource Down}"
+                               IsVisible="{Binding BodyError, Converter={StaticResource StringNotEmptyConverter}}"/>
+                    </VerticalStackLayout>
+
+                    <Border StrokeShape="RoundRectangle 12" StrokeThickness="1"
+                            Stroke="{DynamicResource StrokeCard}"
+                            BackgroundColor="{DynamicResource SurfaceCard}" Padding="16">
+                        <VerticalStackLayout Spacing="10">
+                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12" MinimumHeightRequest="48">
+                                <VerticalStackLayout Grid.Column="0" Spacing="2" VerticalOptions="Center">
+                                    <Label Text="Include diagnostics" FontSize="15" FontAttributes="Bold"/>
+                                    <Label Text="App version, device, screen, theme and recent request errors. No account details."
+                                           FontSize="12" TextColor="{DynamicResource TextSecondary}"
+                                           LineBreakMode="WordWrap"/>
+                                </VerticalStackLayout>
+                                <Switch Grid.Column="1" IsToggled="{Binding IncludeDiagnostics}"
+                                        OnColor="{DynamicResource Accent}"
+                                        ThumbColor="{DynamicResource AccentInk}"
+                                        VerticalOptions="Center"
+                                        SemanticProperties.Description="Include diagnostics"
+                                        SemanticProperties.Hint="Adds technical details to your report"/>
+                            </Grid>
+
+                            <Label Text="Only your message is sent."
+                                   FontSize="12" TextColor="{DynamicResource TextMuted}"
+                                   IsVisible="{Binding IncludeDiagnostics, Converter={StaticResource InvertedBoolConverter}}"/>
+
+                            <VerticalStackLayout Spacing="8" IsVisible="{Binding IncludeDiagnostics}">
+                                <Button Text="What is sent"
+                                        Command="{Binding ToggleDiagnosticsPreviewCommand}"
+                                        BackgroundColor="{DynamicResource SurfaceLo}"
+                                        TextColor="{Binding ThemePrimaryColor}"
+                                        CornerRadius="8" MinimumHeightRequest="48"
+                                        FontSize="13" FontAttributes="Bold"
+                                        SemanticProperties.Hint="Shows or hides the details that will be sent"/>
+                                <Border IsVisible="{Binding ShowDiagnosticsPreview}"
+                                        StrokeShape="RoundRectangle 8" StrokeThickness="1"
+                                        Stroke="{DynamicResource StrokeCard}"
+                                        BackgroundColor="{DynamicResource SurfaceLo}" Padding="12">
+                                    <Label Text="{Binding DiagnosticsPreview}" FontSize="11"
+                                           FontFamily="monospace"
+                                           TextColor="{DynamicResource TextSecondary}"
+                                           LineBreakMode="WordWrap"
+                                           SemanticProperties.Description="Diagnostics that will be sent"/>
+                                </Border>
+                            </VerticalStackLayout>
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <Border IsVisible="{Binding HasStatusMessage}"
+                            BackgroundColor="{DynamicResource SurfaceCard}"
+                            Stroke="{DynamicResource Down}" StrokeThickness="1"
+                            StrokeShape="RoundRectangle 10" Padding="14,10">
+                        <Label Text="{Binding StatusMessage}" TextColor="{DynamicResource Down}"
+                               FontSize="13" LineBreakMode="WordWrap"
+                               SemanticProperties.Description="Send status"/>
+                    </Border>
+
+                </VerticalStackLayout>
+            </ScrollView>
+
+            <Grid Grid.Row="2" Padding="20,12,20,32"
+                  BackgroundColor="{DynamicResource SurfacePage}">
+                <BoxView HeightRequest="1" Color="{DynamicResource SurfaceDivider}"
+                         VerticalOptions="Start" Margin="-20,-12,-20,0"/>
+                <Button Text="{Binding SubmitLabel}"
+                        Command="{Binding SubmitCommand}"
+                        IsEnabled="{Binding CanSubmit}"
+                        BackgroundColor="{DynamicResource Accent}"
+                        TextColor="{DynamicResource SurfacePage}"
+                        CornerRadius="12" MinimumHeightRequest="52"
+                        FontSize="15" FontAttributes="Bold"
+                        SemanticProperties.Hint="Sends your report"/>
+            </Grid>
+        </Grid>
+    </Grid>
+</ContentPage>

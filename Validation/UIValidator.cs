@@ -15,6 +15,8 @@ public static class UIValidator
     public const int DescriptionMaxLength      = 40;
     public const int CategoryMaxLength         = 25;
     public const int AmendDescriptionMaxLength = 40;
+    public const int FeedbackBodyMinLength     = 10;
+    public const int FeedbackBodyMaxLength     = 4000;
 
     // Example shown in every numeric error message.
     private const string NumericHint = "e.g. 100.00";
@@ -168,6 +170,26 @@ public static class UIValidator
 
         if (ContainsUnsafeContent(trimmed))
             return "Description contains invalid characters.";
+
+        return null;
+    }
+
+    /// <summary>
+    /// Checks a feedback message after trimming. Unlike names and descriptions it allows any
+    /// punctuation, because bug reports often contain code, symbols and several lines.
+    /// </summary>
+    public static string? ValidateFeedbackBody(string? value)
+    {
+        var length = (value ?? string.Empty).Trim().Length;
+
+        if (length == 0)
+            return "Please describe your feedback.";
+
+        if (length < FeedbackBodyMinLength)
+            return $"Please write at least {FeedbackBodyMinLength} characters.";
+
+        if (length > FeedbackBodyMaxLength)
+            return $"Please keep your message to {FeedbackBodyMaxLength} characters or fewer.";
 
         return null;
     }

@@ -512,6 +512,10 @@ public partial class SettingsViewModel : BaseViewModel
     }
 
     [RelayCommand]
+    private async Task OpenFeedbackAsync() =>
+        await Shell.Current.GoToAsync("feedback");
+
+    [RelayCommand]
     private async Task ClearCacheAsync()
     {
         var mainPage = Application.Current?.MainPage;

@@ -107,6 +107,7 @@ public static class MauiProgram
         builder.Services.AddTransient<AddEntryViewModel>();
         builder.Services.AddTransient<AccountsViewModel>();
         builder.Services.AddTransient<SettingsViewModel>();
+        builder.Services.AddTransient<FeedbackViewModel>();
 
         builder.Services.AddTransient<LoginPage>();
         builder.Services.AddTransient<HomePage>();
@@ -116,6 +117,7 @@ public static class MauiProgram
         builder.Services.AddTransient<AddEntryPage>();
         builder.Services.AddTransient<AccountsPage>();
         builder.Services.AddTransient<SettingsPage>();
+        builder.Services.AddTransient<FeedbackPage>();
 
 #if DEBUG
         builder.Logging.AddDebug();

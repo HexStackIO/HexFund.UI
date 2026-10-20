@@ -211,6 +211,13 @@
                         <Label Text="Actions" FontSize="16" FontAttributes="Bold"
                                TextColor="{DynamicResource TextSecondary}"/>
                         <BoxView HeightRequest="1" Color="{DynamicResource SurfaceDivider}"/>
+                        <Button Text="💬  Send feedback"
+                                Command="{Binding OpenFeedbackCommand}"
+                                IsVisible="{Binding CanLogout}"
+                                BackgroundColor="{DynamicResource SurfaceLo}"
+                                TextColor="{DynamicResource TextPrimary}"
+                                CornerRadius="8" Padding="0,12" MinimumHeightRequest="48"
+                                SemanticProperties.Hint="Opens a form to report a bug, share an idea or ask a question"/>
                         <Button Text="🗑  Clear Cache"
                                 Command="{Binding ClearCacheCommand}"
                                 BackgroundColor="{DynamicResource SurfaceLo}"
