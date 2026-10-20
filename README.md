@@ -105,7 +105,7 @@ below comes from its schedule-snapping logic and display strings.
 | Item | Status |
 |------|--------|
 | Application ID | `com.hexstackio.hexfund` |
-| Android | Targets Android 16 (API level 36), minimum Android 5.0 (API 21). Built as `net9.0-android36.0`. |
+| Android | Targets Android 16 (API level 36), minimum Android 7.0 (API 24, required by Play automatic protection). Built as `net9.0-android36.0`. |
 | iOS | `net9.0-ios` is in the project (minimum iOS 14.2) with iOS-specific code, but there is no iOS build or release pipeline in this repository. The iOS build was not verified in this repository's current state **(unverified)**. |
 | Google Play | Closed testing. The release workflow uploads to the `alpha` track. The app is in a closed beta. |
 | Latest changelog entry | 1.9 (2026-04-30). Version numbers are computed by CI, see [section 8](#8-release-process). |
@@ -248,7 +248,7 @@ stale month in the background and prefetches the neighbouring months.
 | Microsoft.Extensions.Http, Caching.Memory, Logging.Debug | 9.0.0 |
 | System.Text.Json | 9.0.0 |
 | Fonts | Cinzel Bold, Inter Regular and SemiBold (files in `Resources/Fonts`) |
-| Android | Target API 36 (Android 16), minimum API 21 |
+| Android | Target API 36 (Android 16), minimum API 24 |
 | iOS | Minimum 14.2 |
 | Release build options | Partial trimming, profiled AOT, concurrent GC (Android); LLVM (iOS) |
 
@@ -352,7 +352,7 @@ Debug builds accept any server certificate so the local development certificate 
 | Workloads | `maui-android` and `android` (add `maui-ios` on macOS). |
 | JDK | 17 |
 | Android SDK | Platform 36 (Android 16) and build tools. Android Studio or the VS installer provides them. |
-| Emulator or device | Android 5.0 or newer. An API 36 emulator is needed to test Android 16 behaviour. |
+| Emulator or device | Android 7.0 or newer. An API 36 emulator is needed to test Android 16 behaviour. |
 | Xcode | Only for iOS builds on macOS (iOS 14.2 deployment target). |
 
 ```bash
