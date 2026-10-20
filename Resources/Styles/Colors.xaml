@@ -5,25 +5,15 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
 
     <!--
-        HexFund — Vault Dark colour constants
-        ══════════════════════════════════════════════════════════════════════
-        These are STATIC values used as fallbacks and in Styles.xaml.
-        Per-theme accent tokens (Primary, Accent, AccentInk, etc.) and all
-        semantic surface tokens (SurfacePage, SurfaceCard, TextPrimary, etc.)
-        are injected at runtime by ThemeService.Apply() and must always be
-        referenced via DynamicResource in XAML — never StaticResource.
-
-        Use StaticResource only for:
-          • Vault surface constants below (they never change per-theme)
-          • Gray scale (skeleton loaders, hard-coded structural chrome)
-          • Semantic Up / Down / Warn where a static value is acceptable
-            (ThemeService also injects dynamic versions of these)
+        Static fallbacks, used by Styles.xaml and before the first theme is applied. The accent and
+        semantic tokens are injected at runtime by ThemeService.Apply, so page XAML must reference
+        those with DynamicResource. Use StaticResource only for the constants in this file.
     -->
 
-    <!-- ── Vault surface constants ──────────────────────────────────────────
-         Same values as the static fields in ThemeService. Exposed here so
-         Styles.xaml can reference them via StaticResource for structural
-         elements that never change across themes.                          -->
+    <!--
+        Same values as the static fields in ThemeService, so Styles.xaml can use them for
+        structural elements that never change per theme.
+    -->
     <Color x:Key="VaultBg">#0A0B0D</Color>
     <Color x:Key="VaultBgDeep">#050506</Color>
     <Color x:Key="VaultSurface">#141619</Color>
@@ -36,17 +26,18 @@
     <Color x:Key="VaultTextDim">#8B8F98</Color>
     <Color x:Key="VaultTextMute">#5A5E68</Color>
 
-    <!-- ── Semantic status colours ──────────────────────────────────────────
-         Static fallbacks. ThemeService.Apply() also injects "Up", "Down",
-         and "Warn" as DynamicResource keys — prefer those in page XAML.   -->
+    <!--
+        Static fallbacks. ThemeService.Apply also injects Up, Down and Warn, which page XAML should
+        prefer.
+    -->
     <Color x:Key="SemanticUp">#3FB97A</Color>
     <Color x:Key="SemanticDown">#E05A6F</Color>
     <Color x:Key="SemanticWarn">#E0A03F</Color>
 
-    <!-- ── Gray scale ───────────────────────────────────────────────────────
-         Kept for structural use (skeleton loaders, hard-coded outlines).
-         Gray100 intentionally stays light — it is used for skeleton shimmer
-         contrast against vault surfaces.                                   -->
+    <!--
+        Gray100 stays light on purpose: it gives skeleton loaders contrast against the dark
+        surfaces.
+    -->
     <Color x:Key="White">White</Color>
     <Color x:Key="Black">Black</Color>
     <Color x:Key="Gray100">#E1E1E1</Color>
@@ -60,9 +51,10 @@
     <Color x:Key="Gray900">#212121</Color>
     <Color x:Key="Gray950">#141414</Color>
 
-    <!-- ── HexFund Gold accent — static fallback only ───────────────────────
-         Used by AppConstants.FallbackPrimary and any place that needs the
-         accent colour before the first ThemeService.Apply() fires.        -->
+    <!--
+        Used by AppConstants.FallbackPrimary and anywhere the accent is needed before the first
+        ThemeService.Apply.
+    -->
     <Color x:Key="GoldAccent">#D4AF37</Color>
     <Color x:Key="GoldAccentInk">#FFE8A3</Color>
 

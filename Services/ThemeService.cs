@@ -3,36 +3,27 @@ using HexFund.UI.Services;
 namespace HexFund.UI.Services;
 
 /// <summary>
-/// Applies the HexFund "Vault Dark" design system to the app's resource dictionary.
-///
-/// Architecture:
-///   • All 8 themes share fixed vault surface tokens — these never vary.
-///   • Each theme contributes 5 accent tokens: Accent, AccentDim, AccentInk,
-///     AccentGlow, plus Primary (= Accent) for back-compat with existing XAML.
-///   • OS AppTheme is forced to Dark unconditionally — the vault substrate is
-///     always dark and we control everything through semantic tokens.
-///
-/// Token contract (all keys are DynamicResource targets in XAML):
-///   Back-compat:  Primary, PrimaryDark, PrimaryLight, PrimaryMuted
-///   New Sprint 01: Accent, AccentDim, AccentInk, AccentGlow
-///   Surfaces:     SurfacePage, SurfaceCard, SurfaceSubtle, SurfaceDivider,
-///                 SurfaceLo, SurfaceHi
-///   Text:         TextPrimary, TextSecondary, TextMuted
-///   Stroke:       StrokeCard, StrokeSection, StrokeHi
-///   Semantic:     Up, Down, Warn
+/// Applies the "Vault Dark" design system to the app's resource dictionary.
 /// </summary>
+/// <remarks>
+/// All themes share the same dark surface, text, stroke and semantic tokens; each theme only
+/// changes the accent tokens. The OS theme is forced to dark because the surfaces are always dark.
+/// XAML binds to these keys with DynamicResource:
+/// <list type="bullet">
+/// <item>Accent: Primary, PrimaryDark, PrimaryLight, PrimaryMuted, Accent, AccentDim, AccentInk,
+/// AccentGlow. The Primary* keys are aliases kept for existing XAML.</item>
+/// <item>Surfaces: SurfacePage, SurfaceCard, SurfaceSubtle, SurfaceDivider, SurfaceLo, SurfaceHi.</item>
+/// <item>Text: TextPrimary, TextSecondary, TextMuted.</item>
+/// <item>Stroke: StrokeCard, StrokeSection, StrokeHi.</item>
+/// <item>Semantic: Up, Down, Warn.</item>
+/// </list>
+/// </remarks>
 public static class ThemeService
 {
-    // ── Vault surface constants — shared across all 8 themes ─────────────────
-    // These are the same colour regardless of which gem/metal accent is active.
+    // The card, high and low surfaces are semi-transparent so the per-theme backdrop shows
+    // through: card 85% (D9), high 88% (E0), low 80% (CC). The page surface stays opaque.
     private static readonly Color VaultBg        = Color.FromArgb("#0A0B0D");
     private static readonly Color VaultBgDeep    = Color.FromArgb("#050506");
-    // Surface tokens — semi-transparent so the per-theme hex backdrop
-    // bleeds through cards and chips. Alpha values:
-    //   SurfaceCard  #D9 = 85% — standard card, readable but translucent
-    //   SurfaceHi    #E0 = 88% — slightly more opaque for raised/active states
-    //   SurfaceLo    #CC = 80% — input fields and sunken surfaces, most transparent
-    // SurfacePage stays fully opaque — it's the page base, not a floating element.
     private static readonly Color VaultSurface   = Color.FromArgb("#D9141619");
     private static readonly Color VaultSurfaceHi = Color.FromArgb("#E01C1F23");
     private static readonly Color VaultSurfaceLo = Color.FromArgb("#CC0F1114");
@@ -46,13 +37,12 @@ public static class ThemeService
     private static readonly Color VaultDown      = Color.FromArgb("#E05A6F");
     private static readonly Color VaultWarn      = Color.FromArgb("#E0A03F");
 
-    // ── Per-theme accent data ─────────────────────────────────────────────────
     private readonly struct AccentTokens
     {
         public readonly Color Accent;
         public readonly Color AccentDim;
         public readonly Color AccentInk;
-        public readonly Color AccentGlow;  // semi-transparent, used for shadows/glows
+        public readonly Color AccentGlow;  // Semi-transparent, used for shadows and glows.
 
         public AccentTokens(string accent, string dim, string ink, string glow)
         {
@@ -76,19 +66,17 @@ public static class ThemeService
         _                    => new("#D4AF37", "#8C7020", "#FFE8A3", "#59D4AF37"),
     };
 
-    // ────────────────────────────────────────────────────────────────────────
     private static ResourceDictionary? _currentThemeDictionary;
 
     /// <summary>
-    /// Applies the selected theme. Safe to call on any thread — internally
-    /// marshals to the main thread via Application.Current.
+    /// Replaces the previously applied theme dictionary with one for the given theme. Call it on
+    /// the main thread.
     /// </summary>
     public static void Apply(ColorTheme theme)
     {
         var app = Application.Current;
         if (app == null) return;
 
-        // ── Remove previous injection ─────────────────────────────────────
         if (_currentThemeDictionary != null)
         {
             app.Resources.MergedDictionaries.Remove(_currentThemeDictionary);
@@ -97,8 +85,8 @@ public static class ThemeService
 
         var t = GetAccentTokens(theme);
 
-        // PrimaryMuted: a very faint accent tint blended over the vault bg.
-        // ~8% accent opacity gives a subtle wash without lifting the surface.
+        // PrimaryMuted is the accent blended 8% over the page background: a faint wash that does
+        // not lift the surface.
         var primaryMuted = new Color(
             VaultBg.Red   + (t.Accent.Red   - VaultBg.Red)   * 0.08f,
             VaultBg.Green + (t.Accent.Green - VaultBg.Green) * 0.08f,
@@ -107,37 +95,31 @@ public static class ThemeService
 
         var dict = new ResourceDictionary
         {
-            // ── Back-compat accent tokens (existing XAML binds to these) ────
             { "Primary",      t.Accent    },
             { "PrimaryDark",  t.AccentDim },
             { "PrimaryLight", t.AccentInk },
             { "PrimaryMuted", primaryMuted },
 
-            // ── New Sprint 01 accent tokens ──────────────────────────────────
             { "Accent",     t.Accent    },
             { "AccentDim",  t.AccentDim },
             { "AccentInk",  t.AccentInk },
             { "AccentGlow", t.AccentGlow },
 
-            // ── Vault surface tokens ─────────────────────────────────────────
             { "SurfacePage",    VaultBg        },
             { "SurfaceCard",    VaultSurface   },
             { "SurfaceHi",      VaultSurfaceHi },
             { "SurfaceLo",      VaultSurfaceLo },
-            { "SurfaceSubtle",  VaultSurfaceLo },   // alias — keeps existing bindings working
+            { "SurfaceSubtle",  VaultSurfaceLo },   // Alias kept for existing bindings.
             { "SurfaceDivider", VaultDivider   },
 
-            // ── Text tokens ──────────────────────────────────────────────────
             { "TextPrimary",   VaultText     },
             { "TextSecondary", VaultTextDim  },
             { "TextMuted",     VaultTextMute },
 
-            // ── Stroke / border tokens ───────────────────────────────────────
             { "StrokeCard",    VaultStroke   },
-            { "StrokeSection", VaultStroke   },   // alias for back-compat
+            { "StrokeSection", VaultStroke   },   // Alias kept for existing bindings.
             { "StrokeHi",      VaultStrokeHi },
 
-            // ── Semantic up/down/warn ────────────────────────────────────────
             { "Up",   VaultUp   },
             { "Down", VaultDown },
             { "Warn", VaultWarn },
@@ -146,31 +128,25 @@ public static class ThemeService
         app.Resources.MergedDictionaries.Add(dict);
         _currentThemeDictionary = dict;
 
-        // Force OS-level dark mode unconditionally — all vault themes are dark
-        // and we do not want platform chrome (system dialogs, status bar) to
-        // render in light mode against our dark surfaces.
+        // Keeps platform chrome such as system dialogs dark against the dark surfaces.
         app.UserAppTheme = AppTheme.Dark;
     }
 
     /// <summary>
-    /// Convenience accessor: returns the raw accent Color for the given theme
-    /// without modifying any resource dictionary. Used by AppShell and
-    /// anywhere a Color is needed before Apply() has been called.
+    /// Returns the accent color for the theme without touching any resource dictionary, so it is
+    /// usable before <see cref="Apply"/> has run.
     /// </summary>
     public static Color GetAccentColor(ColorTheme theme) =>
         GetAccentTokens(theme).Accent;
 
     /// <summary>
-    /// Returns the AccentInk color for the given theme. Used by AppShell
-    /// to colour the selected tab indicator.
+    /// Returns the AccentInk color for the theme, used to color the selected tab indicator.
     /// </summary>
     public static Color GetAccentInkColor(ColorTheme theme) =>
         GetAccentTokens(theme).AccentInk;
 
     /// <summary>
-    /// Returns the per-theme logo image source name (without extension).
-    /// MAUI resolves "hex_logo_gold.png" etc. from the themes/ asset folder.
-    /// Bind in XAML: <Image Source="{Binding CurrentThemeLogo}"/>
+    /// Returns the image source name of the theme's logo, for example "hex_logo_gold.png".
     /// </summary>
     public static string GetThemeLogo(ColorTheme theme) => theme switch
     {
@@ -186,8 +162,7 @@ public static class ThemeService
     };
 
     /// <summary>
-    /// Returns the per-theme full-bleed backdrop image source name.
-    /// Bind in XAML: <Image Source="{Binding CurrentThemeBackdrop}"/>
+    /// Returns the image source name of the theme's full-bleed backdrop.
     /// </summary>
     public static string GetThemeBackdrop(ColorTheme theme) => theme switch
     {
@@ -203,8 +178,8 @@ public static class ThemeService
     };
 
     /// <summary>
-    /// Per-theme FAB hexagon image — resolves to e.g. "hex_fab_gold.png".
-    /// The stroke color matches the theme Accent; the fill stays dark.
+    /// Returns the image source name of the theme's floating action button, for example
+    /// "hex_fab_gold.png". The stroke matches the accent and the fill stays dark.
     /// </summary>
     public static string GetThemeFab(ColorTheme theme) => theme switch
     {

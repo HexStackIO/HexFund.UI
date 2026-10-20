@@ -11,6 +11,7 @@ using Microsoft.Maui.LifecycleEvents;
 
 namespace HexFund.UI;
 
+/// <summary>Application entry point: registers handlers, HTTP, services, view models and pages.</summary>
 public static class MauiProgram
 {
     public static MauiApp CreateMauiApp()
@@ -78,20 +79,19 @@ public static class MauiProgram
                     System.Net.DecompressionMethods.GZip |
                     System.Net.DecompressionMethods.Deflate,
 #if DEBUG
+                // Accepts the local API's development certificate. Compiled out of Release.
                 ServerCertificateCustomValidationCallback = (_, _, _, _) => true,
 #endif
             };
             return handler;
         });
 
-        // ── Services ──────────────────────────────────────────────────────────
         builder.Services.AddSingleton<ICacheService,        CacheService>();
         builder.Services.AddSingleton<IApiService,          ApiService>();
         builder.Services.AddSingleton<IAuthService,         AuthService>();
         builder.Services.AddSingleton<IAccountStateService, AccountStateService>();
         builder.Services.AddSingleton<ISettingsService,     SettingsService>();
 
-        // ── ViewModels ────────────────────────────────────────────────────────
         builder.Services.AddTransient<LoginViewModel>();
         builder.Services.AddTransient<HomeViewModel>();
         builder.Services.AddTransient<CalendarViewModel>();
@@ -101,7 +101,6 @@ public static class MauiProgram
         builder.Services.AddTransient<AccountsViewModel>();
         builder.Services.AddTransient<SettingsViewModel>();
 
-        // ── Views ─────────────────────────────────────────────────────────────
         builder.Services.AddTransient<LoginPage>();
         builder.Services.AddTransient<HomePage>();
         builder.Services.AddTransient<CalendarPage>();

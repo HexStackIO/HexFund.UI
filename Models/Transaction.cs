@@ -1,5 +1,6 @@
 namespace HexFund.UI.Models;
 
+/// <summary>How often a transaction repeats. Values match the API.</summary>
 public enum FrequencyType
 {
     Once             = 0,
@@ -11,6 +12,10 @@ public enum FrequencyType
     BiMonthly        = 6
 }
 
+/// <summary>
+/// A one-time or recurring income or expense from which occurrences are generated. Amending a
+/// transaction creates a successor linked through <see cref="PredecessorTransactionId"/>.
+/// </summary>
 public class Transaction
 {
     public Guid TransactionId { get; set; }
@@ -47,10 +52,11 @@ public class Transaction
     public string EndDateDisplay   => EndDate.HasValue ? EndDate.Value.ToString("MMM dd, yyyy") : "Ongoing";
     public string DateRangeDisplay =>
         Frequency == FrequencyType.Once
-            ? StartDate.ToString("MMM dd, yyyy")           // single date — no range needed
+            ? StartDate.ToString("MMM dd, yyyy")
             : EndDate.HasValue
                 ? $"{StartDate:MMM dd, yyyy} → {EndDate.Value:MMM dd, yyyy}"
                 : $"{StartDate:MMM dd, yyyy} → Ongoing";
+    /// <summary>True when this is an earlier version of an amended transaction that has ended.</summary>
     public bool IsSuperseded =>
         PredecessorTransactionId != null &&
         EndDate.HasValue &&

@@ -8,15 +8,12 @@ using AndroidContext = Android.Content.Context;
 namespace HexFund.UI.Platforms.Android;
 
 /// <summary>
-/// Android handler for SwipeableCollectionView.
-///
-/// We never override CreatePlatformView — that would discard the adapter,
-/// LayoutManager, and all other configuration the base handler applies.
-/// Instead ConnectHandler receives the fully-configured RecyclerView and
-/// attaches a GestureDetector via an OnItemTouchListener, which is the
-/// official RecyclerView API for intercepting touches before item click
-/// handlers run. Horizontal flings fire SwipedLeft / SwipedRight; everything
-/// else (taps, vertical scroll) is passed through untouched.
+/// Android handler for <see cref="SwipeableCollectionView"/>. It does not override
+/// CreatePlatformView, because that would discard the adapter, layout manager and other setup
+/// that the base handler applies. Instead ConnectHandler receives the configured RecyclerView and
+/// adds an OnItemTouchListener, the RecyclerView API for intercepting touches before item click
+/// handlers run. Horizontal flings raise SwipedLeft and SwipedRight; taps and vertical scrolling
+/// pass through.
 /// </summary>
 public class SwipeableCollectionViewHandler : CollectionViewHandler
 {
@@ -44,9 +41,8 @@ public class SwipeableCollectionViewHandler : CollectionViewHandler
 }
 
 /// <summary>
-/// RecyclerView.IOnItemTouchListener that intercepts horizontal flings.
-/// OnInterceptTouchEvent is called for every MotionEvent before RecyclerView
-/// dispatches it to children or its own scroll logic.
+/// Intercepts horizontal flings. OnInterceptTouchEvent sees every MotionEvent before RecyclerView
+/// dispatches it to its children or its own scrolling.
 /// </summary>
 internal sealed class SwipeTouchListener : Java.Lang.Object, RecyclerView.IOnItemTouchListener
 {
@@ -74,8 +70,7 @@ internal sealed class SwipeTouchListener : Java.Lang.Object, RecyclerView.IOnIte
                 intercepting => _intercepting = intercepting));
     }
 
-    // Called before RecyclerView processes the event.
-    // Return true to steal the remainder of the gesture from children.
+    // Returning true takes the rest of the gesture away from the children.
     public bool OnInterceptTouchEvent(RecyclerView rv, MotionEvent e)
     {
         _detector.OnTouchEvent(e);
@@ -88,8 +83,6 @@ internal sealed class SwipeTouchListener : Java.Lang.Object, RecyclerView.IOnIte
     }
 
     public void OnRequestDisallowInterceptTouchEvent(bool disallowIntercept) { }
-
-    // ── Fling listener ───────────────────────────────────────────────────────
 
     private sealed class FlingListener : GestureDetector.SimpleOnGestureListener
     {
@@ -115,9 +108,8 @@ internal sealed class SwipeTouchListener : Java.Lang.Object, RecyclerView.IOnIte
 
         public override bool OnDown(MotionEvent e)
         {
-            // Reset intercept flag on every new touch sequence.
             _setIntercepting(false);
-            return false; // don't consume — let RecyclerView see ACTION_DOWN
+            return false; // Let RecyclerView see ACTION_DOWN.
         }
 
         public override bool OnFling(
@@ -133,7 +125,7 @@ internal sealed class SwipeTouchListener : Java.Lang.Object, RecyclerView.IOnIte
             if (Math.Abs(dx) < _minDist)           return false;
             if (Math.Abs(velocityX) < _minVelocity) return false;
 
-            // Tell the listener to intercept the remaining events in this gesture
+            // Takes the remaining events of this gesture so the list does not also scroll.
             _setIntercepting(true);
 
             if (dx < 0) _left();

@@ -4,12 +4,10 @@ using Microsoft.Identity.Client;
 
 namespace HexFund.UI.Platforms.Android;
 
-// ── IMPORTANT ────────────────────────────────────────────────────────────────
-// The DataScheme below MUST match the format: msal{ClientId}
-// where ClientId is the Application (client) ID of your Entra CIAM app registration.
-// Update this value whenever the app registration ClientId changes.
-// It must also match the android:scheme in AndroidManifest.xml.
-// ─────────────────────────────────────────────────────────────────────────────
+// Receives the redirect that ends the interactive Entra sign-in. The DataScheme must be "msal"
+// followed by the client ID of the app registration, and must match EntraAuthConfig.RedirectUri.
+// Update it when the client ID changes. The scheme is declared only here, because repeating it in
+// AndroidManifest.xml would register it twice and make Android show an app chooser on redirect.
 [Activity(Exported = true)]
 [IntentFilter(new[] { Intent.ActionView },
     Categories = new[] { Intent.CategoryBrowsable, Intent.CategoryDefault },

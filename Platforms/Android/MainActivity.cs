@@ -26,6 +26,6 @@ public class MainActivity : MauiAppCompatActivity
             requestCode, resultCode, data);
     }
 
-    // Back-press interception is handled at the Shell level (AppShell.xaml.cs)
-    // to show a themed in-app exit confirmation overlay instead of a native dialog.
+    // The back button is handled in AppShell, which shows a themed exit confirmation instead of a
+    // native dialog.
 }

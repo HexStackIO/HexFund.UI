@@ -1,5 +1,6 @@
 namespace HexFund.UI.Services;
 
+/// <summary>How the calendar page shows a month.</summary>
 public enum CalendarViewMode
 {
     List = 0,
@@ -7,34 +8,33 @@ public enum CalendarViewMode
 }
 
 /// <summary>
-/// The 8 HexFund gem/metal themes. Int values are frozen — they map directly
-/// to the user's saved "color_theme" Preference so must never be renumbered.
-///
-/// Legacy mapping for reference (old name → new name):
-///   Default(0)→Gold, Ocean(1)→Sapphire, Forest(2)→Emerald, Sunset(3)→Bronze,
-///   Monochrome(4)→Obsidian, Rose(5)→Ruby, Midnight(6)→Amethyst, Blush(7)→Platinum
+/// The eight accent themes. The integer values are stored in the "color_theme" preference, so
+/// they must not be renumbered.
 /// </summary>
 public enum ColorTheme
 {
-    Gold      = 0,  // #D4AF37 — HexFund signature / default
-    Sapphire  = 1,  // #4A7FD6 — deep blue
-    Emerald   = 2,  // #35B88C — teal green
-    Bronze    = 3,  // #B87333 — warm copper
-    Obsidian  = 4,  // #8E94A0 — cool slate
-    Ruby      = 5,  // #C73A57 — deep crimson
-    Amethyst  = 6,  // #9C6ED1 — violet purple
-    Platinum  = 7   // #D9DDE2 — cool silver
+    Gold      = 0,  // #D4AF37, the default.
+    Sapphire  = 1,  // #4A7FD6
+    Emerald   = 2,  // #35B88C
+    Bronze    = 3,  // #B87333
+    Obsidian  = 4,  // #8E94A0
+    Ruby      = 5,  // #C73A57
+    Amethyst  = 6,  // #9C6ED1
+    Platinum  = 7   // #D9DDE2
 }
 
+/// <summary>Device-local user preferences backed by MAUI Preferences.</summary>
 public interface ISettingsService
 {
     CalendarViewMode CalendarView { get; set; }
     ColorTheme Theme { get; set; }
     bool HasCompletedOnboarding { get; set; }
 
+    /// <summary>Raised when the calendar view mode or the theme changes.</summary>
     event Action SettingsChanged;
 }
 
+/// <inheritdoc />
 public class SettingsService : ISettingsService
 {
     private const string KeyCalendarView        = "calendar_view_mode";
@@ -55,7 +55,6 @@ public class SettingsService : ISettingsService
 
     public ColorTheme Theme
     {
-        // Default is Gold (0) — the HexFund signature theme.
         get => (ColorTheme)Preferences.Default.Get(KeyColorTheme, (int)ColorTheme.Gold);
         set
         {

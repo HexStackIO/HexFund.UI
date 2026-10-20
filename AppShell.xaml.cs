@@ -3,6 +3,10 @@ using HexFund.UI.Views;
 
 namespace HexFund.UI;
 
+/// <summary>
+/// The navigation shell. Shows the main tab bar when signed in and the login tab bar otherwise,
+/// registers the pushed routes and handles the Android back button on the root page.
+/// </summary>
 public partial class AppShell : Shell
 {
     private readonly IAuthService _authService;
@@ -33,8 +37,10 @@ public partial class AppShell : Shell
         Navigating += OnShellNavigating;
     }
 
-    // ── Hex FAB action — called by App.xaml.cs overlay button ────────────────
-
+    /// <summary>
+    /// Handles a tap on the floating button: the add-entry page when an account is selected,
+    /// otherwise the accounts page. Does nothing if that page is already open.
+    /// </summary>
     public async Task ExecuteHexFabAsync()
     {
         if (_accountStateService.SelectedAccount == null)
@@ -49,10 +55,8 @@ public partial class AppShell : Shell
         }
     }
 
-    // ── Tab switch — close modal pages when the user switches tabs ───────────
-
-    // Handles the cross-tab case where AddEntry, Accounts, or Settings is
-    // pushed as a route on top of a tab — pop before switching.
+    // A tab switch while the add-entry, accounts or settings route is pushed must pop it first, so
+    // the switch is cancelled, the route popped and then the switch repeated.
     private void OnShellNavigating(object? sender, ShellNavigatingEventArgs e)
     {
         var target = e.Target.Location.OriginalString;
@@ -78,8 +82,7 @@ public partial class AppShell : Shell
         return stack?.Any(p => p is T) ?? false;
     }
 
-    // ── Public navigation API ─────────────────────────────────────────────────
-
+    /// <summary>Selects a tab. Failures are logged and ignored.</summary>
     public void SwitchToTab(AppTab tab)
     {
         try
@@ -107,22 +110,17 @@ public partial class AppShell : Shell
     public async Task NavigateToSettingsAsync() => await GoToAsync("settings");
     public async Task NavigateToAddEntryAsync() => await GoToAsync("add");
 
-    // ── Auth state ────────────────────────────────────────────────────────────
-
     private void OnAuthStateChanged() =>
         MainThread.BeginInvokeOnMainThread(() =>
             UpdateTabBarForAuthState(_authService.IsAuthenticated));
 
     private void UpdateTabBarForAuthState(bool isAuthenticated)
     {
-        // Pop any pushed routes (Settings, Accounts, AddEntry) before switching
-        // tab bars. If a route is on the stack when CurrentItem changes, Shell
-        // tries to resolve it against the new tab bar and throws because the
-        // route doesn't exist in that context (e.g. "settings" is not a route
-        // in AuthTabBar).
+        // Pushed routes must be popped before the tab bar changes. Shell would otherwise try to
+        // resolve the route against the new tab bar and throw, because for example "settings" does
+        // not exist in AuthTabBar.
         if (Navigation.NavigationStack.Count > 1)
         {
-            // Fire-and-forget the pop, then switch tab bars once it completes
             MainThread.BeginInvokeOnMainThread(async () =>
             {
                 await GoToAsync("..");
@@ -156,8 +154,7 @@ public partial class AppShell : Shell
 #endif
     }
 
-    // ── Back-button / exit confirmation ──────────────────────────────────────
-
+    // On a root page the back button asks for exit confirmation instead of closing the app.
     protected override bool OnBackButtonPressed()
     {
         if (Navigation.NavigationStack.Count > 1)
@@ -166,8 +163,6 @@ public partial class AppShell : Shell
         _ = Navigation.PushModalAsync(new ExitConfirmationPage(), animated: false);
         return true;
     }
-
-    // ── Theme ─────────────────────────────────────────────────────────────────
 
     private void ApplyThemeToShell()
     {

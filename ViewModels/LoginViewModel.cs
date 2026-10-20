@@ -4,6 +4,9 @@ using HexFund.UI.Services;
 
 namespace HexFund.UI.ViewModels;
 
+/// <summary>Drives the sign-in page. Sign-in itself happens in the hosted Entra flow.</summary>
+/// <summary>Drives the sign-in page. Sign-in itself happens in the hosted Entra flow.</summary>
+/// <summary>Drives the sign-in page. Sign-in itself happens in the hosted Entra flow.</summary>
 public partial class LoginViewModel : BaseViewModel
 {
     private readonly IAuthService _authService;
@@ -33,7 +36,6 @@ public partial class LoginViewModel : BaseViewModel
 
         try
         {
-            // Entra External ID handles the sign-in UI — no email/password params needed
             var success = await _authService.LoginAsync();
 
             if (success)
@@ -76,7 +78,7 @@ public partial class LoginViewModel : BaseViewModel
         }
         catch (Exception ex)
         {
-            // navigation failure is non-fatal — user is already logged in
+            // Not fatal: the user is already signed in and can pick an account from the tab bar.
         }
     }
 }

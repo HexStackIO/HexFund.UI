@@ -1,11 +1,17 @@
 namespace HexFund.UI.Config;
 
+/// <summary>
+/// Compile-time constants shared across the app: HTTP settings, version display values, cache
+/// lifetimes and tab titles.
+/// </summary>
 public static class AppConstants
 {
-    // ── API ───────────────────────────────────────────────────────────────────
     public const string HttpClientName = "HexFundApi";
     public const int    HttpTimeoutSecs = 30;
 
+    // Debug builds target a local API; 10.0.2.2 is the Android emulator's alias for the host
+    // machine. Release builds target the hosted API. Both can be overridden at runtime with the
+    // API_BASE_URL environment variable (see MauiProgram).
 #if DEBUG
     public const string AndroidBaseUrl = "https://10.0.2.2:5001/api/";
     public const string LocalBaseUrl   = "https://localhost:5001/api/";
@@ -14,37 +20,23 @@ public static class AppConstants
     public const string LocalBaseUrl   = "https://financeplannerapi-ehguhgghete7auc8.centralus-01.azurewebsites.net/api/";
 #endif
 
-    // ── Version ───────────────────────────────────────────────────────────────
-    //
-    // AppVersion must match the <ApplicationVersion> in HexFund.UI.csproj.
-    // BuildNumber is a monotonically increasing integer incremented on every
-    // release commit — it appears in the "App Information" section alongside the
-    // semantic version.
-    //
-    // Workflow before each release:
-    //   1. Bump <ApplicationVersion> and <ApplicationDisplayVersion> in the csproj.
-    //   2. Increment BuildNumber here to match.
-    //   3. Prepend a new entry to Resources/changelog.json.
-    //   4. Commit — no pipeline transforms needed.
-    //
+    // Shown in the "App Information" section of Settings. The release workflow rewrites
+    // AppVersion with the computed version name before building, so keep the declaration in the
+    // form `AppVersion = "x.y"`. BuildNumber is a manually maintained display value.
     public const string AppVersion  = "5";
     public const int    BuildNumber = 5;
 
-
-    // ── Changelog ─────────────────────────────────────────────────────────────
     public const string ChangelogResourcePath = "changelog.json";
 
-    // ── Cache TTLs ────────────────────────────────────────────────────────────
     public static readonly TimeSpan AccountsCacheTtl     = TimeSpan.FromMinutes(10);
     public static readonly TimeSpan TransactionsCacheTtl = TimeSpan.FromMinutes(3);
     public static readonly TimeSpan CalendarCacheTtl     = TimeSpan.FromMinutes(5);
     public static readonly TimeSpan CategoriesCacheTtl   = TimeSpan.FromMinutes(30);
 
-    // ── Fallback colours ──────────────────────────────────────────────────────
+    // Used when a theme resource cannot be resolved.
     public const string FallbackPrimary = "#D4AF37";
     public const string FallbackMuted   = "#59D4AF37";
 
-    // ── Tab titles ────────────────────────────────────────────────────────────
     public const string CalendarTabTitle     = "Calendar";
     public const string TransactionsTabTitle = "Transactions";
     public const string AccountsTabTitle     = "Accounts";

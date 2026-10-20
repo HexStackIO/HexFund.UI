@@ -2,6 +2,7 @@ using System.Text.Json;
 
 namespace HexFund.UI.Models;
 
+/// <summary>A single dated instance of a transaction, as returned by the calendar endpoints.</summary>
 public class TransactionOccurrence
 {
     public Guid TransactionId { get; set; }

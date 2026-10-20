@@ -2,6 +2,10 @@ using HexFund.UI.Services;
 
 namespace HexFund.UI;
 
+/// <summary>
+/// Application root. Applies the saved theme, creates the shell window, and owns the floating
+/// hexagon action button that is added to the native window while the user is signed in.
+/// </summary>
 public partial class App : Application
 {
     private readonly IAuthService _authService;
@@ -11,7 +15,7 @@ public partial class App : Application
     private AppShell? _shell;
     private bool _fabInjected;
 
-    // Native view references for show/hide and theme image updates
+    // Native view references, kept so the button can be hidden and re-themed.
 #if ANDROID
     private global::Android.Widget.FrameLayout? _androidFabFrame;
     private global::Android.Widget.ImageView?   _androidFabImg;
@@ -32,11 +36,11 @@ public partial class App : Application
         InitializeComponent();
         ThemeService.Apply(_settingsService.Theme);
 
-        // Only show FAB when authenticated — inject on first login, toggle after
+        // The button is added on the first sign-in and only shown and hidden after that.
         _authService.AuthStateChanged += () =>
             MainThread.BeginInvokeOnMainThread(OnAuthStateChanged);
 
-        // Swap the FAB image whenever the user switches theme
+        // Re-skins the button when the theme changes.
         _settingsService.SettingsChanged += () =>
             MainThread.BeginInvokeOnMainThread(UpdateFabImage);
     }
@@ -47,8 +51,6 @@ public partial class App : Application
         return new Window(_shell);
     }
 
-    // ── Auth state ────────────────────────────────────────────────────────────
-
     private void OnAuthStateChanged()
     {
         if (_authService.IsAuthenticated)
@@ -56,8 +58,8 @@ public partial class App : Application
             if (!_fabInjected)
             {
                 _fabInjected = true;
-                // Short delay so the authenticated Shell page is fully rendered
-                // before we add the overlay — avoids injecting over the login UI
+                // The delay lets the signed-in shell finish rendering, so the button is not added
+                // over the login page.
                 MainThread.BeginInvokeOnMainThread(async () =>
                 {
                     await Task.Delay(300);
@@ -89,8 +91,7 @@ public partial class App : Application
 #endif
     }
 
-    // ── Hex FAB injection ─────────────────────────────────────────────────────
-
+    // Size and distance from the bottom edge, in dp on Android and points on iOS.
     private const double FabSize   = 62.0;
     private const double FabBottom = 48.0;
 
@@ -107,7 +108,7 @@ public partial class App : Application
 
         var frame = new global::Android.Widget.FrameLayout(activity)
         {
-            Clickable = false, // frame itself doesn't consume — only the image does
+            Clickable = false, // Only the image takes touches.
         };
 
         var hexImg = new global::Android.Widget.ImageView(activity);
@@ -116,8 +117,7 @@ public partial class App : Application
         hexImg.Clickable = true;
         hexImg.Click += async (_, _) =>
         {
-            // Disable immediately and synchronously before any await so rapid
-            // taps cannot queue up multiple navigation calls
+            // Disabled before the first await so rapid taps cannot queue several navigations.
             hexImg.Clickable = false;
             try
             {
@@ -126,7 +126,6 @@ public partial class App : Application
             }
             finally
             {
-                // Re-enable after navigation completes
                 hexImg.Clickable = true;
             }
         };
@@ -139,9 +138,8 @@ public partial class App : Application
         };
         frame.AddView(hexImg, imgLp);
 
-        // The FrameLayout covers the full screen but only the ImageView is
-        // Clickable=true. The frame has Clickable=false so all touches that
-        // don't land on the ImageView fall straight through to views below.
+        // The frame covers the whole window but is not clickable, so touches outside the image
+        // pass through to the views below.
         var rootLp = new global::Android.Views.ViewGroup.LayoutParams(
             global::Android.Views.ViewGroup.LayoutParams.MatchParent,
             global::Android.Views.ViewGroup.LayoutParams.MatchParent);
@@ -167,7 +165,7 @@ public partial class App : Application
         nfloat screenH  = uiWindow.Bounds.Height;
 
         var fabName = ThemeService.GetThemeFab(_settingsService.Theme)
-                          .Replace(".png", "");   // UIImage.FromBundle doesn't need extension
+                          .Replace(".png", "");   // FromBundle takes the name without extension.
 
         var hexImg = new UIKit.UIImageView
         {
@@ -205,12 +203,7 @@ public partial class App : Application
 #endif
     }
 
-    // ── FAB theme image swap ──────────────────────────────────────────────────
-
-    /// <summary>
-    /// Swaps the FAB image to match the current theme. Called on inject and
-    /// whenever SettingsChanged fires.
-    /// </summary>
+    // Called when the button is added and whenever settings change.
     private void UpdateFabImage()
     {
 #if ANDROID
@@ -230,7 +223,7 @@ public partial class App : Application
         global::Android.App.Activity activity)
     {
         var imageName = ThemeService.GetThemeFab(_settingsService.Theme)
-                            .Replace(".png", "");   // GetIdentifier doesn't use extension
+                            .Replace(".png", "");   // GetIdentifier takes the name without extension.
 
         var resId = activity.Resources?.GetIdentifier(
                         imageName, "mipmap", activity.PackageName) ?? 0;
@@ -238,7 +231,7 @@ public partial class App : Application
             resId = activity.Resources?.GetIdentifier(
                         imageName, "drawable", activity.PackageName) ?? 0;
 
-        // Fall back to the unthemed hex_fab if the themed asset isn't present yet
+        // Falls back to the unthemed image when the themed asset is missing.
         if (resId == 0)
         {
             resId = activity.Resources?.GetIdentifier(
@@ -263,8 +256,6 @@ public partial class App : Application
                      ?? UIKit.UIImage.FromBundle("hex_fab");
     }
 #endif
-
-    // ── Animations ────────────────────────────────────────────────────────────
 
 #if ANDROID
     private static void StartAndroidPulse(global::Android.Widget.ImageView view)

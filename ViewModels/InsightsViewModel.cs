@@ -6,42 +6,39 @@ using System.Collections.ObjectModel;
 
 namespace HexFund.UI.ViewModels;
 
-// ── Display models ────────────────────────────────────────────────────────────
-
 /// <summary>
-/// One slice of the category spending donut.
-/// Carries everything the XAML needs to render a bar-approximation segment.
+/// One category of the monthly expense breakdown. The page draws it as a bar segment.
 /// </summary>
 public class CategorySlice
 {
     public string  Category           { get; init; } = string.Empty;
     public decimal Total              { get; init; }
-    public double  Percentage         { get; init; }   // 0–100
+    public double  Percentage         { get; init; }   // 0 to 100.
     public Color   SliceColor         { get; init; } = Colors.Gray;
     public string  PercentageDisplay  => $"{Percentage:F0}%";
     public string  TotalDisplay       => Total.ToString("C");
-    /// Width multiplier for the XAML bar (0.0–1.0)
+    /// <summary>Width multiplier for the bar, from 0.0 to 1.0.</summary>
     public double  BarWeight          => Percentage / 100.0;
 }
 
 /// <summary>
-/// One month bar for the 6-month net-change trend chart.
+/// One month of the six-month net-change trend chart.
 /// </summary>
 public class MonthBar
 {
     private const int MaxBarPx = 80;
 
-    public string  MonthLabel    { get; init; } = string.Empty;  // "Jan", "Feb" …
+    public string  MonthLabel    { get; init; } = string.Empty;  // For example "Jan".
     public decimal NetChange     { get; init; }
     public bool    IsPositive    => NetChange >= 0;
     public string  ValueDisplay  => $"{(NetChange >= 0 ? "+" : "")}{NetChange:C0}";
-    /// Normalised bar height (0.0–1.0) — set by the VM after all bars are known.
+    /// <summary>Bar height relative to the largest month, from 0.0 to 1.0. Set once all bars are known.</summary>
     public double  BarWeight     { get; set; }
-    /// Pixel height for HeightRequest binding (4px minimum so zero months are visible).
+    /// <summary>Bar height in pixels, with a 4 pixel minimum so empty months stay visible.</summary>
     public int     BarHeightPx   => Math.Max(4, (int)(BarWeight * MaxBarPx));
-    /// Spacer height that pushes the bar to the bottom of a fixed 120px chart area.
+    /// <summary>Spacer height that pushes the bar to the bottom of the fixed 120 pixel chart area.</summary>
     public double  SpacerHeightPx => Math.Max(0, 120.0 - BarHeightPx);
-    /// Colour driven by IsPositive — resolved at bind time via VM helper.
+    /// <summary>Up color for a positive month, Down color otherwise.</summary>
     public Color   BarColor      => IsPositive
         ? GetSemanticColor("Up",   "#3FB97A")
         : GetSemanticColor("Down", "#E05A6F");
@@ -55,7 +52,7 @@ public class MonthBar
 }
 
 /// <summary>
-/// A single smart-alert card surfaced when a spend spike is detected.
+/// A card shown when a category's spending rose sharply compared with the previous month.
 /// </summary>
 public class SpendAlert
 {
@@ -68,42 +65,30 @@ public class SpendAlert
         $"({LastMonth:C0} → {ThisMonth:C0}).";
 }
 
-// ── ViewModel ─────────────────────────────────────────────────────────────────
-
 /// <summary>
-/// InsightsViewModel — Sprint 05.
-///
-/// Three sections:
-///   1. Category donut — expense breakdown for the current month.
-///      Empty state if the selected account has fewer than 5 transactions.
-///   2. 6-month bar trend — net change per month for the last 6 months.
-///   3. Smart alerts — surfaces categories whose spend is >20% higher than last month.
-///
-/// All data is scoped to the currently selected account and refreshes whenever
-/// SelectedAccountChanged or TransactionsChanged fires.
+/// Drives the insights page for the selected account: the expense breakdown by category for the
+/// displayed month, the net change of the last six months, and spending alerts for categories
+/// that rose more than 20% over the previous month. It reloads when the selected account or the
+/// transactions change.
 /// </summary>
+/// <remarks>The category breakdown needs at least five transactions in the month.</remarks>
 public partial class InsightsViewModel : BaseViewModel
 {
     private readonly IApiService _apiService;
     private readonly IAccountStateService _accountStateService;
 
-    // ── Loading / error ───────────────────────────────────────────────────────
     [ObservableProperty] private bool isLoading;
     [ObservableProperty] private bool hasError;
     [ObservableProperty] private string errorMessage = string.Empty;
 
-    // ── No-account state ──────────────────────────────────────────────────────
     [ObservableProperty] private bool hasAccount;
 
-    // ── Month navigation ──────────────────────────────────────────────────────
     /// <summary>The first day of the month currently being displayed.</summary>
     [ObservableProperty] private DateTime displayMonth = new(DateTime.Today.Year, DateTime.Today.Month, 1);
 
-    // No upper bound — users can browse future months (balances will simply
-    // show zero / projected data from whatever the server returns).
+    // There is no upper bound: future months show whatever projection the server returns.
     public bool CanGoForward => true;
 
-    // ── Section 1: Category donut ─────────────────────────────────────────────
     [ObservableProperty] private ObservableCollection<CategorySlice> categorySlices = new();
     [ObservableProperty] private bool hasCategoryData;
     [ObservableProperty] private string categoryEmptyReason = string.Empty;
@@ -111,15 +96,12 @@ public partial class InsightsViewModel : BaseViewModel
     [ObservableProperty] private decimal totalExpensesThisMonth;
     public string TotalExpensesDisplay => TotalExpensesThisMonth.ToString("C");
 
-    // ── Section 2: 6-month bar trend ─────────────────────────────────────────
     [ObservableProperty] private ObservableCollection<MonthBar> monthBars = new();
     [ObservableProperty] private bool hasTrendData;
 
-    // ── Section 3: Smart alerts ───────────────────────────────────────────────
     [ObservableProperty] private ObservableCollection<SpendAlert> spendAlerts = new();
     [ObservableProperty] private bool hasAlerts;
 
-    // ── Colour palette for category slices ───────────────────────────────────
     private static readonly string[] SliceColors =
     {
         "#4A7FD6", // Sapphire
@@ -131,8 +113,6 @@ public partial class InsightsViewModel : BaseViewModel
         "#D4AF37", // Gold
         "#8E94A0", // Obsidian
     };
-
-    // ── Constructor ───────────────────────────────────────────────────────────
 
     public InsightsViewModel(
         IApiService apiService,
@@ -147,8 +127,6 @@ public partial class InsightsViewModel : BaseViewModel
         _accountStateService.TransactionsChanged    += OnAccountChanged;
     }
 
-    // ── Initialisation ────────────────────────────────────────────────────────
-
     public async Task InitializeAsync()
     {
         if (!HasAccount && _accountStateService.SelectedAccount == null) return;
@@ -158,8 +136,6 @@ public partial class InsightsViewModel : BaseViewModel
 
     private void OnAccountChanged() =>
         MainThread.BeginInvokeOnMainThread(async () => await LoadAsync());
-
-    // ── Month navigation commands ─────────────────────────────────────────────
 
     [RelayCommand]
     private async Task PreviousMonthAsync()
@@ -174,8 +150,6 @@ public partial class InsightsViewModel : BaseViewModel
         DisplayMonth = DisplayMonth.AddMonths(1);
         await LoadAsync();
     }
-
-    // ── Data loading ──────────────────────────────────────────────────────────
 
     [RelayCommand]
     private async Task RefreshAsync() => await LoadAsync();
@@ -195,7 +169,6 @@ public partial class InsightsViewModel : BaseViewModel
             var thisMonth = DisplayMonth;
             var now       = DateTime.Today;
 
-            // ── Fetch this month and last month overviews in parallel ──────
             var thisTask = _apiService.GetMonthlyOverviewAsync(
                 account.AccountId, thisMonth.Year, thisMonth.Month, forceRefresh: false);
 
@@ -203,7 +176,6 @@ public partial class InsightsViewModel : BaseViewModel
             var lastTask = _apiService.GetMonthlyOverviewAsync(
                 account.AccountId, lastMonthDate.Year, lastMonthDate.Month, forceRefresh: false);
 
-            // ── Fetch 6 months for the trend (selected month + 5 prior) ──────
             var trendTasks = Enumerable.Range(0, 6)
                 .Select(i =>
                 {
@@ -239,8 +211,6 @@ public partial class InsightsViewModel : BaseViewModel
         }
     }
 
-    // ── Section builders ──────────────────────────────────────────────────────
-
     private void BuildCategoryDonut(EnhancedMonthlyOverview? overview)
     {
         if (overview == null)
@@ -251,14 +221,14 @@ public partial class InsightsViewModel : BaseViewModel
             return;
         }
 
-        // Only expense categories, sorted by total descending
+        // Expense categories only, largest first.
         var expenseBreakdowns = overview.CategoryBreakdowns
             .Where(c => c.Type?.Equals("expense", StringComparison.OrdinalIgnoreCase) == true
                      && c.Total > 0)
             .OrderByDescending(c => c.Total)
             .ToList();
 
-        // Spec: empty state if fewer than 5 transactions total this month
+        // A breakdown of very few transactions is not meaningful, so show an empty state instead.
         var totalTxCount = overview.CategoryBreakdowns.Sum(c => c.TransactionCount);
         if (totalTxCount < 5)
         {
@@ -284,7 +254,7 @@ public partial class InsightsViewModel : BaseViewModel
         TotalExpensesThisMonth = totalExpenses;
         OnPropertyChanged(nameof(TotalExpensesDisplay));
 
-        // Group anything beyond top-6 into "Other"
+        // At most six slices: the largest five categories plus an "Other" slice for the rest.
         const int maxSlices = 6;
         List<CategorySlice> slices;
 
@@ -330,8 +300,8 @@ public partial class InsightsViewModel : BaseViewModel
 
     private void BuildTrendBars(List<EnhancedMonthlyOverview?> overviews, DateTime thisMonth)
     {
-        // overviews[0] = this month, [1] = last month … [5] = 5 months ago
-        // Reverse so bars display oldest-left to newest-right
+        // overviews[0] is this month and overviews[5] is five months ago. The bars are reversed so
+        // they read oldest to newest, left to right.
         var bars = overviews
             .Select((o, i) =>
             {
@@ -345,7 +315,7 @@ public partial class InsightsViewModel : BaseViewModel
             .Reverse()
             .ToList();
 
-        // Normalise bar heights: max absolute value = 1.0
+        // The month with the largest absolute change gets weight 1.0.
         var maxAbs = bars.Max(b => Math.Abs((double)b.NetChange));
         if (maxAbs > 0)
         {
@@ -387,7 +357,7 @@ public partial class InsightsViewModel : BaseViewModel
 
             var changePercent = (double)((thisTotal - lastTotal) / lastTotal * 100);
 
-            // Spec: alert if >20% higher than last month
+            // Only increases of more than 20% raise an alert.
             if (changePercent > 20)
             {
                 alerts.Add(new SpendAlert
@@ -400,7 +370,7 @@ public partial class InsightsViewModel : BaseViewModel
             }
         }
 
-        // Sort by biggest spike first
+        // Largest increase first.
         alerts = alerts.OrderByDescending(a => a.ChangePercent).ToList();
 
         SpendAlerts = new ObservableCollection<SpendAlert>(alerts);

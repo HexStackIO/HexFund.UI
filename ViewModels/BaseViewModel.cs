@@ -4,6 +4,18 @@ using HexFund.UI.Services;
 
 namespace HexFund.UI.ViewModels;
 
+/// <summary>
+/// Base class for view models. Exposes the theme-dependent colors and images so pages can bind
+/// to them, and raises change notifications when the theme changes.
+/// </summary>
+/// <summary>
+/// Base class for view models. Exposes the theme-dependent colors and images so pages can bind
+/// to them, and raises change notifications when the theme changes.
+/// </summary>
+/// <summary>
+/// Base class for view models. Exposes the theme-dependent colors and images so pages can bind
+/// to them, and raises change notifications when the theme changes.
+/// </summary>
 public abstract partial class BaseViewModel : ObservableObject
 {
     protected readonly ISettingsService SettingsService;
@@ -32,24 +44,15 @@ public abstract partial class BaseViewModel : ObservableObject
         Application.Current?.Resources.TryGetValue("PrimaryMuted", out var m) == true && m is Color mc
             ? mc : Color.FromArgb(AppConstants.FallbackMuted);
 
-    /// <summary>
-    /// Per-theme hex logo image source — resolves to e.g. "hex_logo_gold.png".
-    /// Bind to Image.Source on any page header.
-    /// </summary>
+    /// <summary>The logo image for the current theme, for example "hex_logo_gold.png".</summary>
     public string CurrentThemeLogo =>
         ThemeService.GetThemeLogo(SettingsService.Theme);
 
-    /// <summary>
-    /// Per-theme full-bleed backdrop image source — resolves to e.g. "hex_bg_gold.png".
-    /// Use as the first child of a Grid behind page content.
-    /// </summary>
+    /// <summary>The full-bleed backdrop image for the current theme, for example "hex_bg_gold.png".</summary>
     public string CurrentThemeBackdrop =>
         ThemeService.GetThemeBackdrop(SettingsService.Theme);
 
-    /// <summary>
-    /// Human-readable theme name for the header subtitle — e.g. "GOLD VAULT".
-    /// Updates automatically when the theme changes.
-    /// </summary>
+    /// <summary>The theme name shown in page headers, for example "GOLD VAULT".</summary>
     public string CurrentThemeName => SettingsService.Theme switch
     {
         ColorTheme.Gold => "GOLD VAULT",

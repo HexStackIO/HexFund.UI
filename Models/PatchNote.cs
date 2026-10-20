@@ -1,9 +1,8 @@
 namespace HexFund.UI.Models;
 
 /// <summary>
-/// Represents a single release entry in the changelog.
-/// Populated from Resources/changelog.json which ships with the app binary.
-/// To add a new release: prepend an entry to that file before committing.
+/// A single release entry in the changelog, loaded from Resources/changelog.json, which ships
+/// inside the app package.
 /// </summary>
 public class PatchNote
 {

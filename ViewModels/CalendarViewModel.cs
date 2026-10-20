@@ -7,6 +7,7 @@ using System.Diagnostics;
 
 namespace HexFund.UI.ViewModels;
 
+/// <summary>The overview and per-day occurrences for one month, with the time they were fetched.</summary>
 internal record MonthData(
     EnhancedMonthlyOverview Overview,
     Dictionary<DateTime, List<TransactionOccurrence>> Transactions,
@@ -16,12 +17,16 @@ internal record MonthData(
     public bool IsStale => DateTime.UtcNow - FetchedAt > Ttl;
 }
 
+/// <summary>
+/// Drives the calendar page: a month summary, a 42-cell grid and the transactions of the selected
+/// day. Months are cached in memory, the neighbouring months are prefetched, and a stale cached
+/// month is shown immediately while a fresh copy loads in the background.
+/// </summary>
 public partial class CalendarViewModel : BaseViewModel
 {
     private readonly IApiService _apiService;
     private readonly IAccountStateService _accountStateService;
 
-    // -- Summary card ---------------------------------------------------------
     [ObservableProperty] private string startingBalanceDisplay = "$0.00";
     [ObservableProperty] private string endingBalanceDisplay   = "$0.00";
     [ObservableProperty] private string totalIncomeDisplay     = "$0.00";
@@ -71,7 +76,7 @@ public partial class CalendarViewModel : BaseViewModel
     public List<string> DayHeaders { get; } = new()
         { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
 
-    // Single unified cache: (accountId, year, month) -> MonthData.
+    // Keyed by (account id, year, month).
     private readonly Dictionary<(Guid, int, int), MonthData> _monthCache = new();
     private CancellationTokenSource? _loadCts;
     private CancellationTokenSource? _prefetchCts;
@@ -532,8 +537,7 @@ public partial class CalendarViewModel : BaseViewModel
         if (SelectedAccount == null) return;
         if (SelectedDate?.Date == date.Date) { CloseDayDetail(); return; }
 
-        // Update date display immediately so the header is always correct
-        // regardless of whether data is already cached or needs fetching.
+        // Updated before any fetch so the header is correct even while data loads.
         SelectedDate = date;
         SelectedDateDisplay = date.ToString("MMMM dd, yyyy");
         IsTransactionDetailVisible = true;

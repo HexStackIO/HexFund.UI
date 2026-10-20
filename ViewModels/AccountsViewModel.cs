@@ -8,46 +8,44 @@ using System.Collections.ObjectModel;
 
 namespace HexFund.UI.ViewModels;
 
+/// <summary>Lists, creates, edits, selects and deletes accounts.</summary>
+/// <summary>Lists, creates, edits, selects and deletes accounts.</summary>
+/// <summary>Lists, creates, edits, selects and deletes accounts.</summary>
 public partial class AccountsViewModel : BaseViewModel
 {
     private readonly IApiService _apiService;
     private readonly IAuthService _authService;
     private readonly IAccountStateService _accountStateService;
 
-    // ── List state ────────────────────────────────────────────────────────────
     [ObservableProperty] private ObservableCollection<Account> accounts = new();
     [ObservableProperty] private Account? selectedAccount;
     [ObservableProperty] private bool isRefreshing;
     [ObservableProperty] private bool isLoading;
 
-    // ── Add dialog ────────────────────────────────────────────────────────────
     [ObservableProperty] private bool showAddAccountDialog;
     [ObservableProperty] private string newAccountName    = string.Empty;
     [ObservableProperty] private string newAccountBalance = string.Empty;
 
-    // Per-field error messages for Add dialog
+    // Field errors for the add dialog.
     [ObservableProperty] private string newAccountNameError    = string.Empty;
     [ObservableProperty] private string newAccountBalanceError = string.Empty;
 
-    // Top-level error for unexpected API failures (distinct from field errors)
+    // Shown for unexpected API failures, separate from field errors.
     [ObservableProperty] private string addErrorMessage = string.Empty;
 
-    // ── Edit dialog ───────────────────────────────────────────────────────────
     [ObservableProperty] private bool showEditAccountDialog;
     [ObservableProperty] private Account? accountToEdit;
     [ObservableProperty] private string editAccountName = string.Empty;
     [ObservableProperty] private bool editIsActive      = true;
 
-    // Per-field error messages for Edit dialog
+    // Field errors for the edit dialog.
     [ObservableProperty] private string editAccountNameError = string.Empty;
 
-    // Top-level error for unexpected API failures
     [ObservableProperty] private string editErrorMessage = string.Empty;
 
-    // Tooltip state — holds the key of whichever tooltip is currently open, or empty.
+    // The key of the open tooltip, or empty when none is open.
     [ObservableProperty] private string activeTooltip = string.Empty;
 
-    // ── Init guard ────────────────────────────────────────────────────────────
     private bool _loaded;
 
     public AccountsViewModel(
@@ -84,8 +82,6 @@ public partial class AccountsViewModel : BaseViewModel
         if (_loaded) return;
         await LoadAccountsAsync();
     }
-
-    // ── Load / Refresh ────────────────────────────────────────────────────────
 
     [RelayCommand]
     private async Task LoadAccountsAsync()
@@ -126,8 +122,6 @@ public partial class AccountsViewModel : BaseViewModel
         await LoadAccountsAsync();
     }
 
-    // ── Add account ───────────────────────────────────────────────────────────
-
     [RelayCommand]
     private void ToggleTooltip(string key)
     {
@@ -140,7 +134,6 @@ public partial class AccountsViewModel : BaseViewModel
         NewAccountName    = string.Empty;
         NewAccountBalance = string.Empty;
 
-        // Clear all errors and any open tooltip
         NewAccountNameError    = string.Empty;
         NewAccountBalanceError = string.Empty;
         AddErrorMessage        = string.Empty;
@@ -159,11 +152,9 @@ public partial class AccountsViewModel : BaseViewModel
     [RelayCommand]
     private async Task CreateAccountAsync()
     {
-        // ── Validate all fields ───────────────────────────────────────────────
         NewAccountNameError    = UIValidator.ValidateAccountName(NewAccountName)        ?? string.Empty;
         NewAccountBalanceError = UIValidator.ValidateInitialBalance(NewAccountBalance)  ?? string.Empty;
 
-        // Duplicate account name check
         if (string.IsNullOrEmpty(NewAccountNameError))
             NewAccountNameError = UIValidator.ValidateAccountNameUnique(NewAccountName, Accounts) ?? string.Empty;
 
@@ -171,7 +162,7 @@ public partial class AccountsViewModel : BaseViewModel
             !string.IsNullOrEmpty(NewAccountBalanceError))
             return;
 
-        // Safe to parse — validated above
+        // Validated above, so parsing cannot fail.
         var balance = decimal.Parse(NewAccountBalance.Trim());
 
         IsLoading       = true;
@@ -213,8 +204,6 @@ public partial class AccountsViewModel : BaseViewModel
         }
     }
 
-    // ── Edit account ──────────────────────────────────────────────────────────
-
     [RelayCommand]
     private void ShowEditAccount(Account account)
     {
@@ -222,7 +211,6 @@ public partial class AccountsViewModel : BaseViewModel
         EditAccountName = account.AccountName;
         EditIsActive    = account.IsActive;
 
-        // Clear all errors and any open tooltip
         EditAccountNameError = string.Empty;
         EditErrorMessage     = string.Empty;
         ActiveTooltip        = string.Empty;
@@ -244,10 +232,9 @@ public partial class AccountsViewModel : BaseViewModel
         if (AccountToEdit == null)
         { EditErrorMessage = "No account selected for editing."; return; }
 
-        // ── Validate all fields ───────────────────────────────────────────────
         EditAccountNameError = UIValidator.ValidateAccountName(EditAccountName) ?? string.Empty;
 
-        // Duplicate account name check — exclude the account currently being edited
+        // The account being edited is excluded from the uniqueness check.
         if (string.IsNullOrEmpty(EditAccountNameError))
             EditAccountNameError = UIValidator.ValidateAccountNameUnique(
                 EditAccountName, Accounts, AccountToEdit?.AccountId) ?? string.Empty;
@@ -303,8 +290,6 @@ public partial class AccountsViewModel : BaseViewModel
             IsLoading = false;
         }
     }
-
-    // ── Select / Delete ───────────────────────────────────────────────────────
 
     [RelayCommand]
     private async Task SelectAccount(Account account)
@@ -363,9 +348,7 @@ public partial class AccountsViewModel : BaseViewModel
         }
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
-
-    // Sanitize numeric balance inputs on every keystroke
+    // Strips invalid characters on every keystroke.
     partial void OnNewAccountBalanceChanged(string value)
     {
         var sanitized = UIValidator.SanitizeDecimalInput(value, allowNegative: true);

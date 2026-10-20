@@ -4,23 +4,34 @@ using Microsoft.Identity.Client;
 
 namespace HexFund.UI.Services;
 
+/// <summary>Signs the user in through Microsoft Entra External ID and holds the session.</summary>
 public interface IAuthService
 {
     bool IsAuthenticated { get; }
     User? CurrentUser { get; set; }
     string? Token { get; }
-    Task<bool> LoginAsync();
-    Task<bool> RegisterAsync();
-    Task LogoutAsync();
     /// <summary>
-    /// Permanently deletes all user data from the server and removes all
-    /// locally cached MSAL tokens. After this returns the user is signed out
-    /// and cannot sign back into the same account.
+    /// Acquires a token silently when possible, otherwise interactively, then syncs the user
+    /// with the API. Returns false on cancellation, timeout or any error.
+    /// </summary>
+    Task<bool> LoginAsync();
+
+    /// <summary>Registration happens in the same hosted Entra flow, so this signs in.</summary>
+    Task<bool> RegisterAsync();
+
+    Task LogoutAsync();
+
+    /// <summary>
+    /// Deletes all user data on the server, then removes the cached MSAL tokens. Returns false
+    /// without changing local state when the server call fails.
     /// </summary>
     Task<bool> DeleteAccountAndDataAsync();
+
+    /// <summary>Raised on the main thread after sign-in, sign-out or account deletion.</summary>
     event Action? AuthStateChanged;
 }
 
+/// <inheritdoc />
 public class AuthService : IAuthService
 {
     public event Action? AuthStateChanged;
@@ -48,7 +59,6 @@ public class AuthService : IAuthService
     {
         try
         {
-            // Try silent first (uses cached token if available)
             var accounts = await _msalClient.GetAccountsAsync();
             AuthenticationResult result;
 
@@ -64,12 +74,11 @@ public class AuthService : IAuthService
             {
                 System.Diagnostics.Debug.WriteLine("AUTH: Silent failed, launching interactive login");
 
-                // No cached token — show the Entra login screen
                 var builder = _msalClient
                     .AcquireTokenInteractive(_config.Scopes);
 
 #if ANDROID
-                // Android requires the current Activity to display the browser pop-up
+                // Android needs the current Activity to host the browser sign-in tab.
                 var activity = Microsoft.Maui.ApplicationModel.Platform.CurrentActivity
                     ?? throw new InvalidOperationException("Current Android Activity is null.");
                 builder = builder.WithParentActivityOrWindow(activity);
@@ -90,7 +99,7 @@ public class AuthService : IAuthService
 
             SaveTokenExpiry(result.ExpiresOn);
 
-            // Marshal back to main thread before invoking UI state change
+            // Subscribers update UI, so raise the event on the main thread.
             await MainThread.InvokeOnMainThreadAsync(() =>
             {
                 System.Diagnostics.Debug.WriteLine("AUTH: Invoking AuthStateChanged on main thread");
@@ -149,14 +158,10 @@ public class AuthService : IAuthService
 
     public async Task<bool> DeleteAccountAndDataAsync()
     {
-        // 1. Tell the server to delete all user data (transactions, accounts,
-        //    categories, profile). This must succeed before we clear local state —
-        //    if the API call fails the user can try again.
+        // The server call must succeed before local state is cleared, so the user can retry.
         var deleted = await _apiService.DeleteUserAsync();
         if (!deleted) return false;
 
-        // 2. Revoke all MSAL tokens from the local cache. This signs the user
-        //    out of Entra ID on this device and prevents silent re-authentication.
         try
         {
             var accounts = await _msalClient.GetAccountsAsync();
@@ -166,11 +171,9 @@ public class AuthService : IAuthService
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"MSAL token removal error: {ex.Message}");
-            // Non-fatal — server data is already deleted. Local token will expire
-            // naturally and the account no longer exists on the server anyway.
+            // Not fatal: the server data is already deleted and the cached token expires on its own.
         }
 
-        // 3. Clear local state exactly as logout does.
         Token = null;
         CurrentUser = null;
         Preferences.Remove("token_expiry");
