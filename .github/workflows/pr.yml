@@ -1,0 +1,85 @@
+name: PR validation
+
+on:
+  pull_request:
+    branches: [ master ]
+
+# Read-only and secret-free on purpose: this repository is public and the workflow runs for
+# pull requests from forks.
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-validation-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  build-android:
+    name: Build Android (Debug)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'microsoft'
+
+      - name: Set up .NET 10 SDK (provides the Android API 36 workload; app still targets net9.0)
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            nuget-${{ runner.os }}-
+
+      - name: Cache .NET workload packs
+        id: cache-workloads
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ env.DOTNET_ROOT }}/packs
+            ${{ env.DOTNET_ROOT }}/sdk-manifests
+            ${{ env.DOTNET_ROOT }}/metadata
+            ${{ env.DOTNET_ROOT }}/library-packs
+          key: dotnet-workloads-${{ runner.os }}-${{ hashFiles('**/global.json') }}-maui-android-api36-v2
+          restore-keys: |
+            dotnet-workloads-${{ runner.os }}-
+
+      - name: Install MAUI Android workload
+        if: steps.cache-workloads.outputs.cache-hit != 'true'
+        run: dotnet workload install maui-android android --skip-sign-check
+
+      # Config/AuthSecrets.cs is git-ignored but required to compile. Placeholder values are enough
+      # for a build; the real values exist only in the distribution workflow.
+      - name: Create placeholder AuthSecrets
+        run: |
+          cat > Config/AuthSecrets.cs << 'EOF'
+          namespace HexFund.UI.Config;
+          internal static class AuthSecrets
+          {
+              public const string ClientId    = "00000000-0000-0000-0000-000000000000";
+              public const string TenantId    = "00000000-0000-0000-0000-000000000000";
+              public const string ApiClientId = "00000000-0000-0000-0000-000000000000";
+          }
+          EOF
+
+      - name: Restore NuGet packages
+        run: dotnet restore HexFund.UI.csproj -p:TargetFrameworks=net9.0-android36.0
+
+      - name: Build (Debug)
+        run: >
+          dotnet build HexFund.UI.csproj
+          -f net9.0-android36.0
+          -c Debug
+          -p:TargetFrameworks=net9.0-android36.0
+          --no-restore
