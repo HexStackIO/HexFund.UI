@@ -120,9 +120,12 @@ jobs:
             -p:ApplicationDisplayVersion=${{ steps.version.outputs.VERSION_NAME }} \
             -o "${{ github.workspace }}/output"
 
+      # The publish step emits two bundles: the unsigned one and a *-Signed.aab signed with the
+      # SDK's debug key. Signing the debug-signed one adds a second certificate chain, which Google
+      # Play rejects, so only the unsigned bundle is used.
       - name: Sign AAB
         run: |
-          AAB=$(find "${{ github.workspace }}/output" -name "*.aab" | head -1)
+          AAB=$(find "${{ github.workspace }}/output" -name "*.aab" ! -name "*-Signed.aab" | head -1)
           echo "Signing: $AAB"
           $JAVA_HOME/bin/jarsigner \
             -verbose \
@@ -138,13 +141,13 @@ jobs:
 
       - name: Verify AAB signature
         run: |
-          AAB=$(find "${{ github.workspace }}/output" -name "*.aab" | head -1)
+          AAB=$(find "${{ github.workspace }}/output" -name "*.aab" ! -name "*-Signed.aab" | head -1)
           $JAVA_HOME/bin/jarsigner -verify -verbose -certs "$AAB" | head -20
 
       - name: Locate AAB
         id: find_aab
         run: |
-          AAB=$(find "${{ github.workspace }}/output" -name "*.aab" | head -1)
+          AAB=$(find "${{ github.workspace }}/output" -name "*.aab" ! -name "*-Signed.aab" | head -1)
           echo "AAB_PATH=$AAB" >> "$GITHUB_OUTPUT"
           echo "Found AAB: $AAB"
 
