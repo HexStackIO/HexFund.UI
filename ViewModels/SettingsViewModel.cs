@@ -512,6 +512,19 @@ public partial class SettingsViewModel : BaseViewModel
     }
 
     [RelayCommand]
+    private async Task OpenSupportAsync()
+    {
+        try
+        {
+            await Launcher.Default.OpenAsync(new Uri(AppConstants.SupportUrl));
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Open support error: {ex.GetType().Name}");
+        }
+    }
+
+    [RelayCommand]
     private async Task OpenFeedbackAsync() =>
         await Shell.Current.GoToAsync("feedback");
 

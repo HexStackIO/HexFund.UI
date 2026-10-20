@@ -20,10 +20,10 @@
 </head>
 <body>
     <h1>HexFund Privacy Policy</h1>
-    <p><strong>Last updated:</strong> April 24, 2026</p>
+    <p><strong>Last updated:</strong> October 20, 2026</p>
 
-    <p>HexFund ("we", "our", or "us") is committed to protecting your privacy. 
-    This Privacy Policy explains how we collect, use, and safeguard your 
+    <p>HexFund ("we", "our", or "us") is committed to protecting your privacy.
+    This Privacy Policy explains how we collect, use, and safeguard your
     information when you use the HexFund mobile application.</p>
 
     <h2>Information We Collect</h2>
@@ -32,7 +32,14 @@
         <li>Account information (email address, name) provided during registration</li>
         <li>Financial data you enter into the app (transactions, account balances, categories)</li>
         <li>Authentication tokens issued by Microsoft Entra for secure sign-in</li>
+        <li>Feedback you choose to send from the app (bug reports, ideas and questions)</li>
+        <li>Optional diagnostics sent with a feedback report, only if you turn them on: app version,
+        build number, device model, operating system version, the screen you were using, the app
+        theme, and a short list of recent failed requests (method, a generic request path without
+        any of your data, status or error type, and a reference number)</li>
     </ul>
+    <p>Diagnostics never include your email address, name, account names, amounts, transaction
+    descriptions, category names or sign-in tokens.</p>
 
     <h2>How We Use Your Information</h2>
     <p>Your information is used solely to provide the HexFund service, including:</p>
@@ -40,37 +47,56 @@
         <li>Authenticating your identity and maintaining your session</li>
         <li>Storing and displaying your financial planning data</li>
         <li>Improving app performance and reliability</li>
+        <li>Reviewing the feedback you send and following up with you when needed</li>
     </ul>
+    <p>The text of a feedback report is analyzed by Anthropic's Claude to categorize and summarize it.</p>
+
+    <h2>Feedback Reports</h2>
+    <p>When you send feedback, the report is stored in our database and then copied into a private
+    issue in a maintainer-only GitHub repository. The issue carries an opaque reference number and
+    does not contain your email address, name or user ID. The link between a report and you exists
+    only in our database and is used only to follow up with you.</p>
+    <p>The diagnostics switch on the feedback screen is off by default. You can see exactly what
+    will be sent before you submit, and you choose whether to include it for each report. Please do
+    not type sensitive personal details into a feedback message.</p>
 
     <h2>Data Storage</h2>
-    <p>Your data is stored securely in Microsoft Azure infrastructure located 
-    in the United States. We use industry-standard encryption for data in 
+    <p>Your data is stored securely in Microsoft Azure infrastructure located
+    in the United States. We use industry-standard encryption for data in
     transit and at rest.</p>
 
     <h2>Data Sharing</h2>
-    <p>We do not sell, trade, or share your personal information with third 
-    parties. Your financial data is never shared with advertisers or 
-    data brokers.</p>
+    <p>We do not sell or trade your personal information. Your financial data is never shared with
+    advertisers or data brokers. We use the following service providers to operate HexFund: Microsoft
+    (sign-in and hosting), GitHub (private issues for feedback reports) and Anthropic (analysis of
+    feedback text).</p>
 
     <h2>Data Retention</h2>
-    <p>Your data is retained for as long as your account is active. You may 
-    request deletion of your account and associated data by contacting us.</p>
+    <p>Your data is retained for as long as your account is active. You can delete your account and
+    your data at any time from the app (Settings, then Delete My Account); see our
+    <a href="delete-account.html">account deletion page</a>. Deleting your account removes your
+    financial data, your profile, your sign-in identity and your feedback records from our database.</p>
+    <p>Feedback records in our database are also deleted automatically 12 months after they are
+    created. The text of a feedback report may remain in the private issue as a de-identified product
+    record, because the issue does not contain information that identifies you. If you want a
+    report removed, contact us and we will redact and close the issue.</p>
 
     <h2>Security</h2>
-    <p>We implement appropriate technical and organizational measures to protect 
-    your personal information, including secure authentication via Microsoft 
+    <p>We implement appropriate technical and organizational measures to protect
+    your personal information, including secure authentication via Microsoft
     Entra External ID and encrypted data transmission.</p>
 
     <h2>Children's Privacy</h2>
-    <p>HexFund is not intended for use by children under the age of 13. We do 
+    <p>HexFund is not intended for use by children under the age of 13. We do
     not knowingly collect personal information from children under 13.</p>
 
     <h2>Changes to This Policy</h2>
-    <p>We may update this Privacy Policy from time to time. We will notify you 
+    <p>We may update this Privacy Policy from time to time. We will notify you
     of any changes by updating the "Last updated" date at the top of this page.</p>
 
     <h2>Contact Us</h2>
-    <p>If you have any questions about this Privacy Policy, please contact us at 
-    <a href="mailto:hexstack@outlook.com">hexstack@outlook.com</a></p>
+    <p>If you have any questions about this Privacy Policy, please contact us at
+    <a href="mailto:hexstack@outlook.com">hexstack@outlook.com</a>. See also our
+    <a href="support.html">support page</a>.</p>
 </body>
 </html>

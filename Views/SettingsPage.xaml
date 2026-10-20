@@ -279,6 +279,13 @@
                                HorizontalOptions="Center"
                                HorizontalTextAlignment="Center"
                                TextColor="{DynamicResource TextSecondary}"/>
+                        <Button Text="Contact support"
+                                Command="{Binding OpenSupportCommand}"
+                                BackgroundColor="{DynamicResource SurfaceLo}"
+                                TextColor="{Binding ThemePrimaryColor}"
+                                CornerRadius="8" Padding="0,12" MinimumHeightRequest="48"
+                                FontAttributes="Bold"
+                                SemanticProperties.Hint="Opens the HexFund support page in your browser"/>
                     </VerticalStackLayout>
                 </Border>
 

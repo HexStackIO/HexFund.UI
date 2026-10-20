@@ -83,6 +83,7 @@ user data is in this repository.
 | Profile | View and edit first and last name. The email is read-only. |
 | Theming | Eight accent themes (Gold, Sapphire, Emerald, Bronze, Obsidian, Ruby, Amethyst, Platinum) on a fixed dark surface, with per-theme logo, backdrop and button images. Gold is the default. |
 | Changelog | A "What's New" dialog reads `Resources/changelog.json`. |
+| Feedback | Signed-in users can send a bug report, idea or question from Settings, with optional diagnostics (off by default) and a draft that survives failures. Signed-out users can open the support page. |
 | Utilities | Clear in-memory cache, reset onboarding tutorial. |
 
 ### Frequency types
@@ -140,6 +141,7 @@ depending on whether the user is signed in.
 |-------|------|---------|
 | `accounts` | `AccountsPage` | List, select, create, edit and delete accounts. |
 | `settings` | `SettingsPage` | Profile, theme, categories, app information, changelog, cache and tutorial reset, logout, account deletion. |
+| `feedback` | `FeedbackPage` | Send feedback: type chips, message with counter, optional diagnostics with a "What is sent" preview, send button. Opened from Settings. |
 | `add` | `AddEntryPage` | Create a transaction: income or expense toggle, amount, description, category chips with inline new category, frequency, start date, optional end date, account picker. |
 
 **Other UI elements**
@@ -187,6 +189,7 @@ whatsnew/      Google Play release notes (whatsnew-en-US)
 | `ICacheService` / `CacheService` | In-memory cache (`IMemoryCache`) with typed key helpers and calendar invalidation by account. |
 | `IAccountStateService` | The selected account plus the `SelectedAccountChanged` and `TransactionsChanged` events used to coordinate pages. |
 | `ISettingsService` | Device-local preferences: theme, calendar view mode, onboarding flag. |
+| `IDiagnosticsService` | Builds the optional diagnostics sent with feedback: app and device info, the current tab, the theme and the recent failed requests. |
 | `ThemeService` (static) | Builds and applies the theme resource dictionary. |
 
 ### State management
@@ -327,6 +330,7 @@ Debug builds accept any server certificate so the local development certificate 
 | `GET accounts/{accountId}/monthly-overview?year=&month=` | Month totals, daily breakdown and category breakdown. |
 | `GET accounts/{accountId}/transactions-for-month?year=&month=` | Occurrences grouped by date (`yyyy-MM-dd` keys). |
 | `GET accounts/{accountId}/transactions-for-date?date=` | Occurrences of one day. |
+| `POST feedback` | Submit a feedback report with optional diagnostics. Returns 202 with the report id. |
 | `GET categories` | List the user's categories. |
 | `POST categories` | Create a category (409 means duplicate). |
 | `DELETE categories/{categoryId}` | Delete a category. |
@@ -430,7 +434,7 @@ Required repository secrets: `HEXFUND_CLIENT_ID`, `HEXFUND_TENANT_ID`, `HEXFUND_
 
 ## 9. Privacy and data handling
 
-Based on `privacy-policy.html` (last updated April 24, 2026), `delete-account.html` and the code.
+Based on `privacy-policy.html` (last updated October 20, 2026), `delete-account.html` and the code.
 
 **Data the app handles**
 
@@ -441,9 +445,25 @@ Based on `privacy-policy.html` (last updated April 24, 2026), `delete-account.ht
 | Authentication tokens | Managed by MSAL on the device. |
 | Preferences (theme, view mode, onboarding flag, token expiry time) | Device-local preferences. |
 | API responses | In memory only, cleared on restart or "Clear Cache". |
+| Feedback text and optional diagnostics | The HexFund API, which stores them in its database and copies them into a private, maintainer-only GitHub issue. The feedback text is analyzed by Anthropic's Claude to categorize and summarize it. |
+| Unsent feedback draft | Device-local preferences (not encrypted). Cleared on success, sign-out and account deletion. |
 
 The app does not connect to bank accounts, and the code contains no analytics or advertising SDKs. The
-privacy policy says data is not sold or shared with third parties.
+privacy policy says data is not sold, and names the service providers it relies on (Microsoft, GitHub and
+Anthropic).
+
+**Feedback and diagnostics**
+
+* The diagnostics switch is off by default and can be changed for each report. The "What is sent" preview is
+  rendered from the same object that is transmitted.
+* Diagnostics contain: app version, build number, platform, OS version, device model, the current tab, the theme
+  and up to 20 recent failed requests (method, a sanitized path with ids replaced by `{id}`, status or exception
+  type name, correlation id). They never contain email, name, user id, tokens, account names, amounts,
+  transaction descriptions, category names, query strings or response bodies.
+* The issue created from a report carries an opaque reference and no user id, email or name. Database rows are
+  deleted after 12 months or with the account. Issues are not deleted with the account: they are de-identified,
+  and the maintainer redacts and closes the issue of a deleted user on request.
+* The failure buffer lives in memory only and is lost when the app restarts.
 
 **Account deletion**
 
@@ -453,14 +473,15 @@ privacy policy says data is not sold or shared with third parties.
 * The hosted page `delete-account.html` also describes an email request path for users who cannot open the app.
 * Deleting the HexFund account does not delete the user's Microsoft account.
 
-**Documentation inconsistencies to fix** (see [section 10](#10-known-limitations-and-tech-debt))
+**Documentation**
 
-* The privacy policy still says deletion is requested "by contacting us", while the app deletes in place.
-* `delete-account.html` describes the steps as profile avatar, then Settings, then Account, but the app uses the
-  gear on the Home page, then Settings, then "Danger Zone".
-* `delete-account.html` says data is removed within 30 days, while the app calls an immediate delete. Whether
-  the API removes data immediately or on a schedule is defined by the API **(unverified)**.
+* `privacy-policy.html`, `delete-account.html` and the new `support.html` are served by GitHub Pages from the
+  `master` branch.
+* The deletion page describes the in-app steps (Home gear, Settings, Danger Zone) and says deletion is
+  immediate, which matches the API: one call removes the Entra identity and the database rows.
 * The policy mentions "improving app performance and reliability", but no telemetry code exists in this client.
+* The deletion page footer still links to `hexstack.io/privacy` and `hexstack.io/terms`, which are outside this
+  repository.
 
 ---
 
@@ -468,7 +489,7 @@ privacy policy says data is not sold or shared with third parties.
 
 | Area | Issue |
 |------|-------|
-| Errors | `ApiService` swallows every exception and returns null, false or empty. The UI cannot tell a failed request from an empty list, and the RFC 7807 problem details from the API (title, detail, field errors) are never shown. |
+| Errors | Every `ApiService` call goes through one `SendAsync` that returns an `ApiResult` (kind, status, parsed problem details, `Retry-After`, correlation id). Only `SubmitFeedbackAsync` exposes it. The older methods still collapse failures to null, false or empty, so those screens cannot tell a failed request from an empty list or show the API's problem details. |
 | Session expiry | The access token is set once at sign-in. No refresh or 401 handling was found in the code **(unverified)**. |
 | Calendar list mode | `CalendarViewMode` (List or Grid) and a view model flag exist, but no screen lets the user change it and the Calendar page only renders the grid. |
 | Colour picker | View models support a transaction colour, but the current pages have no colour picker (it was removed from the XAML). Colours set elsewhere still render. |
@@ -482,7 +503,6 @@ privacy policy says data is not sold or shared with third parties.
 | Android 16 and 35 | MAUI 9.0.10 is not officially validated against API 36. A move to .NET 10 and MAUI 10 is the long-term path. |
 | iOS | No pipeline, and the iOS sign-in redirect configuration is not in this repository **(unverified)**. |
 | Tests | No unit or UI tests. |
-| Docs | The privacy and deletion pages disagree with the app, see section 9. |
 | Partial amend semantics | The client only snaps the effective date. Whether an amend before the transaction's start or after its end is rejected is decided by the API **(unverified)**. |
 | Restore and history | History is rebuilt client-side from the `includeHistory` list, so large histories load all versions. |
 
