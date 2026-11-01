@@ -83,3 +83,6 @@ jobs:
           -c Debug
           -p:TargetFrameworks=net9.0-android36.0
           --no-restore
+
+      - name: Run unit tests
+        run: dotnet test tests/HexFund.UI.Tests/HexFund.UI.Tests.csproj

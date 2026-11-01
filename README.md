@@ -22,6 +22,7 @@ derived from the code in this repository. Items that could not be confirmed from
 10. [Known limitations and tech debt](#10-known-limitations-and-tech-debt)
 11. [Roadmap and enhancement ideas](#11-roadmap-and-enhancement-ideas)
 12. [Glossary](#12-glossary)
+13. [Feedback feature: status and remaining work](#13-feedback-feature-status-and-remaining-work)
 
 ---
 
@@ -83,6 +84,7 @@ user data is in this repository.
 | Profile | View and edit first and last name. The email is read-only. |
 | Theming | Eight accent themes (Gold, Sapphire, Emerald, Bronze, Obsidian, Ruby, Amethyst, Platinum) on a fixed dark surface, with per-theme logo, backdrop and button images. Gold is the default. |
 | Changelog | A "What's New" dialog reads `Resources/changelog.json`. |
+| Feedback | Signed-in users can send a bug report, idea or question from Settings, with optional diagnostics (off by default) and a draft that survives failures. Signed-out users can open the support page. |
 | Utilities | Clear in-memory cache, reset onboarding tutorial. |
 
 ### Frequency types
@@ -140,6 +142,7 @@ depending on whether the user is signed in.
 |-------|------|---------|
 | `accounts` | `AccountsPage` | List, select, create, edit and delete accounts. |
 | `settings` | `SettingsPage` | Profile, theme, categories, app information, changelog, cache and tutorial reset, logout, account deletion. |
+| `feedback` | `FeedbackPage` | Send feedback: type chips, message with counter, optional diagnostics with a "What is sent" preview, send button. Opened from Settings. |
 | `add` | `AddEntryPage` | Create a transaction: income or expense toggle, amount, description, category chips with inline new category, frequency, start date, optional end date, account picker. |
 
 **Other UI elements**
@@ -187,6 +190,7 @@ whatsnew/      Google Play release notes (whatsnew-en-US)
 | `ICacheService` / `CacheService` | In-memory cache (`IMemoryCache`) with typed key helpers and calendar invalidation by account. |
 | `IAccountStateService` | The selected account plus the `SelectedAccountChanged` and `TransactionsChanged` events used to coordinate pages. |
 | `ISettingsService` | Device-local preferences: theme, calendar view mode, onboarding flag. |
+| `IDiagnosticsService` | Builds the optional diagnostics sent with feedback: app and device info, the current tab, the theme and the recent failed requests. |
 | `ThemeService` (static) | Builds and applies the theme resource dictionary. |
 
 ### State management
@@ -327,6 +331,7 @@ Debug builds accept any server certificate so the local development certificate 
 | `GET accounts/{accountId}/monthly-overview?year=&month=` | Month totals, daily breakdown and category breakdown. |
 | `GET accounts/{accountId}/transactions-for-month?year=&month=` | Occurrences grouped by date (`yyyy-MM-dd` keys). |
 | `GET accounts/{accountId}/transactions-for-date?date=` | Occurrences of one day. |
+| `POST feedback` | Submit a feedback report with optional diagnostics. Returns 202 with the report id. |
 | `GET categories` | List the user's categories. |
 | `POST categories` | Create a category (409 means duplicate). |
 | `DELETE categories/{categoryId}` | Delete a category. |
@@ -430,7 +435,7 @@ Required repository secrets: `HEXFUND_CLIENT_ID`, `HEXFUND_TENANT_ID`, `HEXFUND_
 
 ## 9. Privacy and data handling
 
-Based on `privacy-policy.html` (last updated April 24, 2026), `delete-account.html` and the code.
+Based on `privacy-policy.html` (last updated October 20, 2026), `delete-account.html` and the code.
 
 **Data the app handles**
 
@@ -441,9 +446,27 @@ Based on `privacy-policy.html` (last updated April 24, 2026), `delete-account.ht
 | Authentication tokens | Managed by MSAL on the device. |
 | Preferences (theme, view mode, onboarding flag, token expiry time) | Device-local preferences. |
 | API responses | In memory only, cleared on restart or "Clear Cache". |
+| Feedback text and optional diagnostics | The HexFund API, which stores them in its database and copies them into a private, maintainer-only GitHub issue. A person (the maintainer) reads and sorts the issues; nothing replies to the reporter. |
+| Unsent feedback draft | Device-local preferences (not encrypted). Cleared on success, sign-out and account deletion. |
 
 The app does not connect to bank accounts, and the code contains no analytics or advertising SDKs. The
-privacy policy says data is not sold or shared with third parties.
+privacy policy says data is not sold, and names the service providers it relies on (Microsoft and GitHub).
+
+**Feedback and diagnostics**
+
+* The diagnostics switch is off by default and can be changed for each report. The "What is sent" preview is
+  rendered from the same object that is transmitted.
+* Diagnostics contain: app version, build number, platform, OS version, device model, the current tab, the theme
+  and up to 20 recent failed requests (method, a sanitized path with ids replaced by `{id}`, status or exception
+  type name, correlation id). They never contain email, name, user id, tokens, account names, amounts,
+  transaction descriptions, category names, query strings or response bodies.
+* Reports are read by the maintainer. There is no automated triage and no reply channel: the app and the
+  policies promise no response, and updates reach users through What's New (`whatsnew/` and
+  `Resources/changelog.json`).
+* The issue created from a report carries an opaque reference and no user id, email or name. Database rows are
+  deleted after 12 months or with the account. Issues are not deleted with the account: they are de-identified,
+  and the maintainer redacts and closes the issue of a deleted user on request.
+* The failure buffer lives in memory only and is lost when the app restarts.
 
 **Account deletion**
 
@@ -453,14 +476,15 @@ privacy policy says data is not sold or shared with third parties.
 * The hosted page `delete-account.html` also describes an email request path for users who cannot open the app.
 * Deleting the HexFund account does not delete the user's Microsoft account.
 
-**Documentation inconsistencies to fix** (see [section 10](#10-known-limitations-and-tech-debt))
+**Documentation**
 
-* The privacy policy still says deletion is requested "by contacting us", while the app deletes in place.
-* `delete-account.html` describes the steps as profile avatar, then Settings, then Account, but the app uses the
-  gear on the Home page, then Settings, then "Danger Zone".
-* `delete-account.html` says data is removed within 30 days, while the app calls an immediate delete. Whether
-  the API removes data immediately or on a schedule is defined by the API **(unverified)**.
+* `privacy-policy.html`, `delete-account.html` and the new `support.html` are served by GitHub Pages from the
+  `master` branch.
+* The deletion page describes the in-app steps (Home gear, Settings, Danger Zone) and says deletion is
+  immediate, which matches the API: one call removes the Entra identity and the database rows.
 * The policy mentions "improving app performance and reliability", but no telemetry code exists in this client.
+* The deletion page footer still links to `hexstack.io/privacy` and `hexstack.io/terms`, which are outside this
+  repository.
 
 ---
 
@@ -468,7 +492,7 @@ privacy policy says data is not sold or shared with third parties.
 
 | Area | Issue |
 |------|-------|
-| Errors | `ApiService` swallows every exception and returns null, false or empty. The UI cannot tell a failed request from an empty list, and the RFC 7807 problem details from the API (title, detail, field errors) are never shown. |
+| Errors | Every `ApiService` call goes through one `SendAsync` that returns an `ApiResult` (kind, status, parsed problem details, `Retry-After`, correlation id). Only `SubmitFeedbackAsync` exposes it. The older methods still collapse failures to null, false or empty, so those screens cannot tell a failed request from an empty list or show the API's problem details. |
 | Session expiry | The access token is set once at sign-in. No refresh or 401 handling was found in the code **(unverified)**. |
 | Calendar list mode | `CalendarViewMode` (List or Grid) and a view model flag exist, but no screen lets the user change it and the Calendar page only renders the grid. |
 | Colour picker | View models support a transaction colour, but the current pages have no colour picker (it was removed from the XAML). Colours set elsewhere still render. |
@@ -482,7 +506,6 @@ privacy policy says data is not sold or shared with third parties.
 | Android 16 and 35 | MAUI 9.0.10 is not officially validated against API 36. A move to .NET 10 and MAUI 10 is the long-term path. |
 | iOS | No pipeline, and the iOS sign-in redirect configuration is not in this repository **(unverified)**. |
 | Tests | No unit or UI tests. |
-| Docs | The privacy and deletion pages disagree with the app, see section 9. |
 | Partial amend semantics | The client only snaps the effective date. Whether an amend before the transaction's start or after its end is rejected is decided by the API **(unverified)**. |
 | Restore and history | History is rebuilt client-side from the `includeHistory` list, so large histories load all versions. |
 
@@ -541,3 +564,46 @@ privacy policy says data is not sold or shared with third parties.
 | Entra External ID (CIAM) | The Microsoft customer identity service used for sign-in. |
 | MSAL | Microsoft Authentication Library, used for token acquisition. |
 | Closed testing, alpha track | The Google Play track the app is released to. |
+
+---
+
+## 13. Feedback feature: status and remaining work
+
+**What exists.** Signed-in users open Settings, then **Send feedback**, choose Bug, Idea or Question, write 10 to
+4000 characters and submit to `POST feedback`. Diagnostics are optional, off by default and previewable. The API
+stores the report and creates an issue in a private tracker repository (`HexStackIO/HexFund.Feedback`), where a
+person reads and sorts it. There is no automated triage and no reply channel: nothing answers the reporter, no
+screen or policy promises a response, and updates reach users through **What's New** (`whatsnew/` and
+`Resources/changelog.json`). The `needs-triage` label in the tracker only means "not reviewed yet". Signed-out
+users get a **Contact support** button that opens `support.html`.
+
+**Code status.** The Android build and the 101 unit tests pass locally. The work was delivered as stacked
+branches `feat/feedback-wp1-http-plumbing` to `feat/feedback-wp5-tests`, plus the merged PR validation workflow.
+Check GitHub for which of them are merged.
+
+**Still open on the UI side**
+
+| # | Item | Detail |
+|---|------|--------|
+| 1 | Manual device checklist (not run) | On an Android 16 (API 36) emulator against a local API with GitHub forwarding disabled: each type submits and the page closes with the thank-you; the diagnostics preview matches what the API receives; with diagnostics off the request has no `diagnostics` property; the sixth submission in an hour shows the rate-limit message with a sensible number of minutes; airplane mode shows the network message and the draft survives closing and reopening; all eight themes are legible and TalkBack reads each control; signed out shows **Contact support** and no **Send feedback**. |
+| 2 | Edge-to-edge and back behaviour on API 36 (unverified) | With the keyboard open, confirm the editor and **Send report** stay visible and usable. Confirm the back gesture closes the feedback page (the draft is kept) and that predictive back behaves on Settings, Accounts and Add entry. Confirm the floating hexagon button clears the system navigation bar. The layout only uses a scrollable body with the button outside it and no inset handling. |
+| 3 | Release notes (waiting for "ship it") | Prepend an entry to `Resources/changelog.json` and update `whatsnew/whatsnew-en-US` for the release that introduces the feedback screen, for example "Send feedback from Settings". Not done on purpose: it is a release-time step, version numbers stay with CI. |
+| 4 | Publish the privacy, deletion and support pages | The wording in `privacy-policy.html`, `delete-account.html` and `support.html` needs the owner's approval. They are served by GitHub Pages from `master`, which could not be confirmed from the repository. `AppConstants.SupportUrl` assumes `https://hexstackio.github.io/HexFund.UI/support.html`; open it after the pages publish, because **Contact support** shows a 404 if the URL is wrong. The deletion page footer still links to `hexstack.io/privacy` and `hexstack.io/terms`, which are outside this repository. |
+| 5 | Store privacy answers (owner action, not edited) | Google Play Data safety: add feedback text as user-generated content and optional diagnostics (app version, device model, OS version, recent request errors), collected only when the user opts in, for app functionality and developer communications. App Store privacy details when an iOS release exists: user content and diagnostic data, not used for tracking. Deletion answers stay as they are, noting that a de-identified issue can remain until the maintainer redacts it on request. |
+| 6 | CI first runs (unverified) | `pr.yml` and the `dotnet test` step in both workflows have not run on GitHub yet. Make `Build Android (Debug)` a required check on `master` in the repository settings. |
+| 7 | Real API checks (unverified) | That the API accepts the `X-Correlation-Id` and `X-App-Version` headers the client sends, that a real 429 carries `Retry-After` in seconds, and that `AppInfo.Current.BuildString` reports the version code CI sets on a release build. |
+
+**Known gaps, not planned in this change**
+
+* HTTP 413 has no dedicated message; it falls under the generic server message until the API's mapping is agreed.
+* A 401 shows "sign out and sign in again". There is no token refresh anywhere in the app.
+* A timeout that happens after the server stored the report can lead to a duplicate if the user sends again. The
+  API has no idempotency key.
+* The unsent draft is stored in device preferences without encryption. It is cleared on success, sign-out and
+  account deletion.
+* The **Question** type is read like the others but never answered, so the form text and the policy say reports
+  are not replied to individually. Consider whether that type is still useful.
+* The success dialog uses `Shell.Current.DisplayAlert`, and several older view models still use the obsolete
+  `Application.MainPage`.
+* Only `SubmitFeedbackAsync` returns an `ApiResult`. The older `ApiService` methods still collapse failures to
+  null, false or empty.

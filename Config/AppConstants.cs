@@ -28,6 +28,9 @@ public static class AppConstants
 
     public const string ChangelogResourcePath = "changelog.json";
 
+    // The support page is served by GitHub Pages from this repository (support.html).
+    public const string SupportUrl = "https://hexstackio.github.io/HexFund.UI/support.html";
+
     public static readonly TimeSpan AccountsCacheTtl     = TimeSpan.FromMinutes(10);
     public static readonly TimeSpan TransactionsCacheTtl = TimeSpan.FromMinutes(3);
     public static readonly TimeSpan CalendarCacheTtl     = TimeSpan.FromMinutes(5);

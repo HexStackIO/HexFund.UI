@@ -104,6 +104,9 @@ jobs:
       - name: Restore NuGet packages
         run: dotnet restore HexFund.UI.csproj -p:TargetFrameworks=net9.0-android36.0
 
+      - name: Run unit tests
+        run: dotnet test tests/HexFund.UI.Tests/HexFund.UI.Tests.csproj
+
       - name: Decode keystore
         run: |
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode \
